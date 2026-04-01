@@ -1,113 +1,56 @@
 // src/components/BottomBar.tsx
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import ActionSheet from "@/components/ui/action-sheet";
 import { HapticService } from "@/services/hapticService";
 
+/** Bottom bar — shows a clear-checked button when checked items exist. */
 const BottomBar = () => {
   const store = useCategoriesStore();
-  const [newItemName, setNewItemName] = useState("");
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const trimmedName = newItemName.trim();
   const hasCheckedItems =
     store.selectedCategory?.items.some((item) => item.isChecked) ?? false;
 
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const update = () => {
-      // The keyboard height is the difference between layout and visual viewport
-      const offset = window.innerHeight - vv.height;
-      setKeyboardHeight(Math.max(0, offset));
-    };
-
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, []);
-
-  function addItem() {
-    if (!trimmedName || !store.selectedCategory) return;
-    store.addItemToSelectedCategory(trimmedName);
-    setNewItemName("");
-    inputRef.current?.focus();
-  }
+  if (!hasCheckedItems) return null;
 
   return (
     <>
       <footer
-        className="sticky bottom-0 z-10 px-4 pt-5 pb-5"
+        className="sticky bottom-0 z-10 px-4 pt-3 pb-3"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
           background:
-            "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
-          transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined,
-          transition: "transform 0.25s ease-out",
+            "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 40%, var(--color-surface-background) 100%)",
         }}
       >
-        {/* Add item row — trash | input | add */}
-        <div className="flex gap-2 items-center">
-          <button
-            disabled={!hasCheckedItems}
-            className="press-scale shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-opacity duration-220"
-            style={{
-              backgroundColor: "var(--color-surface-input)",
-              opacity: hasCheckedItems ? 1 : 0.35,
-              cursor: hasCheckedItems ? "pointer" : "default",
-            }}
-            onClick={() => {
-              if (!hasCheckedItems) return;
-              setIsActionSheetOpen(true);
-              HapticService.light();
-            }}
+        <button
+          className="press-scale w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.96] active:opacity-75"
+          style={{
+            color: "var(--color-danger)",
+            backgroundColor: "rgba(212, 75, 74, 0.08)",
+          }}
+          onClick={() => {
+            setIsActionSheetOpen(true);
+            HapticService.light();
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ color: "var(--color-danger)" }}
-            >
-              <path d="M3 6h18" />
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
-          </button>
-          <Input
-            ref={inputRef}
-            placeholder="Add an item"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addItem();
-              }
-            }}
-            className="flex-1 h-10 rounded-full px-4 border-brand-green/20 bg-surface-card focus-visible:ring-brand-green"
-          />
-          <Button
-            className="press-scale rounded-full h-10 px-5 text-white font-semibold text-sm"
-            style={{ backgroundColor: "var(--color-brand-green)" }}
-            disabled={trimmedName.length === 0 || !store.selectedCategory}
-            onClick={addItem}
-          >
-            Add
-          </Button>
-        </div>
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          </svg>
+          Clear Checked Items
+        </button>
       </footer>
 
       <ActionSheet
