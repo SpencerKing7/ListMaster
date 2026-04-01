@@ -48,6 +48,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const itemRects = useRef<DOMRect[]>([]);
 
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const sheetFocusSentinelRef = useRef<HTMLDivElement>(null);
   const trimmedNewCategoryName = newCategoryName.trim();
 
   // ── Swipe-to-dismiss state ──
@@ -161,12 +162,15 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           side="bottom"
           showCloseButton={false}
           className="rounded-t-2xl max-h-[90dvh] overflow-y-auto"
+          initialFocus={sheetFocusSentinelRef}
           style={{
             backgroundColor: "var(--color-surface-background)",
             transform: `translateY(${swipeTranslateY}px)`,
             transition: swipeTranslateY === 0 ? "transform 0.3s ease-out" : "none",
           }}
         >
+          {/* Focus sentinel — absorbs auto-focus on open so no button appears focused */}
+          <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
           {/* Drag indicator — also the swipe-to-dismiss grab target */}
           <div
             className="flex justify-center pt-2 pb-1 touch-none cursor-grab active:cursor-grabbing select-none"
