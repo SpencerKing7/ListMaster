@@ -183,7 +183,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           {/* Header */}
           <SheetHeader className="flex flex-row items-center justify-between pr-4 pb-2">
             <SheetTitle
-              className="text-lg font-bold"
+              className="text-2xl font-bold"
               style={{ color: "var(--color-brand-green)" }}
             >
               Settings
