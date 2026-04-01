@@ -53,7 +53,7 @@ export default function OnboardingInstallScreen() {
 
       {/* Header */}
       <div className="flex flex-col items-center gap-4">
-        {/* Icon — iPhone */}
+        {/* Icon — Mobile Device */}
         <svg
           width="64"
           height="64"
@@ -65,7 +65,8 @@ export default function OnboardingInstallScreen() {
           strokeLinejoin="round"
         >
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-          <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2" />
+          <circle cx="12" cy="18" r="1" />
+          <path d="m9 6 6 6" />
         </svg>
 
         <h1
@@ -102,8 +103,8 @@ export default function OnboardingInstallScreen() {
             <line x1="12" y1="2" x2="12" y2="15" />
           </svg>
           <div className="flex-1">
-            <p className="font-semibold text-text-primary">Tap the Share button</p>
-            <p className="text-sm text-text-secondary">in Safari's toolbar at the bottom of the screen</p>
+            <p className="font-semibold text-text-primary">Open your browser menu</p>
+            <p className="text-sm text-text-secondary">Tap the menu button (⋮) or share button in your browser</p>
           </div>
         </div>
 
@@ -128,15 +129,15 @@ export default function OnboardingInstallScreen() {
             <line x1="8" y1="12" x2="16" y2="12" />
           </svg>
           <div className="flex-1">
-            <p className="font-semibold text-text-primary">Tap "Add to Home Screen"</p>
-            <p className="text-sm text-text-secondary">then tap Add in the top-right corner</p>
+            <p className="font-semibold text-text-primary">Select "Add to Home Screen" or "Install App"</p>
+            <p className="text-sm text-text-secondary">Choose the option to install or add to your home screen</p>
           </div>
         </div>
       </div>
 
       {/* Browser note */}
       <p className="text-xs text-text-secondary text-center mt-4 max-w-sm">
-        Most iOS browsers support Add to Home Screen from the share menu. On Android, look for "Install App" or "Add to Home Screen" in your browser's menu (⋮).
+        This feature works on most modern mobile browsers. If you don't see the option, try a different browser like Chrome, Safari, or Firefox.
       </p>
 
       <div className="flex-1" />
