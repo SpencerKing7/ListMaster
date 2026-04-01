@@ -1,5 +1,5 @@
 // src/components/BottomBar.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
@@ -10,11 +10,30 @@ const BottomBar = () => {
   const store = useCategoriesStore();
   const [newItemName, setNewItemName] = useState("");
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const trimmedName = newItemName.trim();
   const hasCheckedItems =
     store.selectedCategory?.items.some((item) => item.isChecked) ?? false;
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => {
+      // The keyboard height is the difference between layout and visual viewport
+      const offset = window.innerHeight - vv.height;
+      setKeyboardHeight(Math.max(0, offset));
+    };
+
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   function addItem() {
     if (!trimmedName || !store.selectedCategory) return;
@@ -31,6 +50,8 @@ const BottomBar = () => {
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
           background:
             "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
+          transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined,
+          transition: "transform 0.25s ease-out",
         }}
       >
         {/* Add item row — trash | input | add */}
