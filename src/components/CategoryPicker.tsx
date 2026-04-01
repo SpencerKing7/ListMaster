@@ -32,6 +32,8 @@ const CategoryPicker = () => {
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
+      // Ignore right-click, middle-click, etc.
+      if (e.button !== 0) return;
       const container = scrollRef.current;
       if (!container) return;
       isDraggingRef.current = true;
@@ -63,13 +65,18 @@ const CategoryPicker = () => {
   const handlePointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       isDraggingRef.current = false;
-      hasDraggedRef.current = false;
+      // Don't reset hasDraggedRef here — let the onClick handler check it first,
+      // then reset it after the click event fires (click fires after pointerUp).
       const container = scrollRef.current;
       if (!container) return;
       if (container.hasPointerCapture(e.pointerId)) {
         container.releasePointerCapture(e.pointerId);
       }
       container.style.cursor = "grab";
+      // Reset after click event has had a chance to fire
+      setTimeout(() => {
+        hasDraggedRef.current = false;
+      }, 0);
     },
     []
   );
@@ -100,23 +107,25 @@ const CategoryPicker = () => {
                 key={category.id}
                 data-category-id={category.id}
                 onClick={() => {
-                  selectCategory(category.id);
-                  HapticService.selection();
+                  if (!hasDraggedRef.current) {
+                    selectCategory(category.id);
+                    HapticService.selection();
+                  }
                 }}
-                className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.97] ${isSelected
-                    ? "shadow-sm"
-                    : ""
-                  }`}
+                className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
                 style={
                   isSelected
                     ? {
                       backgroundColor: "var(--color-surface-card)",
                       color: "var(--color-brand-green)",
                       fontWeight: 700,
+                      boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                      transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
                     }
                     : {
                       backgroundColor: "transparent",
                       color: "var(--color-text-secondary)",
+                      transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
                     }
                 }
               >

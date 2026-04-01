@@ -37,6 +37,7 @@
 
   /* Brand token extensions */
   --color-brand-green: var(--color-brand-green);
+  --color-brand-green-rgb: var(--color-brand-green-rgb);
   --color-brand-teal: var(--color-brand-teal);
   --color-brand-blue: var(--color-brand-blue);
   --color-brand-deep-green: var(--color-brand-deep-green);
@@ -50,6 +51,16 @@
 
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
+
+  /* Overlay and elevation tokens */
+  --color-surface-overlay: var(--color-surface-overlay);
+  --elevation-card: var(--elevation-card);
+  --elevation-sheet: var(--elevation-sheet);
+
+  /* Animation easing aliases for Tailwind */
+  --ease-decelerate: var(--ease-decelerate);
+  --spring-snap: var(--spring-snap);
+  --spring-page: var(--spring-page);
 }
 
 :root {
@@ -145,6 +156,20 @@
   .press-scale:active {
     transform: scale(0.96);
     opacity: 0.75;
+  }
+  /* iOS decelerate easing for entrance animations */
+  .ease-decelerate {
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+  /* Empty-state entrance helper classes */
+  .entrance-hidden {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  .entrance-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 
   /* Page transition animations */

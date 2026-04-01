@@ -21,28 +21,34 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
           "linear-gradient(to top, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
       }}
     >
-      <div className="flex items-baseline gap-2 mb-6">
+      <div className="flex items-center gap-2 mb-4">
         {trimmedName.length > 0 && (
           <p
-            className={`font-semibold flex-1 transition-all duration-220 ease-out ${scrolled ? "text-base opacity-70" : "text-xl"
+            className={`font-bold flex-1 min-w-0 truncate transition-all duration-220 ease-out ${scrolled ? "text-base opacity-60" : "text-2xl"
               }`}
             style={{
-              color: "var(--color-brand-green)",
-              transform: scrolled ? "scale(0.85)" : "scale(1)",
+              color: "var(--color-text-primary)",
+              letterSpacing: scrolled ? "0" : "-0.01em",
+              transform: scrolled ? "scale(0.88) translateX(-6%)" : "scale(1)",
+              transformOrigin: "left center",
             }}
           >
-            Welcome, {trimmedName}!
+            Welcome,{" "}
+            <span style={{ color: "var(--color-brand-green)" }}>{trimmedName}</span>
           </p>
         )}
         {trimmedName.length === 0 && <div className="flex-1" />}
         <button
           onClick={onRefresh}
-          className="relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-150 active:scale-[0.96]"
-          style={{ touchAction: "manipulation" }}
+          className="relative shrink-0 w-9 h-9 rounded-full flex items-center justify-center press-scale"
+          style={{
+            touchAction: "manipulation",
+            backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)",
+          }}
         >
           <svg
-            width="22"
-            height="22"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="var(--color-brand-teal)"
@@ -58,12 +64,15 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
         </button>
         <button
           onClick={onOpenSettings}
-          className="relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-150 active:scale-[0.96]"
-          style={{ touchAction: "manipulation" }}
+          className="relative shrink-0 w-9 h-9 rounded-full flex items-center justify-center press-scale"
+          style={{
+            touchAction: "manipulation",
+            backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)",
+          }}
         >
           <svg
-            width="22"
-            height="22"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="var(--color-brand-teal)"
             stroke="none"

@@ -4,6 +4,7 @@ import { useCategoriesStore } from "@/store/useCategoriesStore";
 import HeaderBar from "@/components/HeaderBar";
 import BottomBar from "@/components/BottomBar";
 import CategoryPanel from "@/components/CategoryPanel";
+import PageIndicator from "@/components/PageIndicator";
 import SettingsSheet from "./SettingsSheet";
 import { HapticService } from "@/services/hapticService";
 
@@ -85,6 +86,8 @@ export default function MainScreen() {
   // Swipe gesture handlers — touch and mouse, but only triggers on intentional horizontal drag
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      // Ignore right-click, middle-click, etc.
+      if (e.button !== 0) return;
       if (isTransitioningRef.current) return;
       startXRef.current = e.clientX;
       startYRef.current = e.clientY;
@@ -196,6 +199,8 @@ export default function MainScreen() {
         <div
           ref={contentRef}
           className="flex h-full touch-pan-y"
+          role="region"
+          aria-label={`${store.selectedCategory?.name ?? "List"} — swipe left or right to switch categories`}
           style={{
             width: `${contentWidth * 3}px`,
             transform: `translateX(${-contentWidth + dragOffset}px)`,
@@ -228,6 +233,14 @@ export default function MainScreen() {
           </div>
         </div>
       </div>
+
+      {/* Page indicator dots */}
+      {store.categories.length > 1 && (
+        <PageIndicator
+          count={store.categories.length}
+          activeIndex={store.categories.findIndex((c) => c.id === store.selectedCategoryID)}
+        />
+      )}
 
       <BottomBar />
 

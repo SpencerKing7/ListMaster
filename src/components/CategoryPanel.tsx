@@ -31,8 +31,11 @@ const AddItemInput = () => {
   return (
     <div className="px-1">
       <div
-        className="flex items-center h-11 rounded-[14px] px-4 gap-2"
-        style={{ backgroundColor: "var(--color-surface-card)" }}
+        className="flex items-center h-12 rounded-[16px] px-4 gap-2"
+        style={{
+          backgroundColor: "var(--color-surface-card)",
+          boxShadow: "var(--elevation-card)",
+        }}
       >
         <input
           ref={inputRef}
@@ -100,27 +103,36 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
         <AddItemInput />
         <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4">
           <div
-            className={`flex flex-col items-center transition-all duration-220 ease-decelerate ${mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-92"
-              }`}
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? "translateY(0) scale(1)" : "translateY(12px) scale(0.92)",
+              transition: "opacity 220ms cubic-bezier(0,0,0.2,1), transform 220ms cubic-bezier(0,0,0.2,1)",
+            }}
+            className="flex flex-col items-center gap-2"
           >
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ color: "var(--color-brand-teal)" }}
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)" }}
             >
-              <line x1="9" y1="6" x2="20" y2="6" />
-              <line x1="9" y1="12" x2="20" y2="12" />
-              <line x1="9" y1="18" x2="20" y2="18" />
-              <polyline points="4 6 5 7 7 5" />
-              <polyline points="4 12 5 13 7 11" />
-              <polyline points="4 18 5 19 7 17" />
-            </svg>
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ color: "var(--color-brand-teal)" }}
+              >
+                <line x1="9" y1="6" x2="20" y2="6" />
+                <line x1="9" y1="12" x2="20" y2="12" />
+                <line x1="9" y1="18" x2="20" y2="18" />
+                <polyline points="4 6 5 7 7 5" />
+                <polyline points="4 12 5 13 7 11" />
+                <polyline points="4 18 5 19 7 17" />
+              </svg>
+            </div>
             <p className="text-base font-medium" style={{ color: "var(--color-brand-teal)" }}>
               No items yet
             </p>
@@ -146,10 +158,13 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
               className={`flex items-center gap-3.5 px-4 py-3.5 rounded-[14px] cursor-pointer ${tappedId === item.id ? "scale-[0.97] opacity-80" : ""
                 }`}
               style={{
-                backgroundColor: "var(--color-surface-card)",
-                boxShadow: "0 2px 4px rgba(var(--color-brand-deep-green-rgb), 0.08)",
-                opacity: item.isChecked ? 0.7 : 1.0,
-                transition: tappedId === item.id ? "transform 80ms ease-out, opacity 80ms ease-out" : "none",
+                backgroundColor: item.isChecked
+                  ? "rgba(var(--color-brand-deep-green-rgb), 0.04)"
+                  : "var(--color-surface-card)",
+                boxShadow: item.isChecked ? "none" : "var(--elevation-card)",
+                transition: tappedId === item.id
+                  ? "transform 80ms ease-out, opacity 80ms ease-out"
+                  : "background-color 200ms ease-out, box-shadow 200ms ease-out",
               }}
               onClick={() => {
                 setTappedId(item.id);
@@ -165,13 +180,12 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
                   height="22"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="var(--color-brand-green)"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <circle cx="12" cy="12" r="10" fill="var(--color-brand-green)" />
-                  <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2" />
+                  <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2.2" />
                 </svg>
               ) : (
                 <svg
@@ -179,10 +193,10 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
                   height="22"
                   viewBox="0 0 24 24"
                   fill="none"
-                  strokeWidth="2"
+                  strokeWidth="1.75"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  style={{ color: "var(--color-brand-teal)", opacity: 0.7 }}
+                  style={{ color: "var(--color-brand-teal)", opacity: 0.6 }}
                 >
                   <circle cx="12" cy="12" r="10" stroke="currentColor" />
                 </svg>
@@ -190,14 +204,20 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
 
               {/* Item name */}
               <span
-                className={`text-base ${item.isChecked
-                  ? "line-through text-text-secondary"
-                  : "font-medium text-text-primary"
+                className={`flex-1 text-base ${item.isChecked
+                  ? "line-through"
+                  : "font-medium"
                   }`}
                 style={
                   item.isChecked
-                    ? { textDecorationColor: "color-mix(in srgb, var(--color-brand-green) 40%, transparent)" }
-                    : undefined
+                    ? {
+                      color: "var(--color-text-secondary)",
+                      // textDecorationColor inherits from color, so set a semi-transparent
+                      // brand-green via currentColor + opacity on the decoration element.
+                      // Using a direct rgba fallback avoids color-mix() (Safari < 16.2).
+                      textDecorationColor: "rgba(var(--color-brand-green-rgb), 0.45)",
+                    }
+                    : { color: "var(--color-text-primary)" }
                 }
               >
                 {item.name}

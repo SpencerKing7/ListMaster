@@ -55,20 +55,35 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const swipeDismissStartY = useRef(0);
   const swipeDismissStartTime = useRef(0);
   const [swipeTranslateY, setSwipeTranslateY] = useState(0);
+  // Tracks whether a real downward drag has been confirmed, preventing mouse
+  // hover or non-primary-button clicks from triggering a dismiss gesture.
+  const isDismissDraggingRef = useRef(false);
 
   const handleDismissPointerDown = useCallback((e: React.PointerEvent) => {
+    // Ignore right-click, middle-click, etc.
+    if (e.button !== 0) return;
+    isDismissDraggingRef.current = false;
     swipeDismissStartY.current = e.clientY;
     swipeDismissStartTime.current = Date.now();
     setSwipeTranslateY(0);
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    // setPointerCapture is deferred to PointerMove once drag intent is confirmed
   }, []);
 
   const handleDismissPointerMove = useCallback((e: React.PointerEvent) => {
+    // On mouse, only track movement while the primary button is held
+    if (e.pointerType === "mouse" && e.buttons === 0) return;
     const dy = e.clientY - swipeDismissStartY.current;
-    if (dy > 0) setSwipeTranslateY(dy);
+    if (!isDismissDraggingRef.current && Math.abs(dy) > 5) {
+      isDismissDraggingRef.current = true;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    if (isDismissDraggingRef.current && dy > 0) setSwipeTranslateY(dy);
   }, []);
 
   const handleDismissPointerUp = useCallback((e: React.PointerEvent, onClose: () => void) => {
+    // No-op if no real drag was ever confirmed
+    if (!isDismissDraggingRef.current) return;
+    isDismissDraggingRef.current = false;
     const dy = e.clientY - swipeDismissStartY.current;
     const dt = Date.now() - swipeDismissStartTime.current;
     const velocity = dy / dt; // px/ms
@@ -114,6 +129,9 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const handleDragPointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (dragIndex === null) return;
+      // On mouse, only track while the primary button is held — prevents
+      // accidental reorder highlights when hovering without dragging.
+      if (e.pointerType === "mouse" && e.buttons === 0) return;
       dragNodeY.current = e.clientY;
       setOverIndex(getDropIndex(e.clientY));
     },
@@ -161,10 +179,11 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="rounded-t-2xl max-h-[90dvh] overflow-y-auto"
+          className="rounded-t-3xl max-h-[90dvh] overflow-y-auto"
           initialFocus={sheetFocusSentinelRef}
           style={{
             backgroundColor: "var(--color-surface-background)",
+            boxShadow: "var(--elevation-sheet)",
             transform: `translateY(${swipeTranslateY}px)`,
             transition: swipeTranslateY === 0 ? "transform 0.3s ease-out" : "none",
           }}
@@ -172,20 +191,21 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           {/* Focus sentinel — absorbs auto-focus on open so no button appears focused */}
           <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
           {/* Drag indicator — also the swipe-to-dismiss grab target */}
+          {/* The pill is hidden on desktop (coarse pointer = touch only) */}
           <div
-            className="flex justify-center pt-2 pb-1 touch-none cursor-grab active:cursor-grabbing select-none"
+            className="flex justify-center pt-3 pb-1 touch-none cursor-grab active:cursor-grabbing select-none"
             onPointerDown={handleDismissPointerDown}
             onPointerMove={handleDismissPointerMove}
             onPointerUp={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
             onPointerCancel={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
           >
             <div
-              className="w-9 h-1 rounded-full"
-              style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.3 }}
+              className="hidden pointer-coarse:block w-10 h-[5px] rounded-full"
+              style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.25 }}
             />
           </div>
           {/* Header */}
-          <SheetHeader className="flex flex-row items-center justify-between pr-4 pb-2">
+          <SheetHeader className="flex flex-row items-center justify-between px-5 pb-3 pt-1">
             <SheetTitle
               className="text-2xl font-bold"
               style={{ color: "var(--color-brand-green)" }}
@@ -500,7 +520,10 @@ function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="flex flex-col gap-3 rounded-2xl px-4 py-4"
-      style={{ backgroundColor: "var(--color-surface-card)" }}
+      style={{
+        backgroundColor: "var(--color-surface-card)",
+        boxShadow: "var(--elevation-card)",
+      }}
     >
       {children}
     </div>

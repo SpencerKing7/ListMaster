@@ -18,6 +18,17 @@
   --color-text-secondary: rgba(0, 0, 0, 0.5);
 
   --color-brand-deep-green-rgb: 26, 94, 75;
+  --color-brand-green-rgb: 57, 179, 133;
+
+  /* Overlay / scrim for ActionSheet and modal backdrops */
+  --color-surface-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Elevation shadow for cards — subtle on light */
+  --elevation-card:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  /* Elevation shadow for floating elements (sheets, dialogs) */
+  --elevation-sheet:
+    0 -4px 24px rgba(0, 0, 0, 0.1), 0 -1px 4px rgba(0, 0, 0, 0.06);
 
   --gradient-brand-wide: linear-gradient(
     135deg,
@@ -63,6 +74,16 @@
     --color-text-secondary: rgba(255, 255, 255, 0.5);
 
     --color-brand-deep-green-rgb: 39, 120, 98;
+    --color-brand-green-rgb: 73, 203, 154;
+
+    /* Overlay / scrim — slightly darker for dark mode */
+    --color-surface-overlay: rgba(0, 0, 0, 0.6);
+
+    /* Elevation shadows — more opaque on dark */
+    --elevation-card:
+      0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+    --elevation-sheet:
+      0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -84,6 +105,13 @@
   --color-text-secondary: rgba(0, 0, 0, 0.5);
 
   --color-brand-deep-green-rgb: 26, 94, 75;
+  --color-brand-green-rgb: 57, 179, 133;
+
+  --color-surface-overlay: rgba(0, 0, 0, 0.45);
+  --elevation-card:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --elevation-sheet:
+    0 -4px 24px rgba(0, 0, 0, 0.1), 0 -1px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* ── Manual override: force dark ────────────────────────── */
@@ -104,4 +132,10 @@
   --color-text-secondary: rgba(255, 255, 255, 0.5);
 
   --color-brand-deep-green-rgb: 39, 120, 98;
+  --color-brand-green-rgb: 73, 203, 154;
+
+  --color-surface-overlay: rgba(0, 0, 0, 0.6);
+  --elevation-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+  --elevation-sheet:
+    0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
 }

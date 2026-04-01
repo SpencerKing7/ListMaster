@@ -22,11 +22,14 @@ export default function OnboardingInstallScreen() {
 
   useEffect(() => {
     if (isStandalone) {
-      // Track standalone mode sessions as a proxy for PWA installs
-      gtag('event', 'pwa_session', {
-        event_category: 'PWA',
-        event_label: 'Standalone Mode'
-      });
+      // Track standalone mode sessions as a proxy for PWA installs.
+      // Guard required — gtag may not be loaded if GA is blocked or slow.
+      if (typeof gtag === "function") {
+        gtag('event', 'pwa_session', {
+          event_category: 'PWA',
+          event_label: 'Standalone Mode'
+        });
+      }
       navigate("/welcome", { replace: true });
       return;
     }
@@ -83,9 +86,14 @@ export default function OnboardingInstallScreen() {
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">
         {/* Step 1 */}
         <div
-          className={`flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/[0.07] border border-brand-green/15 transition-all duration-220 ease-decelerate ${mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-92"
-            }`}
-          style={{ transitionDelay: "0ms" }}
+          className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
+          style={{
+            backgroundColor: "var(--color-surface-card)",
+            boxShadow: "var(--elevation-card)",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
+            transition: `opacity 220ms cubic-bezier(0,0,0.2,1) 0ms, transform 220ms cubic-bezier(0,0,0.2,1) 0ms`,
+          }}
         >
           <svg
             width="28"
@@ -109,9 +117,14 @@ export default function OnboardingInstallScreen() {
 
         {/* Step 2 */}
         <div
-          className={`flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/[0.07] border border-brand-green/15 transition-all duration-220 ease-decelerate ${mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-92"
-            }`}
-          style={{ transitionDelay: "100ms" }}
+          className={`flex items-center gap-3 px-4 py-3.5 rounded-xl`}
+          style={{
+            backgroundColor: "var(--color-surface-card)",
+            boxShadow: "var(--elevation-card)",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
+            transition: `opacity 220ms cubic-bezier(0,0,0.2,1) 100ms, transform 220ms cubic-bezier(0,0,0.2,1) 100ms`,
+          }}
         >
           <svg
             width="28"
@@ -142,7 +155,10 @@ export default function OnboardingInstallScreen() {
       <div className="flex-1" />
 
       {/* Buttons */}
-      <div className="w-full pb-[60px] flex flex-col gap-3">
+      <div
+        className="w-full flex flex-col gap-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)" }}
+      >
         <Button
           variant="ghost"
           className="w-full h-12 rounded-2xl text-sm font-medium"

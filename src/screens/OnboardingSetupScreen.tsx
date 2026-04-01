@@ -115,7 +115,8 @@ export default function OnboardingSetupScreen() {
                 categoryInputRef.current?.focus();
               }
             }}
-            className="h-12 rounded-[14px] border-white/15 bg-white/[0.07] px-4 text-text-primary placeholder:text-text-secondary focus-visible:ring-brand-green"
+            className="h-12 rounded-[14px] border-transparent px-4 text-text-primary placeholder:text-[color:var(--color-text-secondary)] focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
+            style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
           />
         </div>
 
@@ -139,7 +140,8 @@ export default function OnboardingSetupScreen() {
                   addCategoryToList();
                 }
               }}
-              className="h-12 rounded-[14px] border-white/15 bg-white/[0.07] px-4 flex-1 text-text-primary placeholder:text-text-secondary focus-visible:ring-brand-green"
+              className="h-12 rounded-[14px] border-transparent px-4 flex-1 focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
+              style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
             />
             <Button
               variant="ghost"
@@ -158,10 +160,9 @@ export default function OnboardingSetupScreen() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 style={{
-                  color:
-                    trimmedCategoryInput.length === 0
-                      ? "color-mix(in srgb, var(--color-brand-green) 35%, transparent)"
-                      : "var(--color-brand-green)",
+                  color: "var(--color-brand-green)",
+                  opacity: trimmedCategoryInput.length === 0 ? 0.35 : 1,
+                  transition: "opacity 150ms ease-out",
                 }}
               >
                 <circle cx="12" cy="12" r="10" fill="currentColor" />
@@ -178,7 +179,11 @@ export default function OnboardingSetupScreen() {
             {pendingCategories.map((name) => (
               <div
                 key={name}
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/[0.07] border border-brand-green/25 animate-in fade-in slide-in-from-top-1 duration-200"
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border animate-in fade-in slide-in-from-top-1 duration-200"
+                style={{
+                  backgroundColor: "var(--color-surface-input)",
+                  borderColor: "rgba(var(--color-brand-deep-green-rgb), 0.20)",
+                }}
               >
                 <svg
                   width="16"
@@ -234,10 +239,16 @@ export default function OnboardingSetupScreen() {
       <div className="flex-1" />
 
       {/* Finish button */}
-      <div className="px-8 pb-[60px]">
+      <div
+        className="px-8"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)" }}
+      >
         <Button
-          className="w-full h-14 rounded-2xl text-base font-semibold text-white disabled:opacity-60"
-          style={{ backgroundColor: "var(--color-brand-green)" }}
+          className="w-full h-14 rounded-2xl text-base font-semibold text-white disabled:opacity-60 press-scale"
+          style={{
+            background: `linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-teal) 100%)`,
+            boxShadow: "0 6px 24px rgba(57,179,133,0.35)",
+          }}
           disabled={!isFormValid}
           onClick={completeOnboarding}
         >
