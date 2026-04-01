@@ -47,7 +47,7 @@ const BottomBar = () => {
       <footer
         className="sticky bottom-0 z-10 px-4 pt-5 pb-3"
         style={{
-          paddingBottom: "calc(var(--keyboard-inset, 0px) + 12px)",
+          paddingBottom: "calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px) + 20px)",
           background:
             "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
         }}

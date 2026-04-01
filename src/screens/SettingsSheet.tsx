@@ -50,6 +50,33 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const trimmedNewCategoryName = newCategoryName.trim();
 
+  // ── Swipe-to-dismiss state ──
+  const swipeDismissStartY = useRef(0);
+  const swipeDismissStartTime = useRef(0);
+  const [swipeTranslateY, setSwipeTranslateY] = useState(0);
+
+  const handleDismissPointerDown = useCallback((e: React.PointerEvent) => {
+    swipeDismissStartY.current = e.clientY;
+    swipeDismissStartTime.current = Date.now();
+    setSwipeTranslateY(0);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleDismissPointerMove = useCallback((e: React.PointerEvent) => {
+    const dy = e.clientY - swipeDismissStartY.current;
+    if (dy > 0) setSwipeTranslateY(dy);
+  }, []);
+
+  const handleDismissPointerUp = useCallback((e: React.PointerEvent, onClose: () => void) => {
+    const dy = e.clientY - swipeDismissStartY.current;
+    const dt = Date.now() - swipeDismissStartTime.current;
+    const velocity = dy / dt; // px/ms
+    if (dy > 80 || velocity > 0.5) {
+      onClose();
+    }
+    setSwipeTranslateY(0);
+  }, []);
+
   // Snapshot all item rects when drag begins
   const snapshotRects = useCallback(() => {
     if (!listRef.current) return;
@@ -134,12 +161,22 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           side="bottom"
           showCloseButton={false}
           className="rounded-t-2xl max-h-[90dvh] overflow-y-auto"
-          style={{ backgroundColor: "var(--color-surface-background)" }}
+          style={{
+            backgroundColor: "var(--color-surface-background)",
+            transform: `translateY(${swipeTranslateY}px)`,
+            transition: swipeTranslateY === 0 ? "transform 0.3s ease-out" : "none",
+          }}
         >
-          {/* Drag indicator */}
-          <div className="flex justify-center pt-2 pb-1">
+          {/* Drag indicator — also the swipe-to-dismiss grab target */}
+          <div
+            className="flex justify-center pt-2 pb-1 touch-none cursor-grab active:cursor-grabbing select-none"
+            onPointerDown={handleDismissPointerDown}
+            onPointerMove={handleDismissPointerMove}
+            onPointerUp={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
+            onPointerCancel={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
+          >
             <div
-              className="w-9 h-1 rounded-full bg-text-secondary/30"
+              className="w-9 h-1 rounded-full"
               style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.3 }}
             />
           </div>
