@@ -48,6 +48,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const itemRects = useRef<DOMRect[]>([]);
 
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const addCategoryInputRef = useRef<HTMLInputElement>(null);
   const sheetFocusSentinelRef = useRef<HTMLDivElement>(null);
   const trimmedNewCategoryName = newCategoryName.trim();
 
@@ -155,6 +156,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     if (!trimmedNewCategoryName) return;
     store.addCategory(trimmedNewCategoryName);
     setNewCategoryName("");
+    addCategoryInputRef.current?.focus();
   }
 
   function handleRenameSave() {
@@ -332,6 +334,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
               {/* Add category inline */}
               <div className="flex gap-2 items-center mt-1">
                 <Input
+                  ref={addCategoryInputRef}
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   onKeyDown={(e) => {
@@ -343,6 +346,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                   placeholder="Add new category"
                   className={`flex-1 ${inputClass}`}
                   style={{ color: "var(--color-text-primary)" }}
+                  enterKeyHint="send"
                 />
                 <button
                   className="h-11 w-11 flex items-center justify-center rounded-xl text-white shrink-0 transition-all disabled:opacity-30 active:scale-[0.96] active:opacity-75"

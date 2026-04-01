@@ -53,7 +53,7 @@ const AddItemInput = () => {
             color: "var(--color-text-primary)",
             caretColor: "var(--color-brand-green)",
           }}
-          enterKeyHint="done"
+          enterKeyHint="send"
           autoComplete="off"
           autoCorrect="off"
         />

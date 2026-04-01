@@ -154,6 +154,7 @@ export default function OnboardingSetupScreen() {
               }}
               className="h-12 rounded-[14px] border-transparent px-4 flex-1 focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
               style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
+              enterKeyHint="send"
             />
             <Button
               variant="ghost"
