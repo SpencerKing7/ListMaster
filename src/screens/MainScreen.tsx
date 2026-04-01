@@ -1,6 +1,7 @@
 // src/screens/MainScreen.tsx
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
+import { useAppUpdate } from "@/store/useAppUpdate";
 import HeaderBar from "@/components/HeaderBar";
 import BottomBar from "@/components/BottomBar";
 import CategoryPanel from "@/components/CategoryPanel";
@@ -42,6 +43,7 @@ function performSlideTransition(
 
 export default function MainScreen() {
   const store = useCategoriesStore();
+  const { isUpdateAvailable, applyUpdate } = useAppUpdate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [contentWidth, setContentWidth] = useState(0);
@@ -181,7 +183,12 @@ export default function MainScreen() {
         style={{ background: "var(--gradient-brand-wide)" }}
       />
 
-      <HeaderBar onOpenSettings={() => setIsSettingsOpen(true)} scrolled={scrolled} />
+      <HeaderBar
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        scrolled={scrolled}
+        isUpdateAvailable={isUpdateAvailable}
+        onRefresh={applyUpdate}
+      />
 
       {/* Content area with three-panel sliding layout */}
       <div

@@ -6,9 +6,11 @@ import CategoryPicker from "./CategoryPicker";
 interface HeaderBarProps {
   onOpenSettings: () => void;
   scrolled?: boolean;
+  isUpdateAvailable?: boolean;
+  onRefresh?: () => void;
 }
 
-const HeaderBar = ({ onOpenSettings, scrolled = false }: HeaderBarProps) => {
+const HeaderBar = ({ onOpenSettings, scrolled = false, isUpdateAvailable = false, onRefresh }: HeaderBarProps) => {
   const { userName } = useSettingsStore();
   const trimmedName = userName.trim();
 
@@ -34,6 +36,32 @@ const HeaderBar = ({ onOpenSettings, scrolled = false }: HeaderBarProps) => {
           </p>
         )}
         {trimmedName.length === 0 && <div className="flex-1" />}
+        <button
+          onClick={onRefresh}
+          className="relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-150 active:scale-[0.96]"
+          style={{ touchAction: "manipulation" }}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-brand-teal)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M8 16H3v5" />
+          </svg>
+          {isUpdateAvailable && (
+            <span
+              className="absolute top-0 right-0 w-2 h-2 bg-[var(--color-brand-green)] rounded-full animate-pulse"
+            />
+          )}
+        </button>
         <Button
           variant="ghost"
           size="icon"
