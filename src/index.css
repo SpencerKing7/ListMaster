@@ -119,6 +119,7 @@
     @apply font-sans;
     margin: 0;
     background-color: var(--color-surface-background);
+    background-image: var(--gradient-brand-wide);
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
