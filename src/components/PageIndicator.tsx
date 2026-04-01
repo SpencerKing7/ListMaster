@@ -22,9 +22,10 @@ export default function PageIndicator({ count, activeIndex }: PageIndicatorProps
               backgroundColor: isActive
                 ? "var(--color-brand-green)"
                 : "var(--color-text-secondary)",
-              opacity: isActive ? 1 : 0.3,
+              opacity: isActive ? 1 : 0.4,
+              willChange: "width, background-color, opacity",
               transition:
-                "width 220ms cubic-bezier(0.34,1.56,0.64,1), background-color 220ms ease-out, opacity 220ms ease-out",
+                "width 280ms cubic-bezier(0.34,1.56,0.64,1), background-color 280ms ease-out, opacity 280ms ease-out",
             }}
           />
         );

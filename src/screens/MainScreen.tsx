@@ -44,7 +44,7 @@ function performSlideTransition(
   };
 
   const onEnd = (e: TransitionEvent) => {
-    if (e.propertyName === "transform") settle();
+    if (e.target === contentEl && e.propertyName === "transform") settle();
   };
   contentEl.addEventListener("transitionend", onEnd);
 
@@ -262,10 +262,12 @@ export default function MainScreen() {
 
         {/* Page indicator dots */}
         {store.categories.length > 1 && (
-          <PageIndicator
-            count={store.categories.length}
-            activeIndex={store.categories.findIndex((c) => c.id === store.selectedCategoryID)}
-          />
+          <div style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
+            <PageIndicator
+              count={store.categories.length}
+              activeIndex={store.categories.findIndex((c) => c.id === store.selectedCategoryID)}
+            />
+          </div>
         )}
 
         <BottomBar />
