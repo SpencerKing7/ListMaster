@@ -135,20 +135,12 @@ export default function OnboardingInstallScreen() {
       {/* Buttons */}
       <div className="w-full pb-[60px] flex flex-col gap-3">
         <Button
-          className="w-full h-14 rounded-2xl text-base font-semibold text-white"
-          style={{ backgroundColor: "var(--color-brand-green)" }}
-          onClick={() => navigate("/welcome")}
-        >
-          I've Added It — Continue
-        </Button>
-
-        <Button
           variant="ghost"
           className="w-full h-12 rounded-2xl text-sm font-medium"
           style={{ color: "var(--color-text-secondary)" }}
           onClick={() => navigate("/welcome")}
         >
-          Skip for Now
+          Skip for Now — Use in Browser
         </Button>
       </div>
     </div>
