@@ -16,30 +16,15 @@ const BottomBar = () => {
   const hasCheckedItems =
     store.selectedCategory?.items.some((item) => item.isChecked) ?? false;
 
-  // Keyboard-safe layout — tracks both keyboard inset and actual visible viewport height
+  // Keyboard-safe layout — lifts the footer above the software keyboard
   useEffect(() => {
     const vv = window.visualViewport;
-
-    const setInitialHeight = () => {
-      document.documentElement.style.setProperty(
-        "--viewport-height",
-        `${window.innerHeight}px`,
-      );
-    };
-    setInitialHeight();
-
     if (!vv) return;
-
     const update = () => {
       const offset = window.innerHeight - vv.height - vv.offsetTop;
       document.documentElement.style.setProperty(
         "--keyboard-inset",
-        `${offset}px`,
-      );
-      // Drive the app height from the visual viewport so layout shrinks with the keyboard
-      document.documentElement.style.setProperty(
-        "--viewport-height",
-        `${vv.height + vv.offsetTop}px`,
+        `${Math.max(0, offset)}px`,
       );
     };
     vv.addEventListener("resize", update);
@@ -60,7 +45,7 @@ const BottomBar = () => {
   return (
     <>
       <footer
-        className="sticky bottom-0 z-10 px-4 pt-5 pb-3"
+        className="fixed bottom-0 left-0 right-0 z-10 px-4 pt-5"
         style={{
           paddingBottom: "calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px) + 20px)",
           background:

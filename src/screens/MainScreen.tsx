@@ -169,10 +169,7 @@ export default function MainScreen() {
   );
 
   return (
-    <div
-      className="relative flex flex-col overflow-hidden"
-      style={{ height: "var(--viewport-height, 100dvh)" }}
-    >
+    <div className="relative h-dvh flex flex-col overflow-hidden">
       {/* Base background */}
       <div
         className="absolute inset-0 -z-10"
@@ -190,6 +187,7 @@ export default function MainScreen() {
       <div
         ref={containerRef}
         className="flex-1 overflow-hidden relative"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
         onScroll={handleScrollWithPosition}
       >
         <div
