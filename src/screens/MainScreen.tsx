@@ -169,7 +169,10 @@ export default function MainScreen() {
   );
 
   return (
-    <div className="relative h-dvh flex flex-col overflow-hidden">
+    <div
+      className="relative flex flex-col overflow-hidden"
+      style={{ height: "var(--viewport-height, 100dvh)" }}
+    >
       {/* Base background */}
       <div
         className="absolute inset-0 -z-10"
