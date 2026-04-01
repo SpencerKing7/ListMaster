@@ -1,5 +1,5 @@
 // src/screens/OnboardingInstallScreen.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -7,20 +7,24 @@ export default function OnboardingInstallScreen() {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
 
-  // Detect if already running as PWA
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-    ((window.navigator as { standalone?: boolean }).standalone === true);
+  // Memoised so it doesn't re-evaluate on every render
+  const isStandalone = useMemo(
+    () =>
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true,
+    []
+  );
 
   useEffect(() => {
-    // Auto-navigate if already installed
     if (isStandalone) {
-      navigate("/welcome");
+      navigate("/welcome", { replace: true });
       return;
     }
-
-    // Trigger mount animation
     setMounted(true);
   }, [isStandalone, navigate]);
+
+  // Render nothing while redirecting — prevents flash of install screen
+  if (isStandalone) return null;
 
   return (
     <div className="relative min-h-dvh flex flex-col items-center justify-center px-8">
