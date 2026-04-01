@@ -183,83 +183,98 @@ export default function MainScreen() {
   );
 
   return (
-    <div className="relative h-dvh flex flex-col overflow-hidden">
-      {/* Base background */}
+    <>
+      {/* Background layers — outside the overflow-hidden layout box */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ backgroundColor: "var(--color-surface-background)" }}
+        className="fixed -z-10"
+        style={{
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          left: 0,
+          right: 0,
+          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
+          backgroundColor: "var(--color-surface-background)",
+        }}
       />
-      {/* Gradient overlay */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ background: "var(--gradient-brand-wide)" }}
+        className="fixed -z-10"
+        style={{
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          left: 0,
+          right: 0,
+          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
+          background: "var(--gradient-brand-wide)",
+        }}
       />
 
-      <HeaderBar
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        scrolled={scrolled}
-        onRefresh={() => window.location.reload()}
-      />
+      {/* App layout — clipped to safe area */}
+      <div className="relative h-dvh flex flex-col overflow-hidden">
 
-      {/* Content area with three-panel sliding layout */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden relative"
-        onScroll={handleScrollWithPosition}
-      >
+        <HeaderBar
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          scrolled={scrolled}
+          onRefresh={() => window.location.reload()}
+        />
+
+        {/* Content area with three-panel sliding layout */}
         <div
-          ref={contentRef}
-          className="flex h-full touch-none"
-          role="region"
-          aria-label={`${store.selectedCategory?.name ?? "List"} — swipe left or right to switch categories`}
-          style={{
-            width: `${contentWidth * 3}px`,
-            transform: `translate3d(${-contentWidth + dragOffset}px, 0, 0)`,
-            willChange: "transform",
-            transition: isAnimating
-              ? "transform var(--duration-page) var(--spring-page)"
-              : "none",
-          }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          ref={containerRef}
+          className="flex-1 overflow-hidden relative"
+          onScroll={handleScrollWithPosition}
         >
           <div
-            className="flex flex-col h-full"
-            style={{ width: `${contentWidth}px` }}
+            ref={contentRef}
+            className="flex h-full touch-none"
+            role="region"
+            aria-label={`${store.selectedCategory?.name ?? "List"} — swipe left or right to switch categories`}
+            style={{
+              width: `${contentWidth * 3}px`,
+              transform: `translate3d(${-contentWidth + dragOffset}px, 0, 0)`,
+              willChange: "transform",
+              transition: isAnimating
+                ? "transform var(--duration-page) var(--spring-page)"
+                : "none",
+            }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
           >
-            <CategoryPanel category={store.previousCategory} />
-          </div>
-          <div
-            className="flex flex-col h-full"
-            style={{ width: `${contentWidth}px` }}
-          >
-            <CategoryPanel category={store.selectedCategory} />
-          </div>
-          <div
-            className="flex flex-col h-full"
-            style={{ width: `${contentWidth}px` }}
-          >
-            <CategoryPanel category={store.nextCategory} />
+            <div
+              className="flex flex-col h-full"
+              style={{ width: `${contentWidth}px` }}
+            >
+              <CategoryPanel category={store.previousCategory} />
+            </div>
+            <div
+              className="flex flex-col h-full"
+              style={{ width: `${contentWidth}px` }}
+            >
+              <CategoryPanel category={store.selectedCategory} />
+            </div>
+            <div
+              className="flex flex-col h-full"
+              style={{ width: `${contentWidth}px` }}
+            >
+              <CategoryPanel category={store.nextCategory} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Page indicator dots */}
-      {store.categories.length > 1 && (
-        <PageIndicator
-          count={store.categories.length}
-          activeIndex={store.categories.findIndex((c) => c.id === store.selectedCategoryID)}
+        {/* Page indicator dots */}
+        {store.categories.length > 1 && (
+          <PageIndicator
+            count={store.categories.length}
+            activeIndex={store.categories.findIndex((c) => c.id === store.selectedCategoryID)}
+          />
+        )}
+
+        <BottomBar />
+
+        <SettingsSheet
+          isOpen={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
         />
-      )}
-
-      <BottomBar />
-
-      <SettingsSheet
-        isOpen={isSettingsOpen}
-        onOpenChange={setIsSettingsOpen}
-      />
-    </div>
+      </div>
+    </>
   );
 }

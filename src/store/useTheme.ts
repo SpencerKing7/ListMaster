@@ -40,6 +40,14 @@ export function applyThemeToDOM(mode: "system" | "light" | "dark"): void {
       : SURFACE_BG_LIGHT;
   root.style.backgroundColor = bg;
   document.body.style.backgroundColor = bg;
+
+  // Also set the gradient to ensure full coverage behind safe areas
+  const gradient = getComputedStyle(root)
+    .getPropertyValue("--gradient-brand-wide")
+    .trim();
+  if (gradient) {
+    root.style.backgroundImage = gradient;
+  }
 }
 
 /** Updates a `<meta name="theme-color">` tag for a specific color-scheme media. */
