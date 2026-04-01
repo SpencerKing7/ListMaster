@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import path from "path";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   base: "/ListMaster/",
@@ -15,8 +15,8 @@ export default defineConfig({
         name: "List Master",
         short_name: "List Master",
         description: "Your personal checklist companion",
-        theme_color: "#39B385",
-        background_color: "#F0F6F3",
+        theme_color: "#0e1714",
+        background_color: "#0e1714",
         display: "standalone",
         orientation: "portrait",
         start_url: "/ListMaster/",
@@ -47,7 +47,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
 });
