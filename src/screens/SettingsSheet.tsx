@@ -190,7 +190,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
             </SheetTitle>
             <Button
               variant="ghost"
-              className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)]"
+              className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)] !border-[color:var(--color-brand-green)]/40 focus-visible:!border-[color:var(--color-brand-green)] focus-visible:!ring-[color:var(--color-brand-green)]/30"
               style={{ color: "var(--color-brand-green)" }}
               onClick={() => onOpenChange(false)}
             >
