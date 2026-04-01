@@ -114,9 +114,12 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
               strokeLinejoin="round"
               style={{ color: "var(--color-brand-teal)" }}
             >
-              <circle cx="8" cy="21" r="1" />
-              <circle cx="19" cy="21" r="1" />
-              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+              <line x1="9" y1="6" x2="20" y2="6" />
+              <line x1="9" y1="12" x2="20" y2="12" />
+              <line x1="9" y1="18" x2="20" y2="18" />
+              <polyline points="4 6 5 7 7 5" />
+              <polyline points="4 12 5 13 7 11" />
+              <polyline points="4 18 5 19 7 17" />
             </svg>
             <p className="text-base font-medium" style={{ color: "var(--color-brand-teal)" }}>
               No items yet
