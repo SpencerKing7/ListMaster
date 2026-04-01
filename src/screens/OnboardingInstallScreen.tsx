@@ -43,13 +43,25 @@ export default function OnboardingInstallScreen() {
     <div className="relative min-h-dvh flex flex-col items-center justify-center px-8">
       {/* Base background */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ backgroundColor: "var(--color-surface-background)" }}
+        className="absolute -z-10"
+        style={{
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "var(--color-surface-background)",
+        }}
       />
       {/* Gradient overlay */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ background: "var(--gradient-brand-wide)" }}
+        className="absolute -z-10"
+        style={{
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "var(--gradient-brand-wide)",
+        }}
       />
 
       <div className="flex-1" />

@@ -11,34 +11,45 @@ import { HapticService } from "@/services/hapticService";
 function performSlideTransition(
   swipeLeft: boolean,
   contentWidth: number,
-  setIsAnimating: (animating: boolean) => void,
-  setDragOffset: (offset: number) => void,
+  setIsAnimating: (v: boolean) => void,
+  setDragOffset: (v: number) => void,
   isTransitioningRef: React.MutableRefObject<boolean>,
-  store: ReturnType<typeof useCategoriesStore>
+  store: ReturnType<typeof useCategoriesStore>,
+  contentEl: HTMLDivElement | null,
 ) {
   isTransitioningRef.current = true;
   const target = swipeLeft ? -contentWidth : contentWidth;
 
-  // Animate to full slide
   setIsAnimating(true);
   setDragOffset(target);
 
-  setTimeout(() => {
-    // Switch category
+  if (!contentEl) return;
+
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
+    contentEl.removeEventListener("transitionend", onEnd);
+
     if (swipeLeft) {
       store.selectNextCategory();
     } else {
       store.selectPreviousCategory();
     }
 
-    // Reset offset without animation
+    // All in one synchronous block — React 19 batches these into a single commit
     setIsAnimating(false);
-    // Use requestAnimationFrame to ensure the transition is disabled before resetting
-    requestAnimationFrame(() => {
-      setDragOffset(0);
-      isTransitioningRef.current = false;
-    });
-  }, 380); // var(--duration-page)
+    setDragOffset(0);
+    isTransitioningRef.current = false;
+  };
+
+  const onEnd = (e: TransitionEvent) => {
+    if (e.propertyName === "transform") settle();
+  };
+  contentEl.addEventListener("transitionend", onEnd);
+
+  // Safety fallback
+  setTimeout(settle, 500);
 }
 
 export default function MainScreen() {
@@ -165,7 +176,7 @@ export default function MainScreen() {
         return;
       }
 
-      performSlideTransition(isSwipeLeft, contentWidth, setIsAnimating, setDragOffset, isTransitioningRef, store);
+      performSlideTransition(isSwipeLeft, contentWidth, setIsAnimating, setDragOffset, isTransitioningRef, store, contentRef.current);
       HapticService.selection();
     },
     [contentWidth, store]
@@ -175,13 +186,25 @@ export default function MainScreen() {
     <div className="relative h-dvh flex flex-col overflow-hidden">
       {/* Base background */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ backgroundColor: "var(--color-surface-background)" }}
+        className="absolute -z-10"
+        style={{
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "var(--color-surface-background)",
+        }}
       />
       {/* Gradient overlay */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ background: "var(--gradient-brand-wide)" }}
+        className="absolute -z-10"
+        style={{
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "var(--gradient-brand-wide)",
+        }}
       />
 
       <HeaderBar
@@ -198,12 +221,13 @@ export default function MainScreen() {
       >
         <div
           ref={contentRef}
-          className="flex h-full touch-pan-y"
+          className="flex h-full touch-none"
           role="region"
           aria-label={`${store.selectedCategory?.name ?? "List"} — swipe left or right to switch categories`}
           style={{
             width: `${contentWidth * 3}px`,
-            transform: `translateX(${-contentWidth + dragOffset}px)`,
+            transform: `translate3d(${-contentWidth + dragOffset}px, 0, 0)`,
+            willChange: "transform",
             transition: isAnimating
               ? "transform var(--duration-page) var(--spring-page)"
               : "none",

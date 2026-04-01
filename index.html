@@ -12,6 +12,25 @@
     <link rel="icon" type="image/png" href="/ListMaster/icon-192.png" />
     <title>List Master</title>
 
+    <!-- Inline theme initializer — runs before first paint to prevent theme flash -->
+    <script>
+      (function () {
+        var mode = localStorage.getItem("appearanceMode") || "system";
+        var lightBg = "#f0f6f3";
+        var darkBg = "#0e1714";
+
+        if (mode === "light" || mode === "dark") {
+          document.documentElement.setAttribute("data-theme", mode);
+          var bg = mode === "dark" ? darkBg : lightBg;
+          var metas = document.querySelectorAll('meta[name="theme-color"]');
+          for (var i = 0; i < metas.length; i++) {
+            metas[i].setAttribute("content", bg);
+          }
+        }
+        // 'system' mode: do nothing — the media-query meta tags handle it
+      })();
+    </script>
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-S49MDQS6JK"></script>
     <script>

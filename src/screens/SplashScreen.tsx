@@ -28,8 +28,12 @@ const SplashScreen = ({ onFinished }: SplashScreenProps) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5"
+      className="fixed z-50 flex flex-col items-center justify-center gap-5"
       style={{
+        top: "calc(-1 * env(safe-area-inset-top, 0px))",
+        left: "calc(-1 * env(safe-area-inset-left, 0px))",
+        right: "calc(-1 * env(safe-area-inset-right, 0px))",
+        bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
         background: `linear-gradient(160deg, var(--color-brand-deep-green) 0%, var(--color-brand-green) 55%, var(--color-brand-teal) 100%)`,
         opacity: isFading ? 0 : 1,
         transition: "opacity 420ms ease-out",

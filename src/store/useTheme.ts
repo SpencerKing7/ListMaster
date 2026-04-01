@@ -30,6 +30,14 @@ export function applyThemeToDOM(mode: "system" | "light" | "dark"): void {
     setThemeColor(bg, "light");
     setThemeColor(bg, "dark");
   }
+
+  // Force immediate background repaint to prevent flash between old and new theme
+  root.style.backgroundColor =
+    mode === "dark" ||
+    (mode === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ? SURFACE_BG_DARK
+      : SURFACE_BG_LIGHT;
 }
 
 /** Updates a `<meta name="theme-color">` tag for a specific color-scheme media. */

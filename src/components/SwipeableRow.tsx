@@ -59,12 +59,16 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
       isDraggingRef.current = true;
       setIsDragging(true);
       e.currentTarget.setPointerCapture(e.pointerId);
+      e.stopPropagation(); // prevent page-level handler from also processing
     }
 
     const dx = e.clientX - startXRef.current;
     // Allow both left-swipe (open) and right-swipe (close); clamp to [-80, 0]
     const newOffset = offsetAtDragStartRef.current + dx;
     setOffsetX(Math.min(0, Math.max(newOffset, -80)));
+    if (isDraggingRef.current) {
+      e.stopPropagation(); // prevent page-level handler from also processing
+    }
   }, []);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
@@ -108,7 +112,7 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
         style={{
           backgroundColor: "var(--color-danger)",
           borderRadius: "0 14px 14px 0",
-          transform: `translateX(${80 + offsetX}px)`,
+          transform: `translate3d(${80 + offsetX}px, 0, 0)`,
           transition: !isDragging ? "transform 300ms cubic-bezier(0.34,1.56,0.64,1)" : "none",
         }}
       >
@@ -136,7 +140,7 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
       {/* Main content */}
       <div
         style={{
-          transform: `translateX(${offsetX}px)`,
+          transform: `translate3d(${offsetX}px, 0, 0)`,
           transition: !isDragging ? "transform 300ms cubic-bezier(0.34,1.56,0.64,1)" : "none",
         }}
         onClick={handleContentClick}
