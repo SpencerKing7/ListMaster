@@ -148,17 +148,17 @@
   }
 
   /* Page transition animations */
-  .animate-slide-in-right {
-    animation: slide-in-right var(--duration-page) var(--spring-page);
+  .page-enter-from-right {
+    animation: slide-in-right var(--duration-page) var(--spring-page) both;
   }
-  .animate-slide-out-left {
-    animation: slide-out-left var(--duration-page) var(--spring-page);
+  .page-enter-from-left {
+    animation: slide-in-left var(--duration-page) var(--spring-page) both;
   }
-  .animate-slide-in-left {
-    animation: slide-in-left var(--duration-page) var(--spring-page);
+  .page-exit-to-left {
+    animation: slide-out-left var(--duration-page) var(--spring-page) both;
   }
-  .animate-slide-out-right {
-    animation: slide-out-right var(--duration-page) var(--spring-page);
+  .page-exit-to-right {
+    animation: slide-out-right var(--duration-page) var(--spring-page) both;
   }
 }
 
