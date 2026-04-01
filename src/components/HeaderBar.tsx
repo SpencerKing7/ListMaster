@@ -31,7 +31,7 @@ const HeaderBar = ({ onOpenSettings, scrolled = false }: HeaderBarProps) => {
               transform: scrolled ? "scale(0.85)" : "scale(1)",
             }}
           >
-            Welcome, {trimmedName}
+            Welcome, {trimmedName}!
           </p>
         )}
         {trimmedName.length === 0 && <div className="flex-1" />}
