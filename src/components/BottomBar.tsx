@@ -16,17 +16,25 @@ const BottomBar = () => {
   const hasCheckedItems =
     store.selectedCategory?.items.some((item) => item.isChecked) ?? false;
 
-  // Keyboard-safe layout — lifts the footer above the software keyboard
+  // Keyboard-safe layout — lifts the footer above the software keyboard on iOS.
+  // iOS scrolls the layout viewport when the keyboard opens, which shifts fixed
+  // elements upward. We counteract that by translating the footer down by
+  // vv.offsetTop, and separately track the keyboard height for padding.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
-      const offset = window.innerHeight - vv.height - vv.offsetTop;
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       document.documentElement.style.setProperty(
         "--keyboard-inset",
-        `${Math.max(0, offset)}px`,
+        `${keyboardHeight}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--vv-offset-top",
+        `${vv.offsetTop}px`,
       );
     };
+    update();
     vv.addEventListener("resize", update);
     vv.addEventListener("scroll", update);
     return () => {
@@ -48,6 +56,9 @@ const BottomBar = () => {
         className="fixed bottom-0 left-0 right-0 z-10 px-4 pt-5"
         style={{
           paddingBottom: "calc(var(--keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px) + 20px)",
+          // translateY counteracts iOS scrolling the layout viewport when the keyboard opens,
+          // which would otherwise push this fixed element up off the bottom of the screen.
+          transform: "translateY(var(--vv-offset-top, 0px))",
           background:
             "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
         }}
