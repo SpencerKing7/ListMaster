@@ -5,7 +5,6 @@ import HeaderBar from "@/components/HeaderBar";
 import BottomBar from "@/components/BottomBar";
 import CategoryPanel from "@/components/CategoryPanel";
 import SettingsSheet from "./SettingsSheet";
-import PageIndicator from "@/components/PageIndicator";
 import { HapticService } from "@/services/hapticService";
 
 function performSlideTransition(
@@ -225,11 +224,6 @@ export default function MainScreen() {
           </div>
         </div>
       </div>
-
-      <PageIndicator
-        count={store.categories.length}
-        activeIndex={store.categories.findIndex(c => c.id === store.selectedCategoryID)}
-      />
 
       <BottomBar />
 

@@ -45,7 +45,7 @@ const BottomBar = () => {
   return (
     <>
       <footer
-        className="sticky bottom-0 z-10 px-4 pt-3.5 pb-3"
+        className="sticky bottom-0 z-10 px-4 pt-5 pb-3"
         style={{
           paddingBottom: "calc(var(--keyboard-inset, 0px) + 12px)",
           background:

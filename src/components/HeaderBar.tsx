@@ -17,8 +17,7 @@ const HeaderBar = ({ onOpenSettings, scrolled = false }: HeaderBarProps) => {
       className="sticky top-0 z-10 px-4 pt-2 pb-4"
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
-        background:
-          "linear-gradient(to bottom, var(--color-surface-background) 0%, var(--color-surface-background) 70%, transparent 100%)",
+        background: "var(--color-surface-background)",
       }}
     >
       <div className="flex items-baseline gap-2 mb-6">
