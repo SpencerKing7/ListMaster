@@ -187,7 +187,6 @@ export default function MainScreen() {
       <div
         ref={containerRef}
         className="flex-1 overflow-hidden relative"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
         onScroll={handleScrollWithPosition}
       >
         <div
