@@ -65,8 +65,7 @@ export default function OnboardingInstallScreen() {
           strokeLinejoin="round"
         >
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-          <circle cx="12" cy="18" r="1" />
-          <path d="m9 6 6 6" />
+          <line x1="12" y1="18" x2="12.01" y2="18" />
         </svg>
 
         <h1
@@ -76,7 +75,7 @@ export default function OnboardingInstallScreen() {
           Add to Home Screen
         </h1>
         <p className="text-sm text-text-secondary text-center">
-          ListMaster works best as an app on your home screen — it's faster, works offline, and feels just like a native app.
+          List Master works best as an app on your home screen — it's faster, works offline, and feels just like a native app.
         </p>
       </div>
 
