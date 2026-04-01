@@ -184,25 +184,25 @@ export default function MainScreen() {
 
   return (
     <div className="relative h-dvh flex flex-col overflow-hidden">
-      {/* Base background */}
+      {/* Base background — extends behind safe area */}
       <div
         className="absolute -z-10"
         style={{
           top: "calc(-1 * env(safe-area-inset-top, 0px))",
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
           backgroundColor: "var(--color-surface-background)",
         }}
       />
-      {/* Gradient overlay */}
+      {/* Gradient overlay — extends behind safe area */}
       <div
         className="absolute -z-10"
         style={{
           top: "calc(-1 * env(safe-area-inset-top, 0px))",
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
           background: "var(--gradient-brand-wide)",
         }}
       />
