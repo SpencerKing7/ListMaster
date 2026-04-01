@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { PersistenceService } from "@/services/persistenceService";
 
 export default function OnboardingSetupScreen() {
   const store = useCategoriesStore();
@@ -59,16 +60,25 @@ export default function OnboardingSetupScreen() {
     settings.setUserName(trimmedName);
 
     // 3. Add all pending categories in order
-    // Note: ADD_CATEGORY auto-sets selectedCategoryID to the new category's ID,
-    // so the first addCategory call automatically selects the first category.
-    // We cannot read store.categories here because React batches dispatches —
-    // the state variable won't reflect the new categories until the next render.
     for (const categoryName of pendingCategories) {
       store.addCategory(categoryName);
     }
 
-    // 4. Mark onboarding complete — triggers route switch in App.tsx
-    settings.completeOnboarding();
+    // 4. Select the first category so the leftmost pill is active on MainScreen.
+    //    Each ADD_CATEGORY dispatch sets selectedCategoryID to the *new* category,
+    //    so after the loop the last one is selected. Read persisted state to get
+    //    the first category's ID and select it explicitly.
+    const persisted = PersistenceService.load();
+    if (persisted && persisted.categories.length > 0) {
+      store.selectCategory(persisted.categories[0].id);
+    }
+
+    // 5. Delay completing onboarding so the iOS viewport height (dvh) can settle
+    //    after the keyboard dismissal — prevents the header from being clipped
+    //    when MainScreen first mounts. iOS keyboard dismiss animation is ~300ms.
+    setTimeout(() => {
+      settings.completeOnboarding();
+    }, 350);
   }
 
   return (
