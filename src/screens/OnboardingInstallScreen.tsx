@@ -3,6 +3,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+// Declare gtag as a global function (loaded by GA script in index.html)
+declare global {
+  function gtag(command: string, targetId: string, config?: Record<string, unknown>): void;
+}
+
 export default function OnboardingInstallScreen() {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
@@ -17,6 +22,11 @@ export default function OnboardingInstallScreen() {
 
   useEffect(() => {
     if (isStandalone) {
+      // Track standalone mode sessions as a proxy for PWA installs
+      gtag('event', 'pwa_session', {
+        event_category: 'PWA',
+        event_label: 'Standalone Mode'
+      });
       navigate("/welcome", { replace: true });
       return;
     }
