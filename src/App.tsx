@@ -1,35 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// src/App.tsx
+import { useEffect } from "react";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSettingsStore } from "./store/useSettingsStore";
+import { useCategoriesStore } from "./store/useCategoriesStore";
+import OnboardingWelcomeScreen from "./screens/OnboardingWelcomeScreen";
+import OnboardingSetupScreen from "./screens/OnboardingSetupScreen";
+import MainScreen from "./screens/MainScreen";
+import PageTransitionWrapper from "./components/PageTransitionWrapper";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const { hasCompletedOnboarding } = useSettingsStore();
+  const { reload } = useCategoriesStore();
+
+  // Foreground-reload: re-read localStorage when the tab becomes visible
+  // Mirrors scenePhase == .active → store.reload() in ListMasterApp.swift
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        reload();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [reload]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <HashRouter>
+      <PageTransitionWrapper>
+        <Routes>
+          {hasCompletedOnboarding ? (
+            <>
+              <Route path="/" element={<MainScreen />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          ) : (
+            <>
+              <Route path="/" element={<OnboardingWelcomeScreen />} />
+              <Route path="/setup" element={<OnboardingSetupScreen />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
+        </Routes>
+      </PageTransitionWrapper>
+    </HashRouter>
+  );
 }
-
-export default App
