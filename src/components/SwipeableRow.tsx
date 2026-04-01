@@ -17,7 +17,10 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
   // from showing a spring animation during active drag.
   const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const isDraggingRef = useRef(false);
+  // Once we decide this gesture is vertical (scroll / page-swipe), lock it out
+  const isLockedOutRef = useRef(false);
   // Capture offsetX at the moment the drag begins so that both left-swipe-to-open
   // and right-swipe-to-close work correctly from any starting position.
   const offsetAtDragStartRef = useRef(0);
@@ -26,20 +29,36 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
     // Ignore right-click, middle-click, etc.
     if (e.button !== 0) return;
     startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
     offsetAtDragStartRef.current = offsetX;
     isDraggingRef.current = false;
+    isLockedOutRef.current = false;
   }, [offsetX]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    // Already decided this gesture belongs to a parent (page swipe / scroll)
+    if (isLockedOutRef.current) return;
+
     if (!isDraggingRef.current) {
       const dx = e.clientX - startXRef.current;
-      if (Math.abs(dx) > 5) {
-        isDraggingRef.current = true;
-        setIsDragging(true);
-        e.currentTarget.setPointerCapture(e.pointerId);
-      } else {
+      const dy = e.clientY - startYRef.current;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      // Wait for enough movement to determine intent
+      if (absDx < 5 && absDy < 5) return;
+
+      // If the gesture is more vertical than horizontal, lock out —
+      // let it propagate to the parent for page-swiping or scrolling.
+      if (absDy >= absDx) {
+        isLockedOutRef.current = true;
         return;
       }
+
+      // Clearly horizontal — claim the pointer for row swipe
+      isDraggingRef.current = true;
+      setIsDragging(true);
+      e.currentTarget.setPointerCapture(e.pointerId);
     }
 
     const dx = e.clientX - startXRef.current;
