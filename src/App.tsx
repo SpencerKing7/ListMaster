@@ -5,6 +5,7 @@ import { useSettingsStore } from "./store/useSettingsStore";
 import { useCategoriesStore } from "./store/useCategoriesStore";
 import OnboardingWelcomeScreen from "./screens/OnboardingWelcomeScreen";
 import OnboardingSetupScreen from "./screens/OnboardingSetupScreen";
+import OnboardingInstallScreen from "./screens/OnboardingInstallScreen";
 import MainScreen from "./screens/MainScreen";
 import SplashScreen from "./screens/SplashScreen";
 import PageTransitionWrapper from "./components/PageTransitionWrapper";
@@ -44,7 +45,8 @@ export default function App() {
             </>
           ) : (
             <>
-              <Route path="/" element={<OnboardingWelcomeScreen />} />
+              <Route path="/" element={<OnboardingInstallScreen />} />
+              <Route path="/welcome" element={<OnboardingWelcomeScreen />} />
               <Route path="/setup" element={<OnboardingSetupScreen />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
