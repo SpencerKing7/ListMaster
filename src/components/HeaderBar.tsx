@@ -6,11 +6,10 @@ import CategoryPicker from "./CategoryPicker";
 interface HeaderBarProps {
   onOpenSettings: () => void;
   scrolled?: boolean;
-  isUpdateAvailable?: boolean;
   onRefresh?: () => void;
 }
 
-const HeaderBar = ({ onOpenSettings, scrolled = false, isUpdateAvailable = false, onRefresh }: HeaderBarProps) => {
+const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps) => {
   const { userName } = useSettingsStore();
   const trimmedName = userName.trim();
 
@@ -56,11 +55,6 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, isUpdateAvailable = false
             <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
             <path d="M8 16H3v5" />
           </svg>
-          {isUpdateAvailable && (
-            <span
-              className="absolute top-0 right-0 w-2 h-2 bg-[var(--color-brand-green)] rounded-full animate-pulse"
-            />
-          )}
         </button>
         <Button
           variant="ghost"
