@@ -37,7 +37,9 @@ export default function OnboardingSetupScreen() {
       return;
     setPendingCategories((prev) => [...prev, trimmed]);
     setCategoryInputText("");
-    categoryInputRef.current?.focus();
+    // Blur then refocus so iOS resets the keyboard shift state (auto-capitalize)
+    categoryInputRef.current?.blur();
+    requestAnimationFrame(() => categoryInputRef.current?.focus());
   }
 
   function removePendingCategory(name: string) {
@@ -46,6 +48,9 @@ export default function OnboardingSetupScreen() {
 
   function completeOnboarding() {
     if (!isFormValid) return;
+
+    // Dismiss the keyboard so the viewport returns to full height before MainScreen mounts
+    (document.activeElement as HTMLElement | null)?.blur();
 
     // 1. Clear any stale in-memory state
     store.resetCategories();
@@ -155,6 +160,7 @@ export default function OnboardingSetupScreen() {
               className="h-12 rounded-[14px] border-transparent px-4 flex-1 focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
               style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
               enterKeyHint="send"
+              autoCapitalize="words"
             />
             <Button
               variant="ghost"

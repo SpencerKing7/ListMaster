@@ -156,7 +156,9 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     if (!trimmedNewCategoryName) return;
     store.addCategory(trimmedNewCategoryName);
     setNewCategoryName("");
-    addCategoryInputRef.current?.focus();
+    // Blur then refocus so iOS resets the keyboard shift state (auto-capitalize)
+    addCategoryInputRef.current?.blur();
+    requestAnimationFrame(() => addCategoryInputRef.current?.focus());
   }
 
   function handleRenameSave() {
@@ -347,6 +349,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                   className={`flex-1 ${inputClass}`}
                   style={{ color: "var(--color-text-primary)" }}
                   enterKeyHint="send"
+                  autoCapitalize="words"
                 />
                 <button
                   className="h-11 w-11 flex items-center justify-center rounded-xl text-white shrink-0 transition-all disabled:opacity-30 active:scale-[0.96] active:opacity-75"

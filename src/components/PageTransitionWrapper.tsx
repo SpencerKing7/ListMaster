@@ -82,7 +82,7 @@ const PageTransitionWrapper = ({ children }: PageTransitionWrapperProps) => {
   }, [location.key]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-dvh overflow-hidden">
       {/* Outgoing page — plays exit animation then is removed */}
       {isTransitioning && prevChildren && (
         <div

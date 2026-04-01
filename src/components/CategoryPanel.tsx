@@ -25,7 +25,9 @@ const AddItemInput = () => {
     store.addItemToSelectedCategory(trimmedName);
     setNewItemName("");
     HapticService.light();
-    inputRef.current?.focus();
+    // Blur then refocus so iOS resets the keyboard shift state (auto-capitalize)
+    inputRef.current?.blur();
+    requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   return (
@@ -54,6 +56,7 @@ const AddItemInput = () => {
             caretColor: "var(--color-brand-green)",
           }}
           enterKeyHint="send"
+          autoCapitalize="sentences"
           autoComplete="off"
           autoCorrect="off"
         />
