@@ -53,6 +53,9 @@
 
   /* Keyboard inset for safe area */
   --keyboard-inset: 0px;
+
+  /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+  --text-size-base: 1rem;
 }
 
 /* ── Dark (system preference) ───────────────────────────── */

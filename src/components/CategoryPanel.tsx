@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Category } from "@/models/types";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { HapticService } from "@/services/hapticService";
 import SwipeableRow from "./SwipeableRow";
 
@@ -89,6 +90,7 @@ const AddItemInput = () => {
 
 const CategoryPanel = ({ category }: CategoryPanelProps) => {
   const store = useCategoriesStore();
+  const settings = useSettingsStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -148,11 +150,23 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
     );
   }
 
+  // Sort a copy of items based on the current sortOrder setting.
+  // Unchecked items always appear before checked items; within each group
+  // items are ordered either by creation date (ascending) or alphabetically.
+  const sortedItems = [...category.items].sort((a, b) => {
+    if (a.isChecked !== b.isChecked) return a.isChecked ? 1 : -1;
+    if (settings.sortOrder === "alpha") {
+      return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    }
+    // "date": sort by createdAt ascending; fall back to 0 for legacy items
+    return (a.createdAt ?? 0) - (b.createdAt ?? 0);
+  });
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-1">
       <AddItemInput />
       <ul className="flex flex-col gap-2 mt-3">
-        {category.items.map((item) => (
+        {sortedItems.map((item) => (
           <SwipeableRow
             key={item.id}
             onDelete={() => store.deleteItemFromSelectedCategory(item.id)}
@@ -207,20 +221,21 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
 
               {/* Item name */}
               <span
-                className={`flex-1 text-base ${item.isChecked
+                className={`flex-1 ${item.isChecked
                   ? "line-through"
                   : "font-medium"
                   }`}
                 style={
                   item.isChecked
                     ? {
+                      fontSize: "var(--text-size-base)",
                       color: "var(--color-text-secondary)",
-                      // textDecorationColor inherits from color, so set a semi-transparent
-                      // brand-green via currentColor + opacity on the decoration element.
-                      // Using a direct rgba fallback avoids color-mix() (Safari < 16.2).
                       textDecorationColor: "rgba(var(--color-brand-green-rgb), 0.45)",
                     }
-                    : { color: "var(--color-text-primary)" }
+                    : {
+                      fontSize: "var(--text-size-base)",
+                      color: "var(--color-text-primary)",
+                    }
                 }
               >
                 {item.name}

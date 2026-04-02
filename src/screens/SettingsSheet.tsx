@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import type { TextSize, SortOrder } from "@/store/useSettingsStore";
 
 interface SettingsSheetProps {
   isOpen: boolean;
@@ -401,6 +402,66 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                     {mode === "system" ? "System" : mode === "light" ? "Light" : "Dark"}
                   </ToggleGroupItem>
                 ))}
+              </ToggleGroup>
+            </SettingsCard>
+
+            {/* Text Size */}
+            <SettingsCard>
+              <SectionLabel>Text Size</SectionLabel>
+              <ToggleGroup
+                value={[settings.textSize]}
+                onValueChange={(values: string[]) => {
+                  if (values.length > 0) {
+                    settings.setTextSize(values[0] as TextSize);
+                  }
+                }}
+                className="w-full rounded-xl p-1"
+                style={{
+                  backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+                }}
+              >
+                {(["xs", "s", "m", "l", "xl"] as const).map((size) => (
+                  <ToggleGroupItem
+                    key={size}
+                    value={size}
+                    className="flex-1 !rounded-lg text-xs font-semibold hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {size.toUpperCase()}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </SettingsCard>
+
+            {/* Sort Order */}
+            <SettingsCard>
+              <SectionLabel>Sort Items</SectionLabel>
+              <ToggleGroup
+                value={[settings.sortOrder]}
+                onValueChange={(values: string[]) => {
+                  if (values.length > 0) {
+                    settings.setSortOrder(values[0] as SortOrder);
+                  }
+                }}
+                className="w-full rounded-xl p-1"
+                style={{
+                  backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+                }}
+              >
+                <ToggleGroupItem
+                  value="date"
+                  className="flex-1 !rounded-lg text-xs font-semibold hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Date Added
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="alpha"
+                  className="flex-1 !rounded-lg text-xs font-semibold hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Alphabetical
+                </ToggleGroupItem>
               </ToggleGroup>
             </SettingsCard>
 
