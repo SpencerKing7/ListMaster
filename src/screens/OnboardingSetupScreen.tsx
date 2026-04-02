@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { PersistenceService } from "@/services/persistenceService";
 
 export default function OnboardingSetupScreen() {
   const store = useCategoriesStore();
@@ -53,30 +52,19 @@ export default function OnboardingSetupScreen() {
     // Dismiss the keyboard so the viewport returns to full height before MainScreen mounts
     (document.activeElement as HTMLElement | null)?.blur();
 
-    // 1. Clear any stale in-memory state
-    store.resetCategories();
-
-    // 2. Save user name
+    // 1. Save user name
     settings.setUserName(trimmedName);
 
-    // 3. Add all pending categories in order
-    for (const categoryName of pendingCategories) {
-      store.addCategory(categoryName);
-    }
+    // 2. Replace all categories in a single dispatch.
+    //    SET_CATEGORIES clears any stale data, creates all categories at once,
+    //    and selects the first one — avoiding multi-dispatch batching issues.
+    store.setCategories(pendingCategories);
 
-    // 4. Select the first category so the leftmost pill is active on MainScreen.
-    //    Each ADD_CATEGORY dispatch sets selectedCategoryID to the *new* category,
-    //    so after the loop the last one is selected. Read persisted state to get
-    //    the first category's ID and select it explicitly.
-    const persisted = PersistenceService.load();
-    if (persisted && persisted.categories.length > 0) {
-      store.selectCategory(persisted.categories[0].id);
-    }
-
-    // 5. Delay completing onboarding so the iOS viewport height (dvh) can settle
-    //    after the keyboard dismissal — prevents the header from being clipped
-    //    when MainScreen first mounts. iOS keyboard dismiss animation is ~300ms.
+    // 3. Wait for the iOS keyboard dismiss animation (~300ms) to finish so the
+    //    viewport height (dvh) settles before MainScreen mounts. Also scroll to
+    //    the top to clear any residual scroll offset from the onboarding form.
     setTimeout(() => {
+      window.scrollTo(0, 0);
       settings.completeOnboarding();
     }, 350);
   }

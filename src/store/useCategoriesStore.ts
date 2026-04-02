@@ -34,6 +34,7 @@ function loadInitialState(): StoreState {
 type StoreAction =
   | { type: "SELECT_CATEGORY"; id: string }
   | { type: "ADD_CATEGORY"; name: string }
+  | { type: "SET_CATEGORIES"; names: string[] }
   | { type: "RENAME_CATEGORY"; id: string; newName: string }
   | { type: "DELETE_CATEGORY"; id: string }
   | { type: "MOVE_CATEGORIES"; from: number; to: number }
@@ -84,6 +85,27 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       next = {
         categories: [...state.categories, newCategory],
         selectedCategoryID: newCategory.id,
+      };
+      break;
+    }
+
+    case "SET_CATEGORIES": {
+      const newCategories: Category[] = [];
+      for (const raw of action.names) {
+        const trimmed = normalizedName(raw);
+        if (!trimmed) continue;
+        if (
+          newCategories.some(
+            (c) => c.name.toLowerCase() === trimmed.toLowerCase(),
+          )
+        )
+          continue;
+        newCategories.push({ id: uuidv4(), name: trimmed, items: [] });
+      }
+      if (newCategories.length === 0) return state;
+      next = {
+        categories: newCategories,
+        selectedCategoryID: newCategories[0].id,
       };
       break;
     }
@@ -232,6 +254,7 @@ interface StoreContextValue {
   selectNextCategory: () => void;
   selectPreviousCategory: () => void;
   addCategory: (name: string) => void;
+  setCategories: (names: string[]) => void;
   renameCategory: (id: string, newName: string) => void;
   deleteCategory: (id: string) => void;
   moveCategories: (from: number, to: number) => void;
@@ -301,6 +324,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (name: string) => dispatch({ type: "ADD_CATEGORY", name }),
     [],
   );
+  const setCategories = useCallback(
+    (names: string[]) => dispatch({ type: "SET_CATEGORIES", names }),
+    [],
+  );
   const renameCategory = useCallback(
     (id: string, newName: string) =>
       dispatch({ type: "RENAME_CATEGORY", id, newName }),
@@ -350,6 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     selectNextCategory,
     selectPreviousCategory,
     addCategory,
+    setCategories,
     renameCategory,
     deleteCategory,
     moveCategories,

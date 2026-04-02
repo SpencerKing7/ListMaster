@@ -81,6 +81,14 @@ export default function MainScreen() {
     return () => observer.disconnect();
   }, []);
 
+  // Reset scroll position on mount — clears any residual scroll offset left
+  // from a previous screen (e.g. onboarding with keyboard open).
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
   // Dismiss keyboard on scroll
   const handleScroll = useCallback(() => {
     const active = document.activeElement as HTMLElement | null;
