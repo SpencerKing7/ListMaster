@@ -116,8 +116,9 @@
     background-image: var(--gradient-brand-wide);
     background-attachment: fixed;
     transition: background-color 0s;
-    height: 100dvh;
-    overflow: hidden;
+    min-height: calc(
+      100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
+    );
   }
   body {
     @apply font-sans;
@@ -126,14 +127,9 @@
     background-image: var(--gradient-brand-wide);
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100dvh;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-  }
-  #root {
-    height: 100dvh;
-    overflow: hidden;
   }
   button,
   [role="button"] {
@@ -141,6 +137,7 @@
   }
   html,
   body {
+    overflow-x: hidden;
     user-select: none;
   }
   input,

@@ -91,22 +91,9 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Measure sticky header height so the fade overlay is positioned exactly at its bottom edge
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => {
-      setHeaderHeight(el.offsetHeight);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
   }, []);
 
   if (!category) {
@@ -181,9 +168,9 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
   });
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 px-4 pt-1 relative">
+    <div className="flex-1 flex flex-col min-h-0 px-4 pt-1">
       {/* ── Sticky header: input + meta/sort row ── */}
-      <div ref={headerRef} className="shrink-0 pb-1">
+      <div className="shrink-0 pb-1">
         <AddItemInput />
         {/* List meta row — item count (left) + sort controls (right) */}
         <div className="flex items-center justify-between mt-4 mb-1 px-1">
@@ -247,20 +234,15 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
         </div>
       </div>
 
-      {/* ── Fade shadow cast downward from the sticky header ── */}
-      <div
-        aria-hidden="true"
-        className="absolute left-0 right-0 pointer-events-none z-10"
-        style={{
-          top: `${headerHeight}px`,
-          height: "32px",
-          background: "linear-gradient(to bottom, var(--color-surface-background) 0%, transparent 100%)",
-        }}
-      />
-
       {/* ── Scrollable list ── */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
-        <ul className="flex flex-col gap-2 pt-1 pb-4">
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent, black 24px, black)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 24px, black)",
+        }}
+      >
+        <ul className="flex flex-col gap-2 pt-3 pb-4">
           {sortedItems.map((item) => (
             <SwipeableRow
               key={item.id}
