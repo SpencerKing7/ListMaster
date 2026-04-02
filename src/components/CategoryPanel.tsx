@@ -169,147 +169,160 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-1">
-      <AddItemInput />
-      {/* List meta row — item count (left) + sort controls (right) */}
-      <div className="flex items-center justify-between mt-4 mb-2 px-1">
-        <span
-          className="text-xs font-medium"
-          style={{ color: "var(--color-text-secondary)" }}
-        >
-          {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
-        </span>
-        <div className="flex items-center gap-2">
-          {/* Sort order toggle */}
-          <button
-            className="flex items-center gap-1 press-scale"
-            style={{ color: "var(--color-text-secondary)", touchAction: "manipulation" }}
-            onClick={() => {
-              const next = sortOrder === "date" ? "alpha" : "date";
-              store.setCategorySortOrder(category.id, next);
-              HapticService.light();
-            }}
+    <div className="flex-1 flex flex-col min-h-0 px-4 pt-1">
+      {/* ── Sticky header: input + meta/sort row ── */}
+      <div className="shrink-0 pb-1">
+        <AddItemInput />
+        {/* List meta row — item count (left) + sort controls (right) */}
+        <div className="flex items-center justify-between mt-4 mb-1 px-1">
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-text-secondary)" }}
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6h18M7 12h10M11 18h2" />
-            </svg>
-            <span className="text-xs font-semibold">
-              {sortOrder === "alpha" ? "A–Z" : "Date Added"}
-            </span>
-          </button>
-          {/* Divider */}
-          <span style={{ color: "var(--color-text-secondary)", opacity: 0.3, fontSize: "11px" }}>|</span>
-          {/* Sort direction toggle */}
-          <button
-            className="flex items-center gap-0.5 press-scale"
-            style={{ color: "var(--color-text-secondary)", touchAction: "manipulation" }}
-            onClick={() => {
-              const next = sortDirection === "asc" ? "desc" : "asc";
-              store.setCategorySortDirection(category.id, next);
-              HapticService.light();
-            }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{
-                transition: "transform 200ms ease-out",
-                transform: sortDirection === "desc" ? "scaleY(-1)" : "scaleY(1)",
-              }}
-            >
-              <path d="M12 5v14M5 12l7-7 7 7" />
-            </svg>
-            <span className="text-xs font-semibold">
-              {sortDirection === "asc" ? "Asc" : "Desc"}
-            </span>
-          </button>
-        </div>
-      </div>
-      <ul className="flex flex-col gap-2">
-        {sortedItems.map((item) => (
-          <SwipeableRow
-            key={item.id}
-            onDelete={() => store.deleteItemFromSelectedCategory(item.id)}
-          >
-            <li
-              className={`flex items-center gap-3.5 px-4 py-3.5 rounded-[14px] cursor-pointer ${tappedId === item.id ? "scale-[0.97] opacity-80" : ""
-                }`}
-              style={{
-                backgroundColor: item.isChecked
-                  ? "rgba(var(--color-brand-deep-green-rgb), 0.04)"
-                  : "var(--color-surface-card)",
-                boxShadow: item.isChecked ? "none" : "var(--elevation-card)",
-                transition: tappedId === item.id
-                  ? "transform 80ms ease-out, opacity 80ms ease-out"
-                  : "background-color 200ms ease-out, box-shadow 200ms ease-out",
-              }}
+            {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
+          </span>
+          <div className="flex items-center gap-2">
+            {/* Sort order toggle */}
+            <button
+              className="flex items-center gap-1 press-scale"
+              style={{ color: "var(--color-text-secondary)", touchAction: "manipulation" }}
               onClick={() => {
-                setTappedId(item.id);
-                setTimeout(() => setTappedId(null), 120);
-                store.toggleItemInSelectedCategory(item.id);
+                const next = sortOrder === "date" ? "alpha" : "date";
+                store.setCategorySortOrder(category.id, next);
                 HapticService.light();
               }}
             >
-              {/* Circle / Checkmark icon */}
-              {item.isChecked ? (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" fill="var(--color-brand-green)" />
-                  <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2.2" />
-                </svg>
-              ) : (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ color: "var(--color-brand-teal)", opacity: 0.6 }}
-                >
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" />
-                </svg>
-              )}
-
-              {/* Item name */}
-              <span
-                className={`flex-1 ${item.isChecked
-                  ? "line-through"
-                  : "font-medium"
-                  }`}
-                style={
-                  item.isChecked
-                    ? {
-                      fontSize: "var(--text-size-base)",
-                      color: "var(--color-text-secondary)",
-                      textDecorationColor: "rgba(var(--color-brand-green-rgb), 0.45)",
-                    }
-                    : {
-                      fontSize: "var(--text-size-base)",
-                      color: "var(--color-text-primary)",
-                    }
-                }
-              >
-                {item.name}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18M7 12h10M11 18h2" />
+              </svg>
+              <span className="text-xs font-semibold">
+                {sortOrder === "alpha" ? "A–Z" : "Date Added"}
               </span>
-            </li>
-          </SwipeableRow>
-        ))}
-      </ul>
+            </button>
+            {/* Divider */}
+            <span style={{ color: "var(--color-text-secondary)", opacity: 0.3, fontSize: "11px" }}>|</span>
+            {/* Sort direction toggle */}
+            <button
+              className="flex items-center gap-0.5 press-scale"
+              style={{ color: "var(--color-text-secondary)", touchAction: "manipulation" }}
+              onClick={() => {
+                const next = sortDirection === "asc" ? "desc" : "asc";
+                store.setCategorySortDirection(category.id, next);
+                HapticService.light();
+              }}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transition: "transform 200ms ease-out",
+                  transform: sortDirection === "desc" ? "scaleY(-1)" : "scaleY(1)",
+                }}
+              >
+                <path d="M12 5v14M5 12l7-7 7 7" />
+              </svg>
+              <span className="text-xs font-semibold">
+                {sortDirection === "asc" ? "Asc" : "Desc"}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Scrollable list with fade-in mask at the top ── */}
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent 0px, black 18px)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0px, black 18px)",
+        }}
+      >
+        <ul className="flex flex-col gap-2 pt-1 pb-4">
+          {sortedItems.map((item) => (
+            <SwipeableRow
+              key={item.id}
+              onDelete={() => store.deleteItemFromSelectedCategory(item.id)}
+            >
+              <li
+                className={`flex items-center gap-3.5 px-4 py-3.5 rounded-[14px] cursor-pointer ${tappedId === item.id ? "scale-[0.97] opacity-80" : ""
+                  }`}
+                style={{
+                  backgroundColor: item.isChecked
+                    ? "rgba(var(--color-brand-deep-green-rgb), 0.04)"
+                    : "var(--color-surface-card)",
+                  boxShadow: item.isChecked ? "none" : "var(--elevation-card)",
+                  transition: tappedId === item.id
+                    ? "transform 80ms ease-out, opacity 80ms ease-out"
+                    : "background-color 200ms ease-out, box-shadow 200ms ease-out",
+                }}
+                onClick={() => {
+                  setTappedId(item.id);
+                  setTimeout(() => setTappedId(null), 120);
+                  store.toggleItemInSelectedCategory(item.id);
+                  HapticService.light();
+                }}
+              >
+                {/* Circle / Checkmark icon */}
+                {item.isChecked ? (
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" fill="var(--color-brand-green)" />
+                    <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2.2" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: "var(--color-brand-teal)", opacity: 0.6 }}
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" />
+                  </svg>
+                )}
+
+                {/* Item name */}
+                <span
+                  className={`flex-1 ${item.isChecked
+                    ? "line-through"
+                    : "font-medium"
+                    }`}
+                  style={
+                    item.isChecked
+                      ? {
+                        fontSize: "var(--text-size-base)",
+                        color: "var(--color-text-secondary)",
+                        textDecorationColor: "rgba(var(--color-brand-green-rgb), 0.45)",
+                      }
+                      : {
+                        fontSize: "var(--text-size-base)",
+                        color: "var(--color-text-primary)",
+                      }
+                  }
+                >
+                  {item.name}
+                </span>
+              </li>
+            </SwipeableRow>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
