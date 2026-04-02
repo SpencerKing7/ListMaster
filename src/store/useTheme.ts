@@ -8,11 +8,11 @@ const SURFACE_BG_DARK = "#0e1714";
 
 /** Maps TextSize tokens to their rem values, matching the 5-step scale. */
 const TEXT_SIZE_VALUES: Record<TextSize, string> = {
-  xs: "0.75rem",
-  s: "0.875rem",
+  xs: "0.6875rem",
+  s: "0.8125rem",
   m: "1rem",
   l: "1.125rem",
-  xl: "1.25rem",
+  xl: "1.3125rem",
 };
 
 /** Applies the user's appearance choice to the DOM.

@@ -149,51 +149,87 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
     );
   }
 
-  // Per-category sort order — falls back to "date" for legacy data without the field.
+  // Per-category sort order and direction — fall back for legacy data without the fields.
   const sortOrder = category.sortOrder ?? "date";
+  const sortDirection = category.sortDirection ?? "asc";
 
-  // Sort a copy of items based on the current sortOrder.
+  // Sort a copy of items based on the current sortOrder and sortDirection.
   // Unchecked items always appear before checked items; within each group
-  // items are ordered either by creation date (ascending) or alphabetically.
+  // items are ordered either by creation date or alphabetically, then
+  // flipped if direction is "desc".
   const sortedItems = [...category.items].sort((a, b) => {
     if (a.isChecked !== b.isChecked) return a.isChecked ? 1 : -1;
+    let cmp: number;
     if (sortOrder === "alpha") {
-      return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+      cmp = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    } else {
+      cmp = (a.createdAt ?? 0) - (b.createdAt ?? 0);
     }
-    // "date": sort by createdAt ascending; fall back to 0 for legacy items
-    return (a.createdAt ?? 0) - (b.createdAt ?? 0);
+    return sortDirection === "desc" ? -cmp : cmp;
   });
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-1">
       <AddItemInput />
-      {/* List meta row — item count (left) + sort toggle (right) */}
-      <div className="flex items-center justify-between mt-3 mb-1 px-1">
+      {/* List meta row — item count (left) + sort controls (right) */}
+      <div className="flex items-center justify-between mt-4 mb-2 px-1">
         <span
           className="text-xs font-medium"
           style={{ color: "var(--color-text-secondary)" }}
         >
           {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
         </span>
-        <button
-          className="flex items-center gap-1 press-scale"
-          style={{
-            color: "var(--color-text-secondary)",
-            touchAction: "manipulation",
-          }}
-          onClick={() => {
-            const next = sortOrder === "date" ? "alpha" : "date";
-            store.setCategorySortOrder(category.id, next);
-            HapticService.light();
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6h18M7 12h10M11 18h2" />
-          </svg>
-          <span className="text-xs font-semibold">
-            {sortOrder === "alpha" ? "A–Z" : "Date Added"}
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Sort order toggle */}
+          <button
+            className="flex items-center gap-1 press-scale"
+            style={{ color: "var(--color-text-secondary)", touchAction: "manipulation" }}
+            onClick={() => {
+              const next = sortOrder === "date" ? "alpha" : "date";
+              store.setCategorySortOrder(category.id, next);
+              HapticService.light();
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M7 12h10M11 18h2" />
+            </svg>
+            <span className="text-xs font-semibold">
+              {sortOrder === "alpha" ? "A–Z" : "Date Added"}
+            </span>
+          </button>
+          {/* Divider */}
+          <span style={{ color: "var(--color-text-secondary)", opacity: 0.3, fontSize: "11px" }}>|</span>
+          {/* Sort direction toggle */}
+          <button
+            className="flex items-center gap-0.5 press-scale"
+            style={{ color: "var(--color-text-secondary)", touchAction: "manipulation" }}
+            onClick={() => {
+              const next = sortDirection === "asc" ? "desc" : "asc";
+              store.setCategorySortDirection(category.id, next);
+              HapticService.light();
+            }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                transition: "transform 200ms ease-out",
+                transform: sortDirection === "desc" ? "scaleY(-1)" : "scaleY(1)",
+              }}
+            >
+              <path d="M12 5v14M5 12l7-7 7 7" />
+            </svg>
+            <span className="text-xs font-semibold">
+              {sortDirection === "asc" ? "Asc" : "Desc"}
+            </span>
+          </button>
+        </div>
       </div>
       <ul className="flex flex-col gap-2">
         {sortedItems.map((item) => (
