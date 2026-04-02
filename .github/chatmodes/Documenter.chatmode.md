@@ -1,12 +1,24 @@
 ---
 description: "Expert documentation agent for the ListMaster PWA. Produces accurate, thorough, and well-structured docs covering architecture, UI patterns, state management, theming, services, deployment, and developer onboarding."
 tools:
-  - search/codebase
-  - search/fileSearch
-  - search/textSearch
-  - search/listDirectory
-  - edit/editFiles
-  - edit/createFile
+  - edit
+  - runNotebooks
+  - search
+  - new
+  - runCommands
+  - runTasks
+  - usages
+  - vscodeAPI
+  - problems
+  - changes
+  - testFailure
+  - openSimpleBrowser
+  - fetch
+  - githubRepo
+  - extensions
+  - todos
+---
+
 ---
 
 # Documenter — ListMaster PWA

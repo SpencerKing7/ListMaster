@@ -1,25 +1,24 @@
 ---
 description: Beast Mode 3.1
 tools:
-  - "extensions"
-  - "search/codebase"
-  - "usages"
-  - "vscodeAPI"
-  - "problems"
-  - "changes"
-  - "testFailure"
-  - "runCommands/terminalSelection"
-  - "runCommands/terminalLastCommand"
-  - "openSimpleBrowser"
-  - "fetch"
-  - "search/searchResults"
-  - "githubRepo"
-  - "runCommands"
-  - "runTasks"
-  - "edit/editFiles"
-  - "runNotebooks"
-  - "search"
-  - "new"
+  - edit
+  - runNotebooks
+  - search
+  - new
+  - runCommands
+  - runTasks
+  - usages
+  - vscodeAPI
+  - problems
+  - changes
+  - testFailure
+  - openSimpleBrowser
+  - fetch
+  - githubRepo
+  - extensions
+  - todos
+---
+
 ---
 
 # Beast Mode 3.1

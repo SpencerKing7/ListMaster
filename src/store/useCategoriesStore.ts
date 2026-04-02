@@ -53,6 +53,7 @@ type StoreAction =
   | { type: "TOGGLE_ITEM"; itemID: string }
   | { type: "DELETE_ITEM"; itemID: string }
   | { type: "CLEAR_CHECKED" }
+  | { type: "CHECK_ALL" }
   | { type: "RELOAD" }
   | { type: "RESET_CATEGORIES" };
 
@@ -241,6 +242,23 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       break;
     }
 
+    case "CHECK_ALL": {
+      const catIdx = state.categories.findIndex(
+        (c) => c.id === state.selectedCategoryID,
+      );
+      if (catIdx === -1) return state;
+      const updatedCats = state.categories.map((c, i) =>
+        i === catIdx
+          ? {
+              ...c,
+              items: c.items.map((item) => ({ ...item, isChecked: true })),
+            }
+          : c,
+      );
+      next = { ...state, categories: updatedCats };
+      break;
+    }
+
     case "RELOAD": {
       const saved = PersistenceService.load();
       if (!saved || saved.categories.length === 0) return state;
@@ -292,6 +310,7 @@ interface StoreContextValue {
   toggleItemInSelectedCategory: (itemID: string) => void;
   deleteItemFromSelectedCategory: (itemID: string) => void;
   clearCheckedItemsInSelectedCategory: () => void;
+  checkAllItemsInSelectedCategory: () => void;
   reload: () => void;
   resetCategories: () => void;
 }
@@ -398,6 +417,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => dispatch({ type: "CLEAR_CHECKED" }),
     [],
   );
+  const checkAllItemsInSelectedCategory = useCallback(
+    () => dispatch({ type: "CHECK_ALL" }),
+    [],
+  );
   const reload = useCallback(() => dispatch({ type: "RELOAD" }), []);
   const resetCategories = useCallback(
     () => dispatch({ type: "RESET_CATEGORIES" }),
@@ -427,6 +450,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toggleItemInSelectedCategory,
     deleteItemFromSelectedCategory,
     clearCheckedItemsInSelectedCategory,
+    checkAllItemsInSelectedCategory,
     reload,
     resetCategories,
   };

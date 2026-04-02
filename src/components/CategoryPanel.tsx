@@ -167,19 +167,68 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
     return sortDirection === "desc" ? -cmp : cmp;
   });
 
+  const uncheckedItems = sortedItems.filter((item) => !item.isChecked);
+  const allChecked = uncheckedItems.length === 0;
+
   return (
     <div className="flex-1 flex flex-col min-h-0 px-4 pt-1">
       {/* ── Sticky header: input + meta/sort row ── */}
       <div className="shrink-0 pb-1">
         <AddItemInput />
-        {/* List meta row — item count (left) + sort controls (right) */}
+        {/* List meta row — check-all button + item count (left) + sort controls (right) */}
         <div className="flex items-center justify-between mt-4 mb-1 px-1">
-          <span
-            className="text-xs font-medium"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Check-all button */}
+            <button
+              className="press-scale shrink-0"
+              style={{ touchAction: "manipulation" }}
+              onClick={() => {
+                if (allChecked) return;
+                store.checkAllItemsInSelectedCategory();
+                HapticService.medium();
+              }}
+              aria-label="Check all items"
+              disabled={allChecked}
+            >
+              {allChecked ? (
+                // Fully filled green circle with checkmark — matches checked item icon
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" fill="var(--color-brand-green)" />
+                  <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2.2" />
+                </svg>
+              ) : (
+                // Empty circle — matches unchecked item icon, but slightly more opaque to signal interactivity
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ color: "var(--color-brand-teal)", opacity: 0.8 }}
+                >
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" />
+                </svg>
+              )}
+            </button>
+
+            {/* Item count */}
+            <span
+              className="text-xs font-medium"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             {/* Sort order toggle */}
             <button
