@@ -2,6 +2,11 @@
 
 > **These rules are STRICT. Do not deviate from them under any circumstances.**
 > Always read the referenced docs before making changes to the areas they cover.
+> If you are unsure about any aspect of this codebase — architecture, patterns, component behavior, naming, theming, or deployment — **consult the `docs/` folder before guessing**. The `docs/` folder is organized as follows:
+>
+> - `docs/reference/` — authoritative reference docs covering architecture, state management, data models, services, theming, UI patterns, PWA config, TypeScript conventions, and more
+> - `docs/plans/` — design and implementation plans for features and fixes
+> - `docs/snapshots/` — point-in-time captures of UI structure, component behavior, and known issues
 
 This is a **React + TypeScript PWA** (Progressive Web App) built with Vite, Tailwind CSS v4, and shadcn/ui. It is the web port of the ListMaster iOS app. The tech stack is: React 19, TypeScript 5, React Router v7, Zustand-style Context/Reducer stores, Tailwind CSS v4, shadcn/ui components, and `vite-plugin-pwa`.
 
