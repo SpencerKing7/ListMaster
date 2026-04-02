@@ -178,17 +178,19 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
         {/* List meta row — check-all button + item count (left) + sort controls (right) */}
         <div className="flex items-center justify-between mt-4 mb-1 px-1">
           <div className="flex items-center gap-2">
-            {/* Check-all button */}
+            {/* Check-all/uncheck-all toggle button */}
             <button
               className="press-scale shrink-0"
               style={{ touchAction: "manipulation" }}
               onClick={() => {
-                if (allChecked) return;
-                store.checkAllItemsInSelectedCategory();
+                if (allChecked) {
+                  store.uncheckAllItemsInSelectedCategory();
+                } else {
+                  store.checkAllItemsInSelectedCategory();
+                }
                 HapticService.medium();
               }}
-              aria-label="Check all items"
-              disabled={allChecked}
+              aria-label={allChecked ? "Uncheck all items" : "Check all items"}
             >
               {allChecked ? (
                 // Fully filled green circle with checkmark — matches checked item icon
