@@ -238,20 +238,22 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
       <div
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{
-          maskImage: "linear-gradient(to bottom, transparent, black 24px, black)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 24px, black)",
+          maskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)",
         }}
       >
-        <ul className="flex flex-col gap-2 pt-3 pb-4">
+        <ul className="flex flex-col gap-2 pt-3 pb-10">
           {sortedItems.map((item) => (
             <SwipeableRow
               key={item.id}
               onDelete={() => store.deleteItemFromSelectedCategory(item.id)}
             >
               <li
-                className={`flex items-center gap-3.5 px-4 py-3.5 rounded-[14px] cursor-pointer ${tappedId === item.id ? "scale-[0.97] opacity-80" : ""
+                className={`flex items-center gap-3.5 px-4 rounded-[14px] cursor-pointer ${tappedId === item.id ? "scale-[0.97] opacity-80" : ""
                   }`}
                 style={{
+                  paddingTop: "var(--row-padding-y)",
+                  paddingBottom: "var(--row-padding-y)",
                   backgroundColor: item.isChecked
                     ? "rgba(var(--color-brand-deep-green-rgb), 0.04)"
                     : "var(--color-surface-card)",

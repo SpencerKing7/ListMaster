@@ -236,7 +236,7 @@ Renders the full content area for a single category. Three instances always exis
   │     └── sort meta row (item count + order/direction toggles)
   └── <div className="flex-1 overflow-y-auto overscroll-contain"   ← scroll container
             style={{ maskImage: ..., WebkitMaskImage: ... }}>
-        └── <ul className="flex flex-col gap-2 pt-3 pb-4">
+        └── <ul className="flex flex-col gap-2 pt-3 pb-10">
               └── <SwipeableRow> × N
                     └── <li> item row
 ```
@@ -252,11 +252,11 @@ Renders the full content area for a single category. Three instances always exis
 The scroll container has inline CSS mask properties:
 
 ```ts
-maskImage: "linear-gradient(to bottom, transparent, black 24px, black)",
-WebkitMaskImage: "linear-gradient(to bottom, transparent, black 24px, black)",
+maskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)",
+WebkitMaskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)",
 ```
 
-This fades the top 24px of the list content as items scroll under the sticky header row. At rest (scroll position 0), the `pt-3` on the `<ul>` keeps the first item below the fade zone so it renders fully opaque.
+This fades the top 24px and bottom 32px of the list content. The top fade prevents items from abruptly appearing under the sticky header. The bottom fade dissolves content before it reaches the page indicator dots, creating a seamless visual transition. At rest (scroll position 0), the `pt-3` on the `<ul>` keeps the first item below the top fade zone, and `pb-10` ensures the last item can scroll into the fully-opaque middle zone above the bottom fade.
 
 > **Why mask instead of an overlay div:** An earlier implementation used an absolutely positioned `<div>` with a background gradient to fake a fade. This created a visible color mismatch because the true app background is `var(--color-surface-background)` **plus** `var(--gradient-brand-wide)` (a diagonal alpha tint), whereas the overlay div could only approximate the solid color. CSS masking operates on transparency, not paint, so it works correctly regardless of what is visually behind the container.
 
@@ -284,13 +284,15 @@ The input font size is forced to `16px` by the global `input { font-size: 16px !
 ```tsx
 className={`... ${tappedId === item.id ? "scale-[0.97] opacity-80" : ""}`}
 style={{
+  paddingTop: "var(--row-padding-y)",
+  paddingBottom: "var(--row-padding-y)",
   transition: tappedId === item.id
     ? "none"
     : "transform 200ms ease-out, opacity 200ms ease-out, background-color 250ms ease-out, box-shadow 250ms ease-out",
 }}
 ```
 
-`tappedId` is set on `pointerdown` and cleared on `pointerup` / `pointercancel` with a 150ms delay. Transition is suppressed during the press-down (instant snap) and re-enabled on release (spring back).
+`tappedId` is set on `pointerdown` and cleared on `pointerup` / `pointercancel` with a 150ms delay. Transition is suppressed during the press-down (instant snap) and re-enabled on release (spring back). Vertical padding scales with the text size setting via `var(--row-padding-y)` for proportional row density.
 
 ---
 
@@ -441,7 +443,9 @@ The entire scrolling architecture depends on this chain being intact:
 - ✅ `SwipeableRow` does not interfere with page swipe for clearly horizontal gestures
 - ✅ Delete button springs open/closed with iOS-like overshoot easing
 - ✅ CSS mask fade at the top of the scroll container works correctly in light and dark themes
+- ✅ CSS mask fade at the bottom of the scroll container prevents content from abruptly ending at the page indicator
 - ✅ No visible color-mismatch band between list and sticky header (mask approach)
+- ✅ Row vertical padding scales proportionally with text size setting (xs: 0.45rem, s: 0.6rem, m: 0.875rem, l: 1.0rem, xl: 1.25rem)
 - ✅ `AddItemInput` stays above the keyboard on iOS (keyboard pushes the viewport, input is in the flow)
 - ✅ 16px font-size override on inputs prevents iOS Safari auto-zoom on focus
 - ✅ `CategoryPicker` scrolls selected pill into view with `scrollIntoView` after category changes

@@ -15,6 +15,16 @@ const TEXT_SIZE_VALUES: Record<TextSize, string> = {
   xl: "1.3125rem",
 };
 
+/** Maps TextSize tokens to vertical padding values for list item rows.
+ *  Scales proportionally with text size for better density. */
+const ROW_PADDING_VALUES: Record<TextSize, string> = {
+  xs: "0.45rem",
+  s: "0.6rem",
+  m: "0.875rem",
+  l: "1.0rem",
+  xl: "1.25rem",
+};
+
 /** Applies the user's appearance choice to the DOM.
  *  - 'light' / 'dark' → sets data-theme attribute, overriding the system media query.
  *  - 'system' → removes data-theme, letting @media (prefers-color-scheme) take over.
@@ -64,8 +74,10 @@ export function applyThemeToDOM(mode: "system" | "light" | "dark"): void {
  *  the `--text-size-base` CSS custom property on the root element.
  *  Called synchronously inside the SettingsProvider useState initializer. */
 export function applyTextSizeToDOM(size: TextSize): void {
-  const value = TEXT_SIZE_VALUES[size] ?? TEXT_SIZE_VALUES["m"];
-  document.documentElement.style.setProperty("--text-size-base", value);
+  const textValue = TEXT_SIZE_VALUES[size] ?? TEXT_SIZE_VALUES["m"];
+  const paddingValue = ROW_PADDING_VALUES[size] ?? ROW_PADDING_VALUES["m"];
+  document.documentElement.style.setProperty("--text-size-base", textValue);
+  document.documentElement.style.setProperty("--row-padding-y", paddingValue);
 }
 
 /** Updates a `<meta name="theme-color">` tag for a specific color-scheme media. */

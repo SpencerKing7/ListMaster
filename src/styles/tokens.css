@@ -56,6 +56,9 @@
 
   /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
   --text-size-base: 1rem;
+
+  /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+  --row-padding-y: 0.875rem;
 }
 
 /* ── Dark (system preference) ───────────────────────────── */
@@ -90,6 +93,9 @@
 
     /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
     --text-size-base: 1rem;
+
+    /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+    --row-padding-y: 0.875rem;
   }
 }
 
@@ -121,6 +127,9 @@
 
   /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
   --text-size-base: 1rem;
+
+  /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+  --row-padding-y: 0.875rem;
 }
 
 /* ── Manual override: force dark ────────────────────────── */
@@ -150,4 +159,7 @@
 
   /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
   --text-size-base: 1rem;
+
+  /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+  --row-padding-y: 0.875rem;
 }
