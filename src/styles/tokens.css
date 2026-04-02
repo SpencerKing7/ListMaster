@@ -87,6 +87,9 @@
       0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
     --elevation-sheet:
       0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
+
+    /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+    --text-size-base: 1rem;
   }
 }
 
@@ -115,6 +118,9 @@
     0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
   --elevation-sheet:
     0 -4px 24px rgba(0, 0, 0, 0.1), 0 -1px 4px rgba(0, 0, 0, 0.06);
+
+  /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+  --text-size-base: 1rem;
 }
 
 /* ── Manual override: force dark ────────────────────────── */
@@ -141,4 +147,7 @@
   --elevation-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
   --elevation-sheet:
     0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
+
+  /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+  --text-size-base: 1rem;
 }

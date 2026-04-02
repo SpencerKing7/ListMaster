@@ -12,6 +12,8 @@ export interface Category {
   id: string; // UUID string
   name: string;
   items: ChecklistItem[];
+  /** Per-list sort order. Defaults to "date" when absent (legacy data). */
+  sortOrder?: SortOrder;
 }
 
 /** Five-step text size scale for checklist item text. */

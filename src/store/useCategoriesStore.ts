@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import type { Category, ChecklistItem } from "../models/types";
+import type { Category, ChecklistItem, SortOrder } from "../models/types";
 import { PersistenceService } from "../services/persistenceService";
 import React from "react";
 
@@ -38,6 +38,7 @@ type StoreAction =
   | { type: "RENAME_CATEGORY"; id: string; newName: string }
   | { type: "DELETE_CATEGORY"; id: string }
   | { type: "MOVE_CATEGORIES"; from: number; to: number }
+  | { type: "SET_CATEGORY_SORT_ORDER"; id: string; sortOrder: SortOrder }
   | { type: "ADD_ITEM"; name: string }
   | { type: "TOGGLE_ITEM"; itemID: string }
   | { type: "DELETE_ITEM"; itemID: string }
@@ -144,6 +145,14 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       const [moved] = arr.splice(action.from, 1);
       arr.splice(action.to, 0, moved);
       next = { ...state, categories: arr };
+      break;
+    }
+
+    case "SET_CATEGORY_SORT_ORDER": {
+      const updated = state.categories.map((c) =>
+        c.id === action.id ? { ...c, sortOrder: action.sortOrder } : c,
+      );
+      next = { ...state, categories: updated };
       break;
     }
 
@@ -259,6 +268,7 @@ interface StoreContextValue {
   renameCategory: (id: string, newName: string) => void;
   deleteCategory: (id: string) => void;
   moveCategories: (from: number, to: number) => void;
+  setCategorySortOrder: (id: string, sortOrder: SortOrder) => void;
   addItemToSelectedCategory: (name: string) => void;
   toggleItemInSelectedCategory: (itemID: string) => void;
   deleteItemFromSelectedCategory: (itemID: string) => void;
@@ -343,6 +353,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "MOVE_CATEGORIES", from, to }),
     [],
   );
+  const setCategorySortOrder = useCallback(
+    (id: string, sortOrder: SortOrder) =>
+      dispatch({ type: "SET_CATEGORY_SORT_ORDER", id, sortOrder }),
+    [],
+  );
   const addItemToSelectedCategory = useCallback(
     (name: string) => dispatch({ type: "ADD_ITEM", name }),
     [],
@@ -382,6 +397,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     renameCategory,
     deleteCategory,
     moveCategories,
+    setCategorySortOrder,
     addItemToSelectedCategory,
     toggleItemInSelectedCategory,
     deleteItemFromSelectedCategory,

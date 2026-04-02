@@ -1,27 +1,26 @@
 // src/store/useSettingsStore.ts
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { PersistenceService } from "../services/persistenceService";
+import { SettingsService } from "../services/settingsService";
 import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
-import type { TextSize, SortOrder } from "@/models/types";
+import type { TextSize } from "@/models/types";
 import React from "react";
 
 // MARK: - Types
 
 type AppearanceMode = "system" | "light" | "dark";
 
-export type { TextSize, SortOrder };
+export type { TextSize };
 
 interface SettingsState {
   userName: string;
   hasCompletedOnboarding: boolean;
   appearanceMode: AppearanceMode;
   textSize: TextSize;
-  sortOrder: SortOrder;
   setUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
-  setSortOrder: (order: SortOrder) => void;
   resetToNewUser: () => void;
 }
 
@@ -30,16 +29,15 @@ interface SettingsState {
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [userName, setUserNameState] = useState<string>(
-    () => localStorage.getItem("userName") ?? "",
+  const [userName, setUserNameState] = useState<string>(() =>
+    SettingsService.getUserName(),
   );
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(
-    () => localStorage.getItem("hasCompletedOnboarding") === "true",
+    () => SettingsService.getHasCompletedOnboarding(),
   );
   const [appearanceMode, setAppearanceModeState] = useState<AppearanceMode>(
     () => {
-      const saved =
-        (localStorage.getItem("appearanceMode") as AppearanceMode) ?? "system";
+      const saved = SettingsService.getAppearanceMode();
       // Apply synchronously during state initialization — BEFORE first paint.
       // This prevents a flash of wrong theme for users with a saved preference.
       applyThemeToDOM(saved);
@@ -47,56 +45,43 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     },
   );
   const [textSize, setTextSizeState] = useState<TextSize>(() => {
-    const saved = (localStorage.getItem("textSize") as TextSize) ?? "m";
+    const saved = SettingsService.getTextSize();
     // Apply synchronously during state initialization to prevent layout shift.
     applyTextSizeToDOM(saved);
     return saved;
   });
-  const [sortOrder, setSortOrderState] = useState<SortOrder>(
-    () => (localStorage.getItem("sortOrder") as SortOrder) ?? "date",
-  );
 
   function setUserName(name: string) {
-    localStorage.setItem("userName", name);
+    SettingsService.setUserName(name);
     setUserNameState(name);
   }
 
   function completeOnboarding() {
-    localStorage.setItem("hasCompletedOnboarding", "true");
+    SettingsService.setHasCompletedOnboarding(true);
     setHasCompletedOnboarding(true);
   }
 
   function setAppearanceMode(mode: AppearanceMode) {
-    localStorage.setItem("appearanceMode", mode);
+    SettingsService.setAppearanceMode(mode);
     setAppearanceModeState(mode);
     applyThemeToDOM(mode);
   }
 
   function setTextSize(size: TextSize) {
-    localStorage.setItem("textSize", size);
+    SettingsService.setTextSize(size);
     setTextSizeState(size);
     applyTextSizeToDOM(size);
   }
 
-  function setSortOrder(order: SortOrder) {
-    localStorage.setItem("sortOrder", order);
-    setSortOrderState(order);
-  }
-
   function resetToNewUser() {
     PersistenceService.clear();
-    localStorage.removeItem("userName");
-    localStorage.removeItem("hasCompletedOnboarding");
-    localStorage.removeItem("appearanceMode");
-    localStorage.removeItem("textSize");
-    localStorage.removeItem("sortOrder");
+    SettingsService.clearAll();
     setUserNameState("");
     setHasCompletedOnboarding(false);
     setAppearanceModeState("system");
     applyThemeToDOM("system");
     setTextSizeState("m");
     applyTextSizeToDOM("m");
-    setSortOrderState("date");
   }
 
   return React.createElement(
@@ -107,12 +92,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         hasCompletedOnboarding,
         appearanceMode,
         textSize,
-        sortOrder,
         setUserName,
         completeOnboarding,
         setAppearanceMode,
         setTextSize,
-        setSortOrder,
         resetToNewUser,
       },
     },

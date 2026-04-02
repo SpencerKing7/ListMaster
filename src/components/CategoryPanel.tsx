@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { Category } from "@/models/types";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
-import { useSettingsStore } from "@/store/useSettingsStore";
 import { HapticService } from "@/services/hapticService";
 import SwipeableRow from "./SwipeableRow";
 
@@ -51,10 +50,11 @@ const AddItemInput = () => {
               addItem();
             }
           }}
-          className="flex-1 bg-transparent text-base font-medium outline-none placeholder:opacity-40"
+          className="flex-1 bg-transparent font-medium outline-none placeholder:opacity-40"
           style={{
             color: "var(--color-text-primary)",
             caretColor: "var(--color-brand-green)",
+            fontSize: "var(--text-size-base)",
           }}
           enterKeyHint="send"
           autoCapitalize="sentences"
@@ -90,7 +90,6 @@ const AddItemInput = () => {
 
 const CategoryPanel = ({ category }: CategoryPanelProps) => {
   const store = useCategoriesStore();
-  const settings = useSettingsStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -150,12 +149,15 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
     );
   }
 
-  // Sort a copy of items based on the current sortOrder setting.
+  // Per-category sort order — falls back to "date" for legacy data without the field.
+  const sortOrder = category.sortOrder ?? "date";
+
+  // Sort a copy of items based on the current sortOrder.
   // Unchecked items always appear before checked items; within each group
   // items are ordered either by creation date (ascending) or alphabetically.
   const sortedItems = [...category.items].sort((a, b) => {
     if (a.isChecked !== b.isChecked) return a.isChecked ? 1 : -1;
-    if (settings.sortOrder === "alpha") {
+    if (sortOrder === "alpha") {
       return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
     }
     // "date": sort by createdAt ascending; fall back to 0 for legacy items
@@ -165,7 +167,35 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-1">
       <AddItemInput />
-      <ul className="flex flex-col gap-2 mt-3">
+      {/* List meta row — item count (left) + sort toggle (right) */}
+      <div className="flex items-center justify-between mt-3 mb-1 px-1">
+        <span
+          className="text-xs font-medium"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
+        </span>
+        <button
+          className="flex items-center gap-1 press-scale"
+          style={{
+            color: "var(--color-text-secondary)",
+            touchAction: "manipulation",
+          }}
+          onClick={() => {
+            const next = sortOrder === "date" ? "alpha" : "date";
+            store.setCategorySortOrder(category.id, next);
+            HapticService.light();
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M7 12h10M11 18h2" />
+          </svg>
+          <span className="text-xs font-semibold">
+            {sortOrder === "alpha" ? "A–Z" : "Date Added"}
+          </span>
+        </button>
+      </div>
+      <ul className="flex flex-col gap-2">
         {sortedItems.map((item) => (
           <SwipeableRow
             key={item.id}
