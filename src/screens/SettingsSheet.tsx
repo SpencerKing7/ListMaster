@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useSyncStore } from "@/store/useSyncStore";
 import type { TextSize } from "@/store/useSettingsStore";
 
 interface SettingsSheetProps {
@@ -31,6 +32,7 @@ const inputClass =
 const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const store = useCategoriesStore();
   const settings = useSettingsStore();
+  const sync = useSyncStore();
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryToRename, setCategoryToRename] = useState<{
@@ -39,6 +41,9 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   } | null>(null);
   const [renameCategoryName, setRenameCategoryName] = useState("");
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isDisableSyncDialogOpen, setIsDisableSyncDialogOpen] = useState(false);
+  const [syncCodeInput, setSyncCodeInput] = useState("");
+  const [isAdoptingCode, setIsAdoptingCode] = useState(false);
 
   // ── Drag-to-reorder state ──
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -172,6 +177,20 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   }
 
   function handleReset() {
+    // If sync is active, delete the cloud document before wiping local state.
+    // Ensure anonymous auth is valid before attempting the delete.
+    // Non-fatal if the delete fails — local reset proceeds regardless.
+    if (sync.isSyncEnabled && sync.syncCode) {
+      const codeToDelete = sync.syncCode;
+      import("@/services/syncService").then(({ ensureAnonymousAuth, deleteSyncData }) =>
+        ensureAnonymousAuth()
+          .then(() => deleteSyncData(codeToDelete))
+          .catch((err) => console.error("Failed to delete cloud data on reset:", err)),
+      );
+    }
+
+    // Disable sync locally (cloud delete handled above, so pass false)
+    sync.disableSync(false);
     store.resetCategories();
     settings.resetToNewUser();
     setIsResetDialogOpen(false);
@@ -435,9 +454,76 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
               </ToggleGroup>
             </SettingsCard>
 
-            {/* Data Management */}
+            {/* Sync & Backup */}
             <SettingsCard>
-              <SectionLabel>Data Management</SectionLabel>
+              <SectionLabel>Sync & Backup</SectionLabel>
+              {sync.isSyncEnabled ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                      Sync Code
+                    </span>
+                    <button
+                      className="text-xs font-semibold px-2 py-1 rounded-lg transition-all hover:opacity-80 active:scale-[0.96]"
+                      style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.1)" }}
+                      onClick={() => navigator.clipboard.writeText(sync.syncCode)}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="font-mono text-sm p-2 rounded-lg break-all" style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}>
+                    {sync.syncCode}
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                    Share this code with others to sync your list, or use it on another device.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                      style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
+                      onClick={() => setIsAdoptingCode(true)}
+                    >
+                      Enter Code
+                    </button>
+                    <button
+                      className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                      style={{ color: "var(--color-danger)", backgroundColor: "rgba(212, 75, 74, 0.08)" }}
+                      onClick={() => setIsDisableSyncDialogOpen(true)}
+                    >
+                      Disable
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
+                    Enable cloud sync to backup your data and share it across devices.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                      style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.1)" }}
+                      onClick={sync.enableSync}
+                      disabled={sync.syncStatus === "syncing"}
+                    >
+                      {sync.syncStatus === "syncing" ? "Enabling..." : "New Code"}
+                    </button>
+                    <button
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                      style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
+                      onClick={() => setIsAdoptingCode(true)}
+                      disabled={sync.syncStatus === "syncing"}
+                    >
+                      Enter Code
+                    </button>
+                  </div>
+                </>
+              )}
+            </SettingsCard>
+
+            {/* Account Management */}
+            <SettingsCard>
+              <SectionLabel>Account Management</SectionLabel>
               <button
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96] active:opacity-75"
                 style={{
@@ -514,6 +600,102 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
               Save
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adopt Sync Code Dialog */}
+      <Dialog open={isAdoptingCode} onOpenChange={setIsAdoptingCode}>
+        <DialogContent
+          showCloseButton={false}
+          className="gap-3"
+        >
+          <DialogHeader>
+            <DialogTitle>Enter Sync Code</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Paste the sync code from another device to load and sync that data.
+          </p>
+          <Input
+            value={syncCodeInput}
+            onChange={(e) => setSyncCodeInput(e.target.value)}
+            placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+            className={inputClass}
+            autoFocus
+          />
+          <DialogFooter className="flex-row gap-2 mt-1">
+            <Button
+              variant="ghost"
+              className="flex-1 rounded-xl hover:!bg-[color:var(--color-surface-input)]"
+              style={{ color: "var(--color-text-secondary)" }}
+              onClick={() => {
+                setIsAdoptingCode(false);
+                setSyncCodeInput("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
+              style={{ color: "var(--color-brand-green)" }}
+              onClick={() => {
+                sync.adoptSyncCode(syncCodeInput.trim());
+                setIsAdoptingCode(false);
+                setSyncCodeInput("");
+              }}
+              disabled={!syncCodeInput.trim()}
+            >
+              Adopt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disable Sync Confirmation Dialog */}
+      <Dialog open={isDisableSyncDialogOpen} onOpenChange={setIsDisableSyncDialogOpen}>
+        <DialogContent showCloseButton={false} className="gap-3">
+          <DialogHeader>
+            <DialogTitle>Disable Sync</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            What would you like to do with your cloud backup?
+          </p>
+          <div className="flex flex-col gap-2 mt-1">
+            <button
+              className="w-full py-3 rounded-xl text-sm font-semibold text-left px-4 transition-all hover:opacity-80 active:scale-[0.98]"
+              style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
+              onClick={() => {
+                sync.disableSync(false);
+                setIsDisableSyncDialogOpen(false);
+              }}
+            >
+              <span className="block font-semibold">Keep cloud backup</span>
+              <span className="block text-xs mt-0.5 font-normal" style={{ color: "var(--color-text-secondary)" }}>
+                Sync is disabled locally. Re-enter your code later to restore.
+              </span>
+            </button>
+            <button
+              className="w-full py-3 rounded-xl text-sm font-semibold text-left px-4 transition-all hover:opacity-80 active:scale-[0.98]"
+              style={{ backgroundColor: "rgba(212, 75, 74, 0.08)", color: "var(--color-danger)" }}
+              onClick={() => {
+                sync.disableSync(true);
+                setIsDisableSyncDialogOpen(false);
+              }}
+            >
+              <span className="block font-semibold">Delete cloud data</span>
+              <span className="block text-xs mt-0.5 font-normal" style={{ color: "var(--color-text-secondary)" }}>
+                Permanently removes your data from the cloud. Cannot be undone.
+              </span>
+            </button>
+          </div>
+          <Button
+            variant="ghost"
+            className="w-full rounded-xl hover:!bg-[color:var(--color-surface-input)] mt-1"
+            style={{ color: "var(--color-text-secondary)" }}
+            onClick={() => setIsDisableSyncDialogOpen(false)}
+          >
+            Cancel
+          </Button>
         </DialogContent>
       </Dialog>
 

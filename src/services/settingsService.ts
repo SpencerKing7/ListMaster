@@ -6,6 +6,8 @@ const HAS_COMPLETED_ONBOARDING_KEY = "hasCompletedOnboarding";
 const APPEARANCE_MODE_KEY = "appearanceMode";
 const TEXT_SIZE_KEY = "textSize";
 const SORT_ORDER_KEY = "sortOrder";
+const SYNC_CODE_KEY = "syncCode";
+const IS_SYNC_ENABLED_KEY = "isSyncEnabled";
 
 type AppearanceMode = "system" | "light" | "dark";
 
@@ -98,6 +100,32 @@ export const SettingsService = {
     localStorage.removeItem(SORT_ORDER_KEY);
   },
 
+  // Sync Code — generated once, persisted forever
+  getSyncCode(): string {
+    return localStorage.getItem(SYNC_CODE_KEY) ?? "";
+  },
+
+  setSyncCode(code: string): void {
+    localStorage.setItem(SYNC_CODE_KEY, code);
+  },
+
+  clearSyncCode(): void {
+    localStorage.removeItem(SYNC_CODE_KEY);
+  },
+
+  // Sync Enabled flag
+  getIsSyncEnabled(): boolean {
+    return localStorage.getItem(IS_SYNC_ENABLED_KEY) === "true";
+  },
+
+  setIsSyncEnabled(value: boolean): void {
+    localStorage.setItem(IS_SYNC_ENABLED_KEY, String(value));
+  },
+
+  clearIsSyncEnabled(): void {
+    localStorage.removeItem(IS_SYNC_ENABLED_KEY);
+  },
+
   // Clear all settings
   clearAll(): void {
     this.clearUserName();
@@ -105,5 +133,7 @@ export const SettingsService = {
     this.clearAppearanceMode();
     this.clearTextSize();
     this.clearSortOrder();
+    this.clearSyncCode();
+    this.clearIsSyncEnabled();
   },
 };

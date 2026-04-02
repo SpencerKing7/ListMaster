@@ -4,6 +4,8 @@ import {
   useContext,
   useReducer,
   useCallback,
+  useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -14,6 +16,7 @@ import type {
   SortDirection,
 } from "../models/types";
 import { PersistenceService } from "../services/persistenceService";
+import { useSyncStore } from "./useSyncStore";
 import React from "react";
 
 // MARK: - State Shape
@@ -56,7 +59,12 @@ type StoreAction =
   | { type: "CHECK_ALL" }
   | { type: "UNCHECK_ALL" }
   | { type: "RELOAD" }
-  | { type: "RESET_CATEGORIES" };
+  | { type: "RESET_CATEGORIES" }
+  | {
+      type: "SYNC_LOAD";
+      categories: Category[];
+      selectedCategoryID: string | null;
+    };
 
 // MARK: - Helpers
 
@@ -294,6 +302,17 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       return next;
     }
 
+    case "SYNC_LOAD": {
+      next = {
+        categories: action.categories,
+        selectedCategoryID:
+          action.selectedCategoryID ?? action.categories[0]?.id ?? "",
+      };
+      // Persist to localStorage so remote data survives an app close.
+      PersistenceService.save(next.categories, next.selectedCategoryID);
+      return next;
+    }
+
     default:
       return state;
   }
@@ -338,6 +357,93 @@ const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
+  const { isSyncEnabled, syncCode } = useSyncStore();
+  // Tracks whether the current state was just loaded from the cloud.
+  // Cleared synchronously at the start of the cloud-save path so we never
+  // echo a remote write back to Firestore.
+  const isLoadingFromSync = useRef(false);
+  // Holds the pending debounce timer ID for cloud saves.
+  const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Schedules a cloud save 1 second after the last local mutation.
+  const scheduleCloudSave = useCallback(
+    (categories: Category[], selectedCategoryID: string | null) => {
+      // If this render was triggered by a SYNC_LOAD, skip — no echo writes.
+      if (isLoadingFromSync.current) {
+        isLoadingFromSync.current = false;
+        return;
+      }
+      if (!isSyncEnabled || !syncCode) return;
+
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+      cloudSaveTimer.current = setTimeout(async () => {
+        cloudSaveTimer.current = null;
+        try {
+          const { saveState } = await import("../services/syncService");
+          await saveState(syncCode, categories, selectedCategoryID);
+        } catch (error) {
+          console.error("Failed to save to cloud:", error);
+        }
+      }, 1000);
+    },
+    [isSyncEnabled, syncCode],
+  );
+
+  // Subscribe to cloud changes when sync is enabled.
+  // The effect cleanup tears down the listener when sync is disabled or the
+  // code changes, so no ghost subscriptions survive.
+  useEffect(() => {
+    if (!isSyncEnabled || !syncCode) return;
+
+    let unsubscribe: (() => void) | null = null;
+
+    const setupSubscription = async () => {
+      try {
+        const { subscribeToState, loadState } =
+          await import("../services/syncService");
+
+        // Immediately fetch the current cloud state so we don't overwrite it
+        // with stale local data before the first onSnapshot fires.
+        const cloudState = await loadState(syncCode);
+        if (cloudState) {
+          isLoadingFromSync.current = true;
+          dispatch({
+            type: "SYNC_LOAD",
+            categories: cloudState.categories,
+            selectedCategoryID: cloudState.selectedCategoryID,
+          });
+        }
+
+        unsubscribe = subscribeToState(
+          syncCode,
+          (categories, selectedCategoryID) => {
+            // Mark synchronously before dispatch so the subsequent useEffect
+            // that calls scheduleCloudSave sees it on the same render cycle.
+            isLoadingFromSync.current = true;
+            dispatch({ type: "SYNC_LOAD", categories, selectedCategoryID });
+          },
+        );
+      } catch (error) {
+        console.error("Failed to subscribe to cloud changes:", error);
+      }
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      // Cancel any pending debounced write when unsubscribing.
+      if (cloudSaveTimer.current) {
+        clearTimeout(cloudSaveTimer.current);
+        cloudSaveTimer.current = null;
+      }
+    };
+  }, [isSyncEnabled, syncCode]);
+
+  // Trigger a debounced cloud save whenever local state changes.
+  useEffect(() => {
+    scheduleCloudSave(state.categories, state.selectedCategoryID);
+  }, [state.categories, state.selectedCategoryID, scheduleCloudSave]);
 
   const selectedCategoryIndex = state.categories.findIndex(
     (c) => c.id === state.selectedCategoryID,
