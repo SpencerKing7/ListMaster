@@ -91,7 +91,6 @@ const CategoryPicker = () => {
       <div
         ref={scrollRef}
         className="overflow-x-auto cursor-grab w-full"
-        style={{ scrollbarWidth: "none" }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

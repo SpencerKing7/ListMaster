@@ -169,7 +169,7 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-1">
+    <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-1">
       <AddItemInput />
       {/* List meta row — item count (left) + sort controls (right) */}
       <div className="flex items-center justify-between mt-4 mb-2 px-1">
