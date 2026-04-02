@@ -142,6 +142,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSyncStore(): SyncContextValue {
   const ctx = useContext(SyncContext);
   if (!ctx) {
