@@ -253,9 +253,8 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
         className="absolute left-0 right-0 pointer-events-none z-10"
         style={{
           top: `${headerHeight}px`,
-          height: "28px",
-          background: "linear-gradient(to bottom, var(--color-surface-background), transparent)",
-          opacity: 0.85,
+          height: "32px",
+          background: "linear-gradient(to bottom, var(--color-surface-background) 0%, transparent 100%)",
         }}
       />
 

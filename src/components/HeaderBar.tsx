@@ -1,4 +1,5 @@
 // src/components/HeaderBar.tsx
+import { useState } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import CategoryPicker from "./CategoryPicker";
 
@@ -11,6 +12,15 @@ interface HeaderBarProps {
 const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps) => {
   const { userName } = useSettingsStore();
   const trimmedName = userName.trim();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  function handleRefresh() {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    setTimeout(() => {
+      onRefresh?.();
+    }, 1400);
+  }
 
   return (
     <header
@@ -39,7 +49,7 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
         )}
         {trimmedName.length === 0 && <div className="flex-1" />}
         <button
-          onClick={onRefresh}
+          onClick={handleRefresh}
           className="relative shrink-0 w-9 h-9 rounded-full flex items-center justify-center press-scale"
           style={{
             touchAction: "manipulation",
@@ -55,6 +65,10 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            style={{
+              transition: "transform 0.3s ease-out",
+              animation: isRefreshing ? "spin 0.7s linear infinite" : "none",
+            }}
           >
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
             <path d="M21 3v5h-5" />

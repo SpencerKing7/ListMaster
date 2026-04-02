@@ -248,19 +248,19 @@ export default function MainScreen() {
             onPointerCancel={handlePointerUp}
           >
             <div
-              className="flex flex-col h-full"
+              className="flex flex-col h-full min-h-0"
               style={{ width: `${contentWidth}px` }}
             >
               <CategoryPanel category={store.previousCategory} />
             </div>
             <div
-              className="flex flex-col h-full"
+              className="flex flex-col h-full min-h-0"
               style={{ width: `${contentWidth}px` }}
             >
               <CategoryPanel category={store.selectedCategory} />
             </div>
             <div
-              className="flex flex-col h-full"
+              className="flex flex-col h-full min-h-0"
               style={{ width: `${contentWidth}px` }}
             >
               <CategoryPanel category={store.nextCategory} />
