@@ -102,7 +102,10 @@ src/
 
 ## UI Development (STRICT)
 
-This app targets a **mobile-first, iOS-feel** experience. Always reference `docs/plans/ios-feel-overhaul.md` before making UI changes.
+This app targets a **mobile-first, iOS-feel** experience. Before making **any** UI edits:
+
+1. Read `docs/snapshots/main-screen-ui-snapshot.md` — it documents the exact current HTML structure, scroll chain, layout mechanics, known issues, and what is confirmed working for every main screen component. Do not make a UI change without first understanding how the component you are touching fits into this structure.
+2. Read `docs/plans/ios-feel-overhaul.md` for design intent and iOS-feel rules.
 
 ### Key Rules
 
