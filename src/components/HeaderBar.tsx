@@ -19,7 +19,7 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
     setIsRefreshing(true);
     setTimeout(() => {
       onRefresh?.();
-    }, 1400);
+    }, 800);
   }
 
   return (
