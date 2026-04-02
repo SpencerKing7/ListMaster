@@ -112,10 +112,13 @@
     box-sizing: border-box;
   }
   html {
-    background: none;
+    background-color: var(--color-surface-background);
+    background-image: var(--gradient-brand-wide);
+    background-attachment: fixed;
     transition: background-color 0s;
-    height: 100dvh;
-    overflow: hidden;
+    min-height: calc(
+      100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
+    );
   }
   body {
     @apply font-sans;
@@ -124,10 +127,17 @@
     background-image: var(--gradient-brand-wide);
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100dvh;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+  }
+  #root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
   }
   button,
   [role="button"] {
