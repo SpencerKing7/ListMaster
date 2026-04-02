@@ -1,6 +1,8 @@
 # Main Screen UI Snapshot — April 2026
 
-> **Purpose:** This document captures the exact current state of every UI component that makes up the main screen — its HTML structure, layout mechanics, scrolling behavior, known quirks, and what is confirmed working. Use it as a reference baseline when diagnosing regressions or planning changes.
+> **Purpose:** This document captures the exact current state of every UI component that makes up the main screen — its HTML structure, layout mechanics, scrolling behavior, known quirks, and what is confirmed working for every main screen component. Use it as a reference baseline when diagnosing regressions or planning changes.
+>
+> **Last updated:** April 2026. The three-panel slider architecture has been replaced with a single-panel layout. See the Architecture Change note in the layout tree section.
 
 ---
 
@@ -12,21 +14,17 @@ The `MainScreen` render tree, from outermost to innermost:
 <> (Fragment)
   ├── [fixed background div — solid color]       position:fixed, extends into safe areas
   ├── [fixed background div — brand gradient]    position:fixed, extends into safe areas
-  └── <div> layout shell                         h-dvh flex flex-col overflow-hidden  (relative)
+  └── <div> layout shell                         relative h-dvh flex flex-col overflow-hidden
         ├── <HeaderBar>                           sticky top-0, z-10
-        │     ├── greeting + icon row
+        │     ├── greeting row (title + refresh icon + settings icon)
         │     └── <CategoryPicker>               overflow-x:auto pill row
-        ├── <div> content container              flex-1 overflow-hidden relative       ← containerRef
-        │     └── <div> three-panel slider       flex h-full touch-none               ← contentRef
-        │           ├── <div> panel (previous)   flex flex-col h-full min-h-0
-        │           │     └── <CategoryPanel>
-        │           ├── <div> panel (current)    flex flex-col h-full min-h-0
-        │           │     └── <CategoryPanel>    ← the one the user sees
-        │           └── <div> panel (next)       flex flex-col h-full min-h-0
-        │                 └── <CategoryPanel>
-        ├── <PageIndicator>                       (only rendered when categories.length > 1)
-        └── <BottomBar>                           sticky bottom-0, z-10
+        ├── <div> content area                   flex-1 overflow-hidden relative flex flex-col min-h-0
+        │     └── <CategoryPanel>                category={store.selectedCategory}
+        ├── <BottomBar>                           sticky bottom-0, z-10  (3-column grid)
+        └── <SettingsSheet>                       Sheet side="bottom", conditionally open
 ```
+
+> **Architecture change (April 2026):** The three-panel slider architecture (previous + current + next `CategoryPanel` instances always mounted side-by-side, driven by a `translate3d` animation and Pointer Events gesture handler) has been **removed**. `MainScreen` now renders a single `<CategoryPanel>` with `category={store.selectedCategory}`. Category switching is driven at the store level (`selectNextCategory` / `selectPreviousCategory`). The `contentRef`, `containerRef`, `dragOffset`, `isAnimating`, `contentWidth`, `ResizeObserver`, and all swipe gesture state variables from the old architecture no longer exist in `MainScreen`.
 
 ---
 
@@ -36,97 +34,63 @@ The `MainScreen` render tree, from outermost to innermost:
 
 #### Layout shell
 
-```
+```tsx
 <div className="relative h-dvh flex flex-col overflow-hidden">
 ```
 
-- `h-dvh` — full dynamic viewport height. This is the **single clipping boundary** for the entire screen. Do not add `overflow:hidden` to `body`, `html`, or `#root`; the shell alone is the clip container.
-- `flex flex-col` — children stack vertically: header → content area → page dots → bottom bar.
-- `overflow-hidden` — clips the three-panel slider so only one panel is visible at a time.
+- `h-dvh` — full dynamic viewport height. This is the **single vertical clip container** for the entire screen.
+- `flex flex-col` — children stack vertically: header → content area → bottom bar.
+- `overflow-hidden` — clips child overflow so the panel occupies exactly the available height.
+- `relative` — establishes a stacking context.
 
 #### Background layers
 
-Two `position: fixed` divs sit **outside** the layout shell, behind everything:
+Two `position: fixed` divs render **before** the layout shell inside the fragment:
 
-1. **Solid color fill** — `backgroundColor: var(--color-surface-background)`, extended with negative `top` / `bottom` to fill behind the notch and home indicator.
-2. **Brand gradient** — `background: var(--gradient-brand-wide)`, same extent.
+1. **Solid color fill** — `backgroundColor: var(--color-surface-background)`. Extended with `top: calc(-1 * env(safe-area-inset-top, 0px))` and `bottom: calc(-1 * env(safe-area-inset-bottom, 0px))` to fill behind the notch and home indicator during overscroll bounce.
+2. **Brand gradient** — `background: var(--gradient-brand-wide)`. Same negative-inset extent.
 
-These are separate from the shell so that `overflow-hidden` on the shell does not clip them, and they always cover the full screen including safe-area overscroll bounce.
+These are outside the `overflow-hidden` layout shell so they always cover the full screen.
 
-#### Content area (`containerRef`)
+#### Content area
 
-```
-className="flex-1 overflow-hidden relative"
-onScroll={handleScrollWithPosition}
-```
-
-`flex-1` makes this area consume all vertical space between the header and bottom bar. `overflow-hidden` clips the sliding panels. The `onScroll` handler is placed here to catch scroll events bubbling up from the inner `CategoryPanel` scroll container — this is how the `scrolled` state (used by `HeaderBar`) is tracked.
-
-> **Known quirk:** `onScroll` on the container div does not directly scroll — the scrollable element is the inner `overflow-y-auto` div inside `CategoryPanel`. React's synthetic `onScroll` does bubble, so this works correctly, but the `e.currentTarget.scrollTop` read inside `handleScrollWithPosition` reflects the **container** div's scroll position (always 0), not the panel's. The `scrollTop > 20` check driving the header shrink animation therefore **never fires** from this handler — `scrolled` stays `false` permanently. This is a latent bug, not a crash. See the Known Issues section below.
-
-#### Three-panel slider (`contentRef`)
-
-```
-className="flex h-full touch-none"
-style={{
-  width: `${contentWidth * 3}px`,
-  transform: `translate3d(${-contentWidth + dragOffset}px, 0, 0)`,
-  willChange: "transform",
-  transition: isAnimating ? "transform var(--duration-page) var(--spring-page)" : "none",
-}}
+```tsx
+<div
+  className="flex-1 overflow-hidden relative flex flex-col min-h-0"
+  onScroll={handleScrollWithPosition}
+>
+  <CategoryPanel category={store.selectedCategory} />
+</div>
 ```
 
-- Three `CategoryPanel` instances (previous, current, next) are rendered side-by-side and always in the DOM. Only the middle panel is visible.
-- `translate3d(-contentWidth + dragOffset)` keeps the current panel centered; dragging changes `dragOffset`.
-- `will-change: transform` promotes the element to its own GPU compositing layer for smooth 60fps animation.
-- `touch-none` (`touch-action: none`) gives the React Pointer Events handlers full ownership of all touch/mouse events. Vertical scroll within each panel is handled by the inner `overflow-y-auto` container in `CategoryPanel` — the outer container does not need browser-native pan.
-- `contentWidth` is measured via a `ResizeObserver` on `containerRef` so it updates on resize.
+`flex-1` consumes all space between header and bottom bar. `flex flex-col min-h-0` passes the flex constraint down so `CategoryPanel` can establish a bounded height for its scroll container. The `onScroll` handler reads `(e.target as HTMLElement).scrollTop` to drive `scrolled` state for the `HeaderBar` title animation.
 
-#### Swipe gesture state machine
+#### State variables
 
-State variables:
+| Variable         | Type      | Purpose                                                          |
+| ---------------- | --------- | ---------------------------------------------------------------- |
+| `isSettingsOpen` | `boolean` | Controls `SettingsSheet` open/close                              |
+| `scrolled`       | `boolean` | Whether the list has been scrolled > 20px (drives header shrink) |
 
-| Variable      | Type      | Purpose                                                             |
-| ------------- | --------- | ------------------------------------------------------------------- |
-| `dragOffset`  | `number`  | Current horizontal drag offset in px                                |
-| `isAnimating` | `boolean` | Whether a spring-back or slide transition CSS animation is running  |
-| `scrolled`    | `boolean` | Whether the list has been scrolled past 20px (drives header shrink) |
+#### Mount scroll reset
 
-Refs (not state, no re-render):
-
-| Ref                      | Purpose                                                 |
-| ------------------------ | ------------------------------------------------------- |
-| `isTransitioningRef`     | Gate that blocks new gestures during a slide transition |
-| `startXRef`, `startYRef` | Pointer coordinates at gesture start                    |
-| `startTimeRef`           | Timestamp at gesture start, used to compute velocity    |
-| `isDraggingRef`          | Whether a confirmed drag is in progress                 |
-
-**`performSlideTransition()`** drives category changes. It:
-
-1. Moves `dragOffset` to `±contentWidth` (off-screen).
-2. Sets `isAnimating = true` so the CSS transition activates.
-3. Waits for the `transitionend` DOM event on `contentRef.current` (with a 350 ms safety-net `setTimeout`).
-4. In a single synchronous block: calls `store.selectNextCategory()` / `store.selectPreviousCategory()`, then sets `isAnimating = false` and `dragOffset = 0`.
-
-React 19 batches those state updates into one commit, so the panel switch and animation reset happen atomically with no visible flash.
-
-**Rubber-band resistance:** when dragging past an edge (no next or previous category), `dragOffset` is clamped to `dx * 0.25` — a 75% dampening factor that creates an elastic over-drag feel.
+On mount, `window.scrollTo(0, 0)`, `document.documentElement.scrollTop = 0`, and `document.body.scrollTop = 0` are called. This clears residual scroll offset from onboarding screens that may have had the software keyboard open.
 
 ---
 
 ### `HeaderBar` (`src/components/HeaderBar.tsx`)
 
-```
-className="sticky top-0 z-10 px-4 pt-2 pb-4"
-style={{
-  paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
-  background: "linear-gradient(to top, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
-}}
+```html
+<header
+  class="sticky top-0 z-10 px-4 pt-2 pb-4"
+  style="padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+         background: linear-gradient(to top, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)"
+></header>
 ```
 
-- `sticky top-0 z-10` — the header sticks to the top of the layout shell as the list scrolls. Because the layout shell has `overflow-hidden`, this `sticky` behavior is relative to the shell, not the document.
-- `paddingTop` overrides Tailwind's `pt-2` to include `env(safe-area-inset-top)` so content clears the iOS notch.
-- The gradient background (`transparent` at the bottom edge, solid at 35%+) fades the list content as items scroll underneath the header.
+- `sticky top-0 z-10` — sticks to the top of the layout shell (not the document, because the ancestor has `overflow-hidden`).
+- `paddingTop` overrides Tailwind's `pt-2` to clear the iOS notch.
+- The gradient fades list content underneath.
 
 #### Greeting title — scroll-shrink animation
 
@@ -139,22 +103,25 @@ className={`font-bold flex-1 min-w-0 truncate transition-all duration-220 ease-o
 style={{
   letterSpacing: scrolled ? "0" : "-0.01em",
   transform: scrolled ? "scale(0.88) translateX(-6%)" : "scale(1)",
+  transformOrigin: "left center",
 }}
 ```
 
-When `scrolled` is `true`, the title animates from `text-2xl` (large, iOS-style navigation title) to `text-base opacity-60` (compact inline title). The `scale(0.88) translateX(-6%)` is a manual geometric correction to keep the text visually left-aligned during the scale.
+When `scrolled` is `true`, the title transitions from `text-2xl` (large iOS-style nav title) to `text-base opacity-60` (compact title). `scale(0.88) translateX(-6%)` keeps the text visually left-aligned during the scale.
 
-> **Known quirk:** `scrolled` never becomes `true` at runtime (see the `onScroll` bug above). The shrink animation is fully implemented and visually correct, but it is currently not triggered.
+#### Refresh button
+
+A circular `w-9 h-9` tinted button. On tap, `isRefreshing` is set to `true`, applying `animation: spin 0.7s linear infinite` to the icon SVG. After 800 ms, `onRefresh?.()` is called (which invokes `window.location.reload()` in `MainScreen`). `@keyframes spin` is defined in `index.css`.
 
 #### `CategoryPicker` placement
 
-`CategoryPicker` is rendered as the last child inside `HeaderBar`, below the greeting row. It is part of the sticky header block.
+`CategoryPicker` is the last child of the `<header>` element, below the greeting row.
 
 ---
 
 ### `CategoryPicker` (`src/components/CategoryPicker.tsx`)
 
-Renders the horizontal pill bar for switching categories. It lives inside `HeaderBar` and inherits its `sticky` positioning.
+Renders the horizontal pill bar for switching categories. Lives inside `HeaderBar`.
 
 #### Outer shell
 
@@ -163,7 +130,7 @@ Renders the horizontal pill bar for switching categories. It lives inside `Heade
   style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}>
 ```
 
-A pill-shaped tinted container housing the scroll track.
+A pill-shaped tinted container.
 
 #### Scroll track
 
@@ -217,7 +184,7 @@ This fires both when the user taps a pill directly and when category changes fro
 
 ### `CategoryPanel` (`src/components/CategoryPanel.tsx`)
 
-Renders the full content area for a single category. Three instances always exist in the DOM (previous, current, next).
+Renders the full content area for a single category. `MainScreen` renders exactly one instance, passing `store.selectedCategory` as the `category` prop. When the selected category changes in the store, the prop updates and the component re-renders in place.
 
 #### Three render paths
 
@@ -318,13 +285,14 @@ Wraps each `<li>` item in the list to provide swipe-left-to-delete behavior.
 - Snap threshold on release: if `offsetX < -40` (more than half open), snap to fully open (`-80`). Otherwise, snap closed (`0`).
 - The `isLockedOutRef` flag: on `pointerdown`, the component checks early movement direction. If the gesture is determined to be **vertical** (scroll or page-swipe) before the horizontal threshold is reached, `isLockedOutRef` is set to `true` and the row stops processing pointer events for that gesture, yielding control to the parent.
 
-#### Gesture arbitration with `MainScreen`
+#### Gesture arbitration
 
-Both `MainScreen` (page swipe) and `SwipeableRow` (row swipe) use Pointer Events. Because `MainScreen`'s sliding div has `touch-none`, the browser does not intervene. The arbitration is:
+Both `SwipeableRow` (row swipe) and `CategoryPanel`'s scroll container (vertical scroll) share the same pointer stream. The arbitration works as follows:
 
-1. On the first move event, `SwipeableRow` checks `|dy| > |dx|` — if vertical wins, it locks out and stops responding.
-2. If horizontal wins, `SwipeableRow` calls `e.currentTarget.setPointerCapture(e.pointerId)`, claiming the pointer.
-3. `MainScreen`'s `handlePointerMove` checks `|dy| > |dx|` similarly before engaging the page swipe — so if `SwipeableRow` has already captured the pointer, `MainScreen` won't fire anyway.
+1. On the first move event, `SwipeableRow` checks whether `|dy| > |dx|`. If vertical movement wins, `isLockedOutRef` is set to `true` and the row stops processing pointer events for that gesture, yielding to the native vertical scroll.
+2. If horizontal movement wins, `SwipeableRow` calls `e.currentTarget.setPointerCapture(e.pointerId)`, claiming the pointer exclusively.
+
+`offsetAtDragStartRef` captures the content row's current `offsetX` at the moment `pointerdown` fires. This allows right-swipe-to-close from a fully-open state: if the row is at `offsetX = -80` and the user drags right, the delta is applied relative to `-80` rather than `0`, so the row smoothly closes instead of jumping.
 
 #### Transitions
 
@@ -334,19 +302,19 @@ When `isDragging` is `false`:
 transition: "transform 300ms cubic-bezier(0.34,1.56,0.64,1)";
 ```
 
-The spring easing (`0.34, 1.56, 0.64, 1`) gives the snap a slight overshoot, matching iOS's UIKit row swipe physics. During an active drag, `transition` is set to `"none"` so the row tracks the finger with zero latency.
+The spring easing (`0.34, 1.56, 0.64, 1`) gives the snap a slight overshoot, matching iOS's UIKit row-swipe physics. During an active drag, `transition` is set to `"none"` so the row tracks the finger with zero latency.
 
 ---
 
 ### `PageIndicator` (`src/components/PageIndicator.tsx`)
 
-A row of dots reflecting the current category index. Only rendered when `categories.length > 1`.
+A row of dots reflecting the current category index relative to all categories. Only rendered when `categories.length > 1`.
 
 ```tsx
 style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
 ```
 
-The wrapper in `MainScreen` adds bottom padding that respects the iOS home indicator.
+The wrapper div adds bottom padding that respects the iOS home indicator.
 
 Each dot:
 
@@ -360,13 +328,13 @@ transition: "width 280ms cubic-bezier(0.34,1.56,0.64,1), background-color 280ms 
 willChange: "width, background-color, opacity",
 ```
 
-The active dot stretches to an 18px pill via the spring easing, matching iOS `UIPageControl`'s look. `willChange` is set so the browser pre-promotes the layer and avoids a paint during the width transition.
+The active dot stretches to an 18px pill via the spring easing, matching iOS `UIPageControl`'s look. `willChange` is set so the browser pre-promotes the layer and avoids a repaint during the width transition. The component is `aria-hidden` — it is purely decorative; category selection feedback is handled by `CategoryPicker` pill highlight and the `HeaderBar` greeting title.
 
 ---
 
 ### `BottomBar` (`src/components/BottomBar.tsx`)
 
-Renders the "Clear Checked Items" button when checked items exist in the selected category.
+The bottom navigation and utility bar. Renders a 3-column CSS grid (`grid-cols-[1fr_auto_1fr]`) within a `<footer>` element.
 
 ```tsx
 className="sticky bottom-0 z-10 px-4 pt-2"
@@ -376,10 +344,22 @@ style={{
 }}
 ```
 
-- `sticky bottom-0` — sticks to the bottom of the layout shell. Because the scroll container is a sibling (not an ancestor), the `sticky` works relative to the flex shell and holds position as the list scrolls above it.
-- The gradient fades from transparent at the top to solid `var(--color-surface-background)` at 40%, masking list content that scrolls underneath.
+- `sticky bottom-0` — sticks to the bottom of the layout shell. Because the scroll container is a sibling inside `CategoryPanel` (not an ancestor of `BottomBar`), `sticky` holds position correctly as the list scrolls above.
+- The gradient fades from transparent at the top to solid `var(--color-surface-background)` at 40%, masking list content scrolling underneath.
 - `paddingBottom` includes `env(safe-area-inset-bottom)` to clear the iPhone home indicator.
-- When no checked items exist, the component returns `null`, collapsing the space entirely.
+
+#### Grid columns
+
+| Column          | Content                                   | Condition                                |
+| --------------- | ----------------------------------------- | ---------------------------------------- |
+| Left (`1fr`)    | Previous-category chevron + category name | `canSelectPreviousCategory`              |
+| Centre (`auto`) | "Clear N" button                          | Checked items exist in selected category |
+| Right (`1fr`)   | Next-category name + chevron              | `canSelectNextCategory`                  |
+
+- `canSelectPreviousCategory` and `canSelectNextCategory` are exposed by `useCategoriesStore`. When a column's condition is false, the cell renders an empty `<div>` placeholder to preserve the grid layout.
+- Each chevron tap calls `store.selectPreviousCategory()` or `store.selectNextCategory()` and triggers `HapticService.selection()` for haptic feedback.
+- The "Clear N" button (`N` = count of checked items) opens an `ActionSheet` confirmation. On confirm, `store.clearCheckedItems()` is called and `HapticService.impact()` fires.
+- The `<footer>` element always renders (even when no grid content is shown) to maintain the gradient and safe-area padding at the bottom of every screen.
 
 ---
 
@@ -391,44 +371,27 @@ The entire scrolling architecture depends on this chain being intact:
 #root (position:fixed, overflow:hidden — set in index.css)
   └── MainScreen layout shell (h-dvh overflow-hidden)
         └── content container (flex-1 overflow-hidden)
-              └── three-panel slider (flex h-full, no overflow)
-                    └── CategoryPanel outer column (flex-1 flex flex-col min-h-0)
-                          └── scroll container (flex-1 overflow-y-auto overscroll-contain)  ← ONLY SCROLLABLE ELEMENT
+              └── CategoryPanel outer column (flex-1 flex flex-col min-h-0)
+                    └── scroll container (flex-1 overflow-y-auto overscroll-contain)  ← ONLY SCROLLABLE ELEMENT
 ```
 
-**The scroll container in `CategoryPanel` is the only element in this chain that scrolls.** Every ancestor clips but does not scroll. If any ancestor gains `overflow-y: auto` or `overflow-y: scroll`, it will intercept the scroll before it reaches the intended container and the list will stop scrolling.
+**The scroll container in `CategoryPanel` is the only element in this chain that scrolls.** Every ancestor clips but does not scroll. If any ancestor gains `overflow-y: auto` or `overflow-y: scroll`, it will intercept scroll events before they reach the intended container and the list will stop scrolling.
 
-**`min-h-0` is load-bearing.** Without it on `CategoryPanel`'s outer column, the flexbox layout calculates that the column's minimum height is the full height of its content (all list items), forces the parent to be taller than the viewport, and the `overflow-y-auto` container never gets a constrained height — so it never scrolls. This has bitten the project before (see `docs/plans/scroll-fade-and-bottom-bar-fix.md`).
+**`min-h-0` is load-bearing.** Without it on `CategoryPanel`'s outer column, the flexbox layout calculates that the column's minimum height equals the full height of all content (all list items), forces the parent to expand past the viewport, and the `overflow-y-auto` container never gets a bounded height — so it never actually scrolls. This has bitten the project before; see `docs/plans/scroll-fade-and-bottom-bar-fix.md`.
+
+**`onScroll` reads `e.target`, not `e.currentTarget`.** The `onScroll` handler is attached to the content container div in `MainScreen`. React's `onScroll` bubbles up from the inner `overflow-y-auto` element inside `CategoryPanel`. The handler correctly casts `e.target as HTMLElement` and reads `.scrollTop` from that element — not `e.currentTarget`, whose `scrollTop` is always `0`.
 
 ---
 
 ## Known Issues (As of April 2026)
 
-### 1. Header shrink animation never triggers
-
-**Component:** `MainScreen`, `HeaderBar`
-
-**Symptom:** The greeting title stays at `text-2xl` even after the user scrolls the list. The compact header state is never reached.
-
-**Root cause:** `onScroll={handleScrollWithPosition}` is attached to the content container div (`flex-1 overflow-hidden`). Inside `handleScrollWithPosition`, the code reads `e.currentTarget.scrollTop` — but `e.currentTarget` is the container div, whose `scrollTop` is always `0` because it does not itself scroll. The actual scrollable element is the `overflow-y-auto` div inside `CategoryPanel`, which is a descendant, not `currentTarget`. React's synthetic `onScroll` does bubble from the inner scrollable div, so the event fires, but `e.currentTarget` always points to the div where the handler is registered — not the source of the scroll event. `scrollTop > 20` never becomes `true`, so `setScrolled(true)` is never called.
-
-**Fix direction:** The `onScroll` handler needs to read `e.target` (cast as `HTMLElement`) rather than `e.currentTarget`, or the handler should be moved to an imperative event listener attached directly to the scroll container inside `CategoryPanel`.
-
-### 2. `BottomBar` gradient does not include `--gradient-brand-wide`
+### 1. `BottomBar` gradient does not include `--gradient-brand-wide`
 
 **Component:** `BottomBar`
 
-**Symptom:** On devices where `--gradient-brand-wide` is visually prominent, the `BottomBar` gradient masks list content with a flat solid color that does not match the background behind it. The mismatch is subtle in light mode and more visible in dark mode.
+**Symptom:** On devices where `--gradient-brand-wide` is visually prominent, the `BottomBar` gradient masks list content with a flat solid color that does not blend seamlessly with the background. The mismatch is subtle in light mode and more visible in dark mode.
 
-**Root cause:** The `background` inline style on `BottomBar` uses `var(--color-surface-background)` as its opaque stop. The actual app background is a composite of that color plus `var(--gradient-brand-wide)`. Matching this exactly in a CSS gradient is not possible without the same diagonal alpha-tint approach the background uses. The same root cause affected the previous fade overlay on `CategoryPanel` (resolved by switching to CSS masking). `BottomBar` still uses the old approach.
-
-### 3. `CategoryPicker` drag-scroll conflicts with `MainScreen` page-swipe on short horizontal flicks
-
-**Component:** `CategoryPicker`, `MainScreen`
-
-**Symptom:** A fast, short horizontal flick starting on the `CategoryPicker` can sometimes trigger a page swipe (category change) instead of — or in addition to — scrolling the pill row. This occurs when the finger moves more than 5px horizontally before `MainScreen`'s gesture detector also sees 5px of horizontal movement.
-
-**Root cause:** Both `CategoryPicker` and `MainScreen` use the same `> 5px horizontal delta` threshold to claim a gesture. `CategoryPicker` calls `e.currentTarget.setPointerCapture()` when it wins, but by the time pointer capture is set, `MainScreen` may have already incremented its own `dragOffset`. The two capture domains do not communicate.
+**Root cause:** The `background` inline style on `BottomBar` uses `var(--color-surface-background)` as its opaque stop. The actual app background is a composite of that color plus `var(--gradient-brand-wide)` (a diagonal alpha-tint overlay). Replicating this exact composite in a CSS gradient is not possible without the same diagonal alpha-tint approach the background layers use. The same root cause previously affected the fade overlay on `CategoryPanel` (resolved by switching to CSS masking). `BottomBar` still uses the old solid-stop approach.
 
 ---
 
@@ -436,25 +399,34 @@ The entire scrolling architecture depends on this chain being intact:
 
 - ✅ List scrolls vertically on iOS Safari in standalone PWA mode
 - ✅ List scrolls vertically in desktop Chrome, Firefox, and Safari
-- ✅ Horizontal swipe between categories works smoothly (no choppiness after `transitionend` fix)
-- ✅ `will-change: transform` on the slider promotes GPU compositing — no jank during swipe animation
-- ✅ Rubber-band resistance at category edges (no previous / no next)
+- ✅ `onScroll` correctly reads `e.target.scrollTop` — header shrink animation triggers at 20px scroll
 - ✅ `SwipeableRow` swipe-to-delete works without conflicting with vertical scroll
-- ✅ `SwipeableRow` does not interfere with page swipe for clearly horizontal gestures
+- ✅ `SwipeableRow` correctly resumes from partially-open state via `offsetAtDragStartRef`
 - ✅ Delete button springs open/closed with iOS-like overshoot easing
-- ✅ CSS mask fade at the top of the scroll container works correctly in light and dark themes
-- ✅ CSS mask fade at the bottom of the scroll container prevents content from abruptly ending at the page indicator
-- ✅ No visible color-mismatch band between list and sticky header (mask approach)
-- ✅ Row vertical padding scales proportionally with text size setting (xs: 0.45rem, s: 0.6rem, m: 0.875rem, l: 1.0rem, xl: 1.25rem)
-- ✅ `AddItemInput` stays above the keyboard on iOS (keyboard pushes the viewport, input is in the flow)
-- ✅ 16px font-size override on inputs prevents iOS Safari auto-zoom on focus
-- ✅ `CategoryPicker` scrolls selected pill into view with `scrollIntoView` after category changes
-- ✅ `CategoryPicker` drag-scroll works; `hasDraggedRef` prevents accidental category tap after drag
-- ✅ `PageIndicator` dots animate with spring easing when category changes
-- ✅ `HeaderBar` and `BottomBar` padding respects `env(safe-area-inset-top/bottom)` on notched iPhones
-- ✅ `BottomBar` renders only when checked items exist; collapses to zero height otherwise
-- ✅ Overscroll bounce at the document level is suppressed (`overscroll-behavior-y: contain` on body)
-- ✅ Three-panel layout: previous, current, and next panels always mounted — no remount flash on swipe
-- ✅ React 19 batching of `setIsAnimating(false)` + `setDragOffset(0)` + store action prevents a two-render transition artifact
+- ✅ CSS mask fade at the top and bottom of the scroll container works in all themes
+- ✅ No visible color-mismatch band between list content and sticky header (mask approach)
+- ✅ Row vertical padding scales proportionally with text size setting via `--row-padding-y` (xs: 0.45rem → xl: 1.25rem)
+- ✅ `AddItemInput` stays above keyboard on iOS (keyboard pushes the viewport; input is in flow above the scroll container)
+- ✅ 16px font-size override prevents iOS Safari auto-zoom on input focus
+- ✅ Check-all / uncheck-all toggle in `CategoryPanel` header works; icon and label update to reflect state
 - ✅ Sort order (date / alpha) and direction (asc / desc) toggles work per-category
-- ✅ Item check/uncheck moves items between unchecked (top) and checked (bottom) groups with correct visual state
+- ✅ Item check/uncheck moves items between unchecked (top) and checked (bottom) groups correctly
+- ✅ Item tap press feedback (`tappedId` scale + opacity) fires instantly and releases with spring easing
+- ✅ `CategoryPicker` scrolls selected pill into view with `scrollIntoView` when category changes
+- ✅ `CategoryPicker` drag-scroll works; `hasDraggedRef` prevents accidental category select after a drag
+- ✅ `PageIndicator` dots animate with spring width expansion when category changes
+- ✅ `BottomBar` previous/next chevrons navigate categories and trigger haptic feedback
+- ✅ `BottomBar` "Clear N" button opens `ActionSheet` confirmation before deleting checked items
+- ✅ `BottomBar` `<footer>` always renders, maintaining safe-area padding and gradient at bottom
+- ✅ `HeaderBar` refresh button spins for 800 ms then triggers `window.location.reload()`
+- ✅ `HeaderBar` and `BottomBar` padding respects `env(safe-area-inset-top/bottom)` on notched iPhones
+- ✅ `SettingsSheet` opens from bottom with shadcn `Sheet` component
+- ✅ `SettingsSheet` swipe-to-dismiss gesture works (tracks `swipeTranslateY`, dismisses at 120px)
+- ✅ `SettingsSheet` drag-to-reorder categories updates live via `MOVE_CATEGORIES` action
+- ✅ `SplashScreen` enter/fade/finish sequence completes correctly for returning users
+- ✅ `PageTransitionWrapper` push/pop animations fire on route changes
+- ✅ Foreground reload fires on `visibilitychange` when app returns from background
+- ✅ Overscroll bounce at the document level is suppressed (`overscroll-behavior-y: contain` on body)
+- ✅ `resetToNewUser()` clears all localStorage and resets all store state correctly
+- ✅ Theme switching (light / dark / system) applies flash-free via synchronous `applyThemeToDOM()` in store initializer
+- ✅ Text size setting applies flash-free via synchronous `applyTextSizeToDOM()` in store initializer

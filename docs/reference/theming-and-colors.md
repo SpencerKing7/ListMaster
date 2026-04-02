@@ -40,15 +40,34 @@ export function applyThemeToDOM(mode: AppearanceMode): void {
 
 ## Text Size
 
-`applyTextSizeToDOM(size)` (also in `src/store/useTheme.ts`) sets the `--text-size-item` CSS custom property on `:root`:
+`applyTextSizeToDOM(size)` (also in `src/store/useTheme.ts`) sets **two** CSS custom properties on `:root`:
 
 ```ts
-document.documentElement.style.setProperty("--text-size-item", remValue);
+document.documentElement.style.setProperty("--text-size-base", remValue);
+document.documentElement.style.setProperty("--row-padding-y", paddingValue);
 ```
 
-This is read by checklist item components to scale the item label font size. The five-step scale maps to specific `rem` values defined inside `applyTextSizeToDOM()`.
+- `--text-size-base` — scales the checklist item label font size. Five-step scale:
 
-Both `applyThemeToDOM()` and `applyTextSizeToDOM()` also update `<meta name="theme-color">` so the iOS status-bar area matches the app background color.
+  | `TextSize` | `--text-size-base` |
+  | ---------- | ------------------ |
+  | `"xs"`     | `0.6875rem`        |
+  | `"s"`      | `0.8125rem`        |
+  | `"m"`      | `1rem`             |
+  | `"l"`      | `1.125rem`         |
+  | `"xl"`     | `1.3125rem`        |
+
+- `--row-padding-y` — scales the vertical padding of list item rows proportionally with the font size:
+
+  | `TextSize` | `--row-padding-y` |
+  | ---------- | ----------------- |
+  | `"xs"`     | `0.45rem`         |
+  | `"s"`      | `0.6rem`          |
+  | `"m"`      | `0.875rem`        |
+  | `"l"`      | `1.0rem`          |
+  | `"xl"`     | `1.25rem`         |
+
+Both `applyThemeToDOM()` and `applyTextSizeToDOM()` also update the `<meta name="theme-color">` tags (one for `media="(prefers-color-scheme: light)"` and one for dark) so the iOS status-bar area matches the app background color at all times, including during forced theme overrides.
 
 ---
 

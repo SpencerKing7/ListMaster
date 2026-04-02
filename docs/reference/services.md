@@ -23,11 +23,11 @@ The field names (`lists`, `selectedListID`) mirror the Swift `CodingKeys` used i
 
 ### API
 
-| Method        | Description                                                                           |
-| ------------- | ------------------------------------------------------------------------------------- |
-| `save(state)` | Serializes and writes the current state to `localStorage`                             |
-| `load()`      | Reads and deserializes state from `localStorage`; returns `null` if nothing is stored |
-| `clear()`     | Removes the key from `localStorage` entirely                                          |
+| Method                                 | Description                                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| `save(categories, selectedCategoryID)` | Serializes and writes current state to `localStorage` under `"grocery-lists-state"`  |
+| `load()`                               | Reads and deserializes state; returns `{ categories, selectedCategoryID }` or `null` |
+| `clear()`                              | Removes `"grocery-lists-state"` from `localStorage` entirely                         |
 
 ### Usage Rule
 
@@ -41,32 +41,40 @@ The **only** layer permitted to read and write `localStorage` for user settings.
 
 ### Storage Keys
 
-Each setting is stored as a separate `localStorage` key:
+Each setting is stored as a separate `localStorage` key (using camelCase key strings):
 
-| Key                          | Setting                              |
-| ---------------------------- | ------------------------------------ |
-| `"user-name"`                | `userName`                           |
-| `"has-completed-onboarding"` | `hasCompletedOnboarding`             |
-| `"appearance-mode"`          | `appearanceMode`                     |
-| `"text-size"`                | `textSize`                           |
-| `"sort-order"`               | `sortOrder` (global default, legacy) |
+| `localStorage` key         | Setting                                                                                                           |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `"userName"`               | `userName`                                                                                                        |
+| `"hasCompletedOnboarding"` | `hasCompletedOnboarding`                                                                                          |
+| `"appearanceMode"`         | `appearanceMode`                                                                                                  |
+| `"textSize"`               | `textSize`                                                                                                        |
+| `"sortOrder"`              | `sortOrder` (legacy global default, no longer written by the store but still readable for backward compatibility) |
 
 ### Validation
 
 All getters validate the stored value against an allowed-values list. If the stored value is missing or invalid (e.g. a user manually edited `localStorage` with a typo), the getter returns a safe default. This prevents the app from entering an undefined state due to corrupted or outdated stored data.
 
-### API
+### Full API
 
 | Method                             | Description                                                       |
 | ---------------------------------- | ----------------------------------------------------------------- |
-| `getUserName()`                    | Returns stored name, or `""` if not set                           |
+| `getUserName()`                    | Returns stored name string, or `""` if not set                    |
 | `setUserName(name)`                | Persists the name string                                          |
-| `getHasCompletedOnboarding()`      | Returns `true` / `false`                                          |
-| `setHasCompletedOnboarding(value)` | Persists the boolean as `"true"` / `"false"`                      |
+| `clearUserName()`                  | Removes `"userName"` from `localStorage`                          |
+| `getHasCompletedOnboarding()`      | Returns `true` if stored value is `"true"`, otherwise `false`     |
+| `setHasCompletedOnboarding(value)` | Persists `"true"` or `"false"` as a string                        |
+| `clearHasCompletedOnboarding()`    | Removes `"hasCompletedOnboarding"` from `localStorage`            |
 | `getAppearanceMode()`              | Returns `"system"` / `"light"` / `"dark"`, defaults to `"system"` |
-| `setAppearanceMode(mode)`          | Persists the appearance mode string                               |
+| `setAppearanceMode(mode)`          | Persists the mode; throws if mode is not a valid value            |
+| `clearAppearanceMode()`            | Removes `"appearanceMode"` from `localStorage`                    |
 | `getTextSize()`                    | Returns a `TextSize` value, defaults to `"m"`                     |
-| `setTextSize(size)`                | Persists the text size string                                     |
+| `setTextSize(size)`                | Persists the size; throws if size is not a valid value            |
+| `clearTextSize()`                  | Removes `"textSize"` from `localStorage`                          |
+| `getSortOrder()`                   | Returns a `SortOrder` value, defaults to `"date"` (legacy)        |
+| `setSortOrder(order)`              | Persists the order; throws if order is not a valid value          |
+| `clearSortOrder()`                 | Removes `"sortOrder"` from `localStorage`                         |
+| `clearAll()`                       | Calls all five `clear*` methods; used by `resetToNewUser()`       |
 
 ### Usage Rule
 
