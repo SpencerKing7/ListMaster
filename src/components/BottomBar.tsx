@@ -23,105 +23,107 @@ const BottomBar = () => {
             "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 40%, var(--color-surface-background) 100%)",
         }}
       >
-        {/* ── Chevron navigation row ── */}
-        <div className="flex items-center justify-between mb-2">
-          {/* Previous category chevron — hidden when at the first category */}
-          {store.canSelectPreviousCategory ? (
-            <button
-              className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
-              style={{
-                color: "var(--color-brand-green)",
-                backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                touchAction: "manipulation",
-              }}
-              onClick={() => {
-                store.selectPreviousCategory();
-                HapticService.selection();
-              }}
-              aria-label="Previous list"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        {/* ── Navigation row: 3-column grid so centre is always truly centred ── */}
+        <div className="grid mb-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+          {/* Left cell — previous chevron or empty */}
+          <div className="flex items-center justify-start">
+            {store.canSelectPreviousCategory && (
+              <button
+                className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
+                style={{
+                  color: "var(--color-brand-green)",
+                  backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                  touchAction: "manipulation",
+                }}
+                onClick={() => {
+                  store.selectPreviousCategory();
+                  HapticService.selection();
+                }}
+                aria-label="Previous list"
               >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              <span className="max-w-[120px] truncate">{store.previousCategory?.name ?? ""}</span>
-            </button>
-          ) : (
-            <div />
-          )}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                <span className="max-w-[100px] truncate">{store.previousCategory?.name ?? ""}</span>
+              </button>
+            )}
+          </div>
 
-          {/* Clear checked button — sits in the centre between the chevrons */}
-          {hasCheckedItems && (
-            <button
-              className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
-              style={{
-                color: "var(--color-danger)",
-                backgroundColor: "rgba(212, 75, 74, 0.10)",
-                touchAction: "manipulation",
-              }}
-              onClick={() => {
-                setIsActionSheetOpen(true);
-                HapticService.light();
-              }}
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {/* Centre cell — clear button, only when checked items exist */}
+          <div className="flex items-center justify-center">
+            {hasCheckedItems && (
+              <button
+                className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
+                style={{
+                  color: "var(--color-danger)",
+                  backgroundColor: "rgba(212, 75, 74, 0.10)",
+                  touchAction: "manipulation",
+                }}
+                onClick={() => {
+                  setIsActionSheetOpen(true);
+                  HapticService.light();
+                }}
               >
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-              </svg>
-              Clear {checkedCount}
-            </button>
-          )}
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
+                Clear {checkedCount}
+              </button>
+            )}
+          </div>
 
-          {/* Next category chevron — hidden when at the last category */}
-          {store.canSelectNextCategory ? (
-            <button
-              className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
-              style={{
-                color: "var(--color-brand-green)",
-                backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                touchAction: "manipulation",
-              }}
-              onClick={() => {
-                store.selectNextCategory();
-                HapticService.selection();
-              }}
-              aria-label="Next list"
-            >
-              <span className="max-w-[120px] truncate">{store.nextCategory?.name ?? ""}</span>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {/* Right cell — next chevron or empty */}
+          <div className="flex items-center justify-end">
+            {store.canSelectNextCategory && (
+              <button
+                className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
+                style={{
+                  color: "var(--color-brand-green)",
+                  backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                  touchAction: "manipulation",
+                }}
+                onClick={() => {
+                  store.selectNextCategory();
+                  HapticService.selection();
+                }}
+                aria-label="Next list"
               >
-                <polyline points="9 6 15 12 9 18" />
-              </svg>
-            </button>
-          ) : (
-            <div />
-          )}
+                <span className="max-w-[100px] truncate">{store.nextCategory?.name ?? ""}</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 6 15 12 9 18" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </footer>
 
