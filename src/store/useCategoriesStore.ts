@@ -158,6 +158,7 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
         id: uuidv4(),
         name: trimmed,
         isChecked: false,
+        createdAt: Date.now(),
       };
       const updatedCats = state.categories.map((c, i) =>
         i === catIdx ? { ...c, items: [...c.items, newItem] } : c,

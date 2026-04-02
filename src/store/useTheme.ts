@@ -1,9 +1,19 @@
 // src/store/useTheme.ts
+import type { TextSize } from "@/models/types";
 
 /** Surface-background hex values matching tokens.css — used to keep the
  *  `<meta name="theme-color">` in sync so the iOS status bar area matches. */
 const SURFACE_BG_LIGHT = "#f0f6f3";
 const SURFACE_BG_DARK = "#0e1714";
+
+/** Maps TextSize tokens to their rem values, matching the 5-step scale. */
+const TEXT_SIZE_VALUES: Record<TextSize, string> = {
+  xs: "0.75rem",
+  s: "0.875rem",
+  m: "1rem",
+  l: "1.125rem",
+  xl: "1.25rem",
+};
 
 /** Applies the user's appearance choice to the DOM.
  *  - 'light' / 'dark' → sets data-theme attribute, overriding the system media query.
@@ -48,6 +58,14 @@ export function applyThemeToDOM(mode: "system" | "light" | "dark"): void {
   if (gradient) {
     root.style.backgroundImage = gradient;
   }
+}
+
+/** Applies the user's text size preference to the DOM by setting
+ *  the `--text-size-base` CSS custom property on the root element.
+ *  Called synchronously inside the SettingsProvider useState initializer. */
+export function applyTextSizeToDOM(size: TextSize): void {
+  const value = TEXT_SIZE_VALUES[size] ?? TEXT_SIZE_VALUES["m"];
+  document.documentElement.style.setProperty("--text-size-base", value);
 }
 
 /** Updates a `<meta name="theme-color">` tag for a specific color-scheme media. */

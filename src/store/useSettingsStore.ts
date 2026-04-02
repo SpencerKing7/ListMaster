@@ -1,20 +1,27 @@
 // src/store/useSettingsStore.ts
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { PersistenceService } from "../services/persistenceService";
-import { applyThemeToDOM } from "./useTheme";
+import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
+import type { TextSize, SortOrder } from "@/models/types";
 import React from "react";
 
 // MARK: - Types
 
 type AppearanceMode = "system" | "light" | "dark";
 
+export type { TextSize, SortOrder };
+
 interface SettingsState {
   userName: string;
   hasCompletedOnboarding: boolean;
   appearanceMode: AppearanceMode;
+  textSize: TextSize;
+  sortOrder: SortOrder;
   setUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
+  setTextSize: (size: TextSize) => void;
+  setSortOrder: (order: SortOrder) => void;
   resetToNewUser: () => void;
 }
 
@@ -39,6 +46,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       return saved;
     },
   );
+  const [textSize, setTextSizeState] = useState<TextSize>(() => {
+    const saved = (localStorage.getItem("textSize") as TextSize) ?? "m";
+    // Apply synchronously during state initialization to prevent layout shift.
+    applyTextSizeToDOM(saved);
+    return saved;
+  });
+  const [sortOrder, setSortOrderState] = useState<SortOrder>(
+    () => (localStorage.getItem("sortOrder") as SortOrder) ?? "date",
+  );
 
   function setUserName(name: string) {
     localStorage.setItem("userName", name);
@@ -56,15 +72,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     applyThemeToDOM(mode);
   }
 
+  function setTextSize(size: TextSize) {
+    localStorage.setItem("textSize", size);
+    setTextSizeState(size);
+    applyTextSizeToDOM(size);
+  }
+
+  function setSortOrder(order: SortOrder) {
+    localStorage.setItem("sortOrder", order);
+    setSortOrderState(order);
+  }
+
   function resetToNewUser() {
     PersistenceService.clear();
     localStorage.removeItem("userName");
     localStorage.removeItem("hasCompletedOnboarding");
     localStorage.removeItem("appearanceMode");
+    localStorage.removeItem("textSize");
+    localStorage.removeItem("sortOrder");
     setUserNameState("");
     setHasCompletedOnboarding(false);
     setAppearanceModeState("system");
     applyThemeToDOM("system");
+    setTextSizeState("m");
+    applyTextSizeToDOM("m");
+    setSortOrderState("date");
   }
 
   return React.createElement(
@@ -74,9 +106,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         userName,
         hasCompletedOnboarding,
         appearanceMode,
+        textSize,
+        sortOrder,
         setUserName,
         completeOnboarding,
         setAppearanceMode,
+        setTextSize,
+        setSortOrder,
         resetToNewUser,
       },
     },
