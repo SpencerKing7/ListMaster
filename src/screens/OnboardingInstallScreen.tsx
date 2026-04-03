@@ -44,36 +44,23 @@ export function OnboardingInstallScreen(): JSX.Element | null {
   if (isStandalone) return null;
 
   return (
-    <div className="relative min-h-dvh flex flex-col">
+    <div className="relative min-h-dvh flex flex-col overflow-y-auto">
       {/* Base background */}
       <div
-        className="absolute -z-10"
-        style={{
-          top: "calc(-1 * env(safe-area-inset-top, 0px))",
-          left: 0,
-          right: 0,
-          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
-          backgroundColor: "var(--color-surface-background)",
-        }}
+        className="fixed -z-10 inset-0"
+        style={{ backgroundColor: "var(--color-surface-background)" }}
       />
       {/* Gradient overlay */}
       <div
-        className="absolute -z-10"
-        style={{
-          top: "calc(-1 * env(safe-area-inset-top, 0px))",
-          left: 0,
-          right: 0,
-          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
-          background: "var(--gradient-brand-wide)",
-        }}
+        className="fixed -z-10 inset-0"
+        style={{ background: "var(--gradient-brand-wide)" }}
       />
-
-      <div className="flex-1" />
 
       {/* Header */}
       <div
-        className="flex flex-col items-center gap-4 px-8"
+        className="flex flex-col items-center gap-3 px-8"
         style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 48px)",
           opacity: isEntered ? 1 : 0,
           transform: isEntered ? "translateY(0)" : "translateY(12px)",
           transition:
@@ -82,8 +69,8 @@ export function OnboardingInstallScreen(): JSX.Element | null {
       >
         {/* Download/install icon */}
         <svg
-          width="56"
-          height="56"
+          width="48"
+          height="48"
           viewBox="0 0 24 24"
           fill="none"
           stroke="var(--color-brand-green)"
@@ -97,12 +84,12 @@ export function OnboardingInstallScreen(): JSX.Element | null {
         </svg>
 
         <h1
-          className="text-[28px] font-bold text-center"
+          className="text-2xl font-bold text-center"
           style={{ color: "var(--color-brand-green)" }}
         >
           Install List Master
         </h1>
-        <p className="text-sm text-center" style={{ color: "var(--color-text-secondary)" }}>
+        <p className="text-sm text-center max-w-xs" style={{ color: "var(--color-text-secondary)" }}>
           For the best experience, add List Master to your home screen — it
           works offline and feels like a native app.
         </p>
@@ -110,7 +97,7 @@ export function OnboardingInstallScreen(): JSX.Element | null {
 
       {/* Device mode toggle */}
       <div
-        className="flex mx-8 mt-6 rounded-xl p-1"
+        className="flex mx-8 mt-5 rounded-xl p-1"
         style={{
           backgroundColor: "var(--color-surface-input)",
           opacity: isEntered ? 1 : 0,
@@ -169,7 +156,16 @@ export function OnboardingInstallScreen(): JSX.Element | null {
         <InstallInstructions deviceMode={deviceMode} />
       </div>
 
-      <div className="flex-1" />
+      {/* Post-install hint */}
+      <p
+        className="text-xs text-center px-10 mt-4"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        After installing, you can close this browser tab and open List Master
+        from your home screen or app launcher.
+      </p>
+
+      <div className="flex-1 min-h-6" />
 
       {/* Buttons */}
       <div
@@ -185,7 +181,7 @@ export function OnboardingInstallScreen(): JSX.Element | null {
           }}
           onClick={() => navigate("/welcome")}
         >
-          I've Added It — Continue
+          Continue
         </Button>
         <Button
           variant="ghost"
