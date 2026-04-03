@@ -154,10 +154,28 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   // Tracks whether the dismiss drag was engaged from a scroll-at-top gesture
   // (as opposed to a direct drag on the pill/header, which is always eligible).
   const dismissEngagedAtTopRef = useRef(false);
+  // Set to true while a row/group reorder drag is active so the swipe-to-dismiss
+  // gesture does not compete with the drag and slide the sheet off screen.
+  const isRowDraggingRef = useRef(false);
+  // Tracks whether the scroll container is at the very top. Updated via a
+  // 'scroll' event listener (reliable on iOS Safari, unlike reading scrollTop
+  // inside a pointer event handler which can return 0 even when scrolled).
+  const scrollAtTopRef = useRef(true);
+
+  // Keep scrollAtTopRef in sync with the actual scroll position.
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const onScroll = () => { scrollAtTopRef.current = el.scrollTop === 0; };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => { el.removeEventListener("scroll", onScroll); };
+  }, []);
 
   const handleDismissPointerDown = useCallback((e: React.PointerEvent) => {
     // Ignore right-click, middle-click, etc.
     if (e.button !== 0) return;
+    // Never engage dismiss while a row reorder drag is in progress.
+    if (isRowDraggingRef.current) return;
     isDismissDraggingRef.current = false;
     dismissEngagedAtTopRef.current = false;
     swipeDismissStartY.current = e.clientY;
@@ -169,12 +187,13 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const handleDismissPointerMove = useCallback((e: React.PointerEvent) => {
     // On mouse, only track movement while the primary button is held
     if (e.pointerType === "mouse" && e.buttons === 0) return;
+    // Never engage dismiss while a row reorder drag is in progress.
+    if (isRowDraggingRef.current) return;
     const dy = e.clientY - swipeDismissStartY.current;
-    const scrollTop = scrollContainerRef.current?.scrollTop ?? 0;
 
     if (!isDismissDraggingRef.current) {
       // Only engage dismiss if: gesture is clearly downward AND scroll container is at top
-      if (dy > 8 && scrollTop === 0) {
+      if (dy > 8 && scrollAtTopRef.current) {
         isDismissDraggingRef.current = true;
         dismissEngagedAtTopRef.current = true;
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -227,7 +246,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
       if (e.button !== 0) return;
       e.preventDefault();
 
-      dragContext.current = { groupID };
+      isRowDraggingRef.current = true;
 
       const scopedCategories = groupID
         ? store.categories.filter(c => c.groupID === groupID)
@@ -284,6 +303,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     dragIndexRef.current = null;
     overIndexRef.current = null;
     dragContext.current = { groupID: null };
+    isRowDraggingRef.current = false;
     if (di !== null && oi !== null && di !== oi) {
       store.moveCategories(di, oi);
     }
@@ -307,6 +327,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     (e: React.PointerEvent, idx: number) => {
       if (e.button !== 0) return;
       e.preventDefault();
+      isRowDraggingRef.current = true;
       snapshotGroupRects();
       const rect = groupItemRects.current[idx];
       if (rect) {
@@ -349,6 +370,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     const oi = groupOverIndexRef.current;
     groupDragIndexRef.current = null;
     groupOverIndexRef.current = null;
+    isRowDraggingRef.current = false;
     if (di !== null && oi !== null && di !== oi) {
       store.moveGroups(di, oi);
     }

@@ -448,9 +448,7 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       const categoriesInGroup =
         action.id === null
           ? state.categories
-          : state.categories.filter(
-              (c) => c.groupID === action.id || c.groupID === undefined,
-            );
+          : state.categories.filter((c) => c.groupID === action.id);
       const currentCategoryInGroup = categoriesInGroup.some(
         (c) => c.id === state.selectedCategoryID,
       );
@@ -730,14 +728,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () =>
       state.selectedGroupID === null
         ? state.categories
-        : [
-            ...state.categories.filter(
-              (c) => c.groupID === state.selectedGroupID,
-            ),
-            ...state.categories.filter((c) => c.groupID === undefined),
-          ],
+        : state.categories.filter((c) => c.groupID === state.selectedGroupID),
     [state.categories, state.selectedGroupID],
   );
+
+  // If the selected category is no longer in the visible group (e.g. after a
+  // reorder or group change in Settings), silently select the first one so
+  // the picker always has an active item.
+  useEffect(() => {
+    if (categoriesInSelectedGroup.length === 0) return;
+    const isSelectionVisible = categoriesInSelectedGroup.some(
+      (c) => c.id === state.selectedCategoryID,
+    );
+    if (!isSelectionVisible) {
+      dispatch({
+        type: "SELECT_CATEGORY",
+        id: categoriesInSelectedGroup[0].id,
+      });
+    }
+  }, [categoriesInSelectedGroup, state.selectedCategoryID]);
 
   const hasGroups = state.groups.length > 0;
 
