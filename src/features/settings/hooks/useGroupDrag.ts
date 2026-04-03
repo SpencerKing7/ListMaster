@@ -176,8 +176,22 @@ export function useGroupDrag(
       });
       hasGroupDraggedRef.current = true;
 
-      // Re-snapshot heights after collapse animation (220ms ease-out).
-      // Also adjust pointerStartY so the dragged group stays under the finger.
+      // The dragged group collapses instantly (no CSS transition) while
+      // siblings animate over 220ms. Adjust pointerStartY on the next
+      // frame so the dragged row stays under the finger immediately.
+      requestAnimationFrame(() => {
+        if (!groupsContainerRef.current || !groupDragStateRef.current) return;
+        const postEl = groupsContainerRef.current.querySelector<HTMLElement>(
+          `[data-group-idx="${groupDragStateRef.current.idx}"]`,
+        );
+        if (postEl) {
+          const postDragTop = postEl.getBoundingClientRect().top;
+          groupDragPointerStartY.current += postDragTop - preDragTop;
+          preDragTop = postDragTop;
+        }
+      });
+
+      // Full re-snapshot after all sibling collapse animations finish (220ms).
       setTimeout(() => {
         if (!groupsContainerRef.current || !groupDragStateRef.current) return;
         const collapsedHeights: number[] = [];
@@ -196,8 +210,7 @@ export function useGroupDrag(
           collapsedAcc += collapsedHeights[i] + GAP;
         }
 
-        // Measure how far the dragged row shifted due to collapse,
-        // then adjust the pointer baseline so translateY stays accurate.
+        // Final pointer adjustment for the remaining sibling collapse shift.
         const postEl = groupsContainerRef.current.querySelector<HTMLElement>(
           `[data-group-idx="${groupDragStateRef.current.idx}"]`,
         );

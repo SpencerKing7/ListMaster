@@ -176,7 +176,9 @@ export function GroupRow({
         className="overflow-hidden"
         style={{
           maxHeight: isExpanded ? "600px" : "0px",
-          transition: "max-height 220ms ease-out",
+          // Skip the collapse animation while this group is being dragged
+          // so the layout reflows instantly and the row stays under the finger.
+          transition: isGroupDragging ? "none" : "max-height 220ms ease-out",
         }}
       >
         <div className="relative"
