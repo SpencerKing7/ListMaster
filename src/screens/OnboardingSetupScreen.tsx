@@ -4,14 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useSyncStore } from "@/store/useSyncStore";
 
 export default function OnboardingSetupScreen() {
   const store = useCategoriesStore();
   const settings = useSettingsStore();
+  const sync = useSyncStore();
 
   const [nameText, setNameText] = useState("");
   const [categoryInputText, setCategoryInputText] = useState("");
   const [pendingCategories, setPendingCategories] = useState<string[]>([]);
+
+  // ── Sync code entry ──
+  const [syncCodeText, setSyncCodeText] = useState("");
+  const syncCodeInputRef = useRef<HTMLInputElement>(null);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   const categoryInputRef = useRef<HTMLInputElement>(null);
@@ -23,7 +29,13 @@ export default function OnboardingSetupScreen() {
 
   const trimmedName = nameText.trim();
   const trimmedCategoryInput = categoryInputText.trim();
-  const isFormValid = trimmedName.length > 0 && pendingCategories.length > 0;
+  const trimmedSyncCode = syncCodeText.trim();
+
+  // Form is valid if either: (name + ≥1 category) OR a sync code is entered
+  const isFormValid = trimmedSyncCode.length > 0 || (trimmedName.length > 0 && pendingCategories.length > 0);
+
+  // When a sync code is present, dim the manual fields to signal they'll be ignored
+  const isManualSectionDimmed = trimmedSyncCode.length > 0;
 
   function addCategoryToList() {
     const trimmed = categoryInputText.trim();
@@ -46,23 +58,23 @@ export default function OnboardingSetupScreen() {
     setPendingCategories((prev) => prev.filter((c) => c !== name));
   }
 
-  function completeOnboarding() {
+  /** Single finish handler — routes to sync path if a code is entered, otherwise manual setup. */
+  async function completeOnboarding() {
     if (!isFormValid) return;
 
-    // Dismiss the keyboard so the viewport returns to full height before MainScreen mounts
+    // Dismiss keyboard so viewport height settles before MainScreen mounts
     (document.activeElement as HTMLElement | null)?.blur();
 
-    // 1. Save user name
-    settings.setUserName(trimmedName);
+    if (trimmedSyncCode.length > 0) {
+      // ── Sync path: adopt the code, data loads from cloud ──
+      await sync.adoptSyncCode(trimmedSyncCode);
+    } else {
+      // ── Manual path: save name + categories ──
+      settings.setUserName(trimmedName);
+      store.setCategories(pendingCategories);
+    }
 
-    // 2. Replace all categories in a single dispatch.
-    //    SET_CATEGORIES clears any stale data, creates all categories at once,
-    //    and selects the first one — avoiding multi-dispatch batching issues.
-    store.setCategories(pendingCategories);
-
-    // 3. Wait for the iOS keyboard dismiss animation (~300ms) to finish so the
-    //    viewport height (dvh) settles before MainScreen mounts. Also scroll to
-    //    the top to clear any residual scroll offset from the onboarding form.
+    // Wait for the iOS keyboard dismiss animation (~300ms) before transitioning
     setTimeout(() => {
       window.scrollTo(0, 0);
       settings.completeOnboarding();
@@ -110,7 +122,10 @@ export default function OnboardingSetupScreen() {
       </div>
 
       {/* Form */}
-      <div className="flex flex-col gap-6 px-8 mt-10">
+      <div
+        className="flex flex-col gap-6 px-8 mt-10 transition-opacity duration-200"
+        style={{ opacity: isManualSectionDimmed ? 0.4 : 1, pointerEvents: isManualSectionDimmed ? "none" : "auto" }}
+      >
         {/* Name input */}
         <div className="flex flex-col gap-2">
           <label
@@ -127,7 +142,6 @@ export default function OnboardingSetupScreen() {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                // Blur first so iOS re-reads autoCapitalize on the next input
                 nameInputRef.current?.blur();
                 requestAnimationFrame(() => categoryInputRef.current?.focus());
               }
@@ -232,22 +246,8 @@ export default function OnboardingSetupScreen() {
                     fill="currentColor"
                   >
                     <circle cx="12" cy="12" r="10" opacity="0.3" />
-                    <line
-                      x1="8"
-                      y1="8"
-                      x2="16"
-                      y2="16"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <line
-                      x1="16"
-                      y1="8"
-                      x2="8"
-                      y2="16"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
+                    <line x1="8" y1="8" x2="16" y2="16" stroke="currentColor" strokeWidth="2" />
+                    <line x1="16" y1="8" x2="8" y2="16" stroke="currentColor" strokeWidth="2" />
                   </svg>
                 </Button>
               </div>
@@ -256,12 +256,48 @@ export default function OnboardingSetupScreen() {
         )}
       </div>
 
+      {/* ── Divider ── */}
+      <div className="flex items-center gap-3 px-8 mt-8">
+        <div className="flex-1 border-t" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.2 }} />
+        <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>or</span>
+        <div className="flex-1 border-t" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.2 }} />
+      </div>
+
+      {/* ── Sync code section ── */}
+      <div className="flex flex-col gap-2 px-8 mt-6">
+        <label
+          className="font-semibold"
+          style={{ color: "var(--color-brand-teal)" }}
+        >
+          Enter a Sync Code
+        </label>
+        <p className="text-xs -mt-1" style={{ color: "var(--color-text-secondary)" }}>
+          Have a code from another device? Enter it here to sync your data instead.
+        </p>
+        <Input
+          ref={syncCodeInputRef}
+          value={syncCodeText}
+          onChange={(e) => setSyncCodeText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              completeOnboarding();
+            }
+          }}
+          placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+          className="h-12 rounded-[14px] border-transparent px-4 font-mono text-sm focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
+          style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
+          autoCapitalize="characters"
+          spellCheck={false}
+        />
+      </div>
+
       <div className="flex-1" />
 
       {/* Finish button */}
       <div
         className="px-8"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)", marginTop: "32px" }}
       >
         <Button
           className="w-full h-14 rounded-2xl text-base font-semibold text-white disabled:opacity-60 press-scale"
@@ -278,3 +314,4 @@ export default function OnboardingSetupScreen() {
     </div>
   );
 }
+

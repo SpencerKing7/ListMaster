@@ -141,6 +141,8 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
 
   const renameInputRef = useRef<HTMLInputElement>(null);
   const sheetFocusSentinelRef = useRef<HTMLDivElement>(null);
+  // Ref to the inner scrollable div — used to check scrollTop before engaging dismiss
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Swipe-to-dismiss state ──
   const swipeDismissStartY = useRef(0);
@@ -149,11 +151,15 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   // Tracks whether a real downward drag has been confirmed, preventing mouse
   // hover or non-primary-button clicks from triggering a dismiss gesture.
   const isDismissDraggingRef = useRef(false);
+  // Tracks whether the dismiss drag was engaged from a scroll-at-top gesture
+  // (as opposed to a direct drag on the pill/header, which is always eligible).
+  const dismissEngagedAtTopRef = useRef(false);
 
   const handleDismissPointerDown = useCallback((e: React.PointerEvent) => {
     // Ignore right-click, middle-click, etc.
     if (e.button !== 0) return;
     isDismissDraggingRef.current = false;
+    dismissEngagedAtTopRef.current = false;
     swipeDismissStartY.current = e.clientY;
     swipeDismissStartTime.current = Date.now();
     setSwipeTranslateY(0);
@@ -164,17 +170,28 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     // On mouse, only track movement while the primary button is held
     if (e.pointerType === "mouse" && e.buttons === 0) return;
     const dy = e.clientY - swipeDismissStartY.current;
-    if (!isDismissDraggingRef.current && Math.abs(dy) > 5) {
-      isDismissDraggingRef.current = true;
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const scrollTop = scrollContainerRef.current?.scrollTop ?? 0;
+
+    if (!isDismissDraggingRef.current) {
+      // Only engage dismiss if: gesture is clearly downward AND scroll container is at top
+      if (dy > 8 && scrollTop === 0) {
+        isDismissDraggingRef.current = true;
+        dismissEngagedAtTopRef.current = true;
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      }
+      return;
     }
-    if (isDismissDraggingRef.current && dy > 0) setSwipeTranslateY(dy);
+
+    // Once engaged, prevent native scroll from competing with the translation
+    if (dismissEngagedAtTopRef.current) e.preventDefault();
+    if (dy > 0) setSwipeTranslateY(dy);
   }, []);
 
   const handleDismissPointerUp = useCallback((e: React.PointerEvent, onClose: () => void) => {
     // No-op if no real drag was ever confirmed
     if (!isDismissDraggingRef.current) return;
     isDismissDraggingRef.current = false;
+    dismissEngagedAtTopRef.current = false;
     const dy = e.clientY - swipeDismissStartY.current;
     const dt = Date.now() - swipeDismissStartTime.current;
     const velocity = dy / dt; // px/ms
@@ -464,7 +481,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="rounded-t-3xl max-h-[90dvh] overflow-y-auto"
+          className="rounded-t-3xl max-h-[90dvh]"
           initialFocus={sheetFocusSentinelRef}
           style={{
             backgroundColor: "var(--color-surface-background)",
@@ -473,705 +490,706 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
             transition: swipeTranslateY === 0 ? "transform 0.3s ease-out" : "none",
           }}
         >
-          {/* Focus sentinel — absorbs auto-focus on open so no button appears focused */}
-          <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
-          {/* Drag indicator — also the swipe-to-dismiss grab target */}
-          {/* The pill is hidden on desktop (coarse pointer = touch only) */}
+          {/* Inner scroll container — dismiss gesture is attached here so we can check scrollTop */}
           <div
-            className="flex justify-center pt-3 pb-1 touch-none cursor-grab active:cursor-grabbing select-none"
+            ref={scrollContainerRef}
+            className="overflow-y-auto max-h-[90dvh]"
             onPointerDown={handleDismissPointerDown}
             onPointerMove={handleDismissPointerMove}
             onPointerUp={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
             onPointerCancel={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
           >
+            {/* Focus sentinel — absorbs auto-focus on open so no button appears focused */}
+            <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
+            {/* Drag indicator pill */}
             <div
-              className="hidden pointer-coarse:block w-10 h-[5px] rounded-full"
-              style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.25 }}
-            />
-          </div>
-          {/* Header — also a swipe-to-dismiss grab target */}
-          <SheetHeader
-            className="flex flex-row items-center justify-between px-5 pb-3 pt-1 touch-none select-none"
-            onPointerDown={handleDismissPointerDown}
-            onPointerMove={handleDismissPointerMove}
-            onPointerUp={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
-            onPointerCancel={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
-          >
-            <SheetTitle
-              className="text-2xl font-bold"
-              style={{ color: "var(--color-brand-green)" }}
+              className="flex justify-center pt-3 pb-1 select-none"
             >
-              Settings
-            </SheetTitle>
-            <Button
-              variant="ghost"
-              className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)] focus-visible:!border-[color:var(--color-brand-green)] focus-visible:!ring-[color:var(--color-brand-green)]/30"
-              style={{
-                color: "var(--color-brand-green)",
-                backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)",
-                touchAction: "manipulation",
-              }}
-              onClick={() => onOpenChange(false)}
+              <div
+                className="hidden pointer-coarse:block w-10 h-[5px] rounded-full"
+                style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.25 }}
+              />
+            </div>
+            {/* Header */}
+            <SheetHeader
+              className="flex flex-row items-center justify-between px-5 pb-3 pt-1"
             >
-              Done
-            </Button>
-          </SheetHeader>
+              <SheetTitle
+                className="text-2xl font-bold"
+                style={{ color: "var(--color-brand-green)" }}
+              >
+                Settings
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)] focus-visible:!border-[color:var(--color-brand-green)] focus-visible:!ring-[color:var(--color-brand-green)]/30"
+                style={{
+                  color: "var(--color-brand-green)",
+                  backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)",
+                  touchAction: "manipulation",
+                }}
+                onClick={() => onOpenChange(false)}
+              >
+                Done
+              </Button>
+            </SheetHeader>
 
-          <div className="flex flex-col gap-4 px-4 pb-10 pt-2">
+            <div className="flex flex-col gap-4 px-4 pb-10 pt-2">
 
-            {/* Categories & Groups */}
-            <SettingsCard>
-              <SectionLabel>Categories & Groups</SectionLabel>
+              {/* Categories & Groups */}
+              <SettingsCard>
+                <SectionLabel>Categories & Groups</SectionLabel>
 
-              {/* Groups discoverability caption — only when no groups */}
-              {store.groups.length === 0 && (
-                <p className="text-xs -mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                  Categories live inside groups. Create groups to organize your lists.
-                </p>
-              )}
+                {/* Groups discoverability caption — only when no groups */}
+                {store.groups.length === 0 && (
+                  <p className="text-xs -mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                    Categories live inside groups. Create groups to organize your lists.
+                  </p>
+                )}
 
-              {/* ── Grouped layout (groups exist) ── */}
-              {store.groups.length > 0 && (
-                <>
-                  {/* All category rows are inside catContainerRef for unified pointer handling */}
-                  <div
-                    ref={catContainerRef}
-                  >
-                    {/* Group sections */}
+                {/* ── Grouped layout (groups exist) ── */}
+                {store.groups.length > 0 && (
+                  <>
+                    {/* All category rows are inside catContainerRef for unified pointer handling */}
                     <div
-                      ref={groupsContainerRef}
-                      className="flex flex-col gap-2"
+                      ref={catContainerRef}
                     >
-                      {store.groups.map((group, groupVisualIdx) => {
-                        const isExpanded = expandedGroupIDs.has(group.id);
-                        const groupCategories = store.categories.filter(c => c.groupID === group.id);
-                        const isGroupDragging = groupVisualIdx === groupDragIndex;
-                        const isLastGroup = groupVisualIdx === store.groups.length - 1;
+                      {/* Group sections */}
+                      <div
+                        ref={groupsContainerRef}
+                        className="flex flex-col gap-2"
+                      >
+                        {store.groups.map((group, groupVisualIdx) => {
+                          const isExpanded = expandedGroupIDs.has(group.id);
+                          const groupCategories = store.categories.filter(c => c.groupID === group.id);
+                          const isGroupDragging = groupVisualIdx === groupDragIndex;
+                          const isLastGroup = groupVisualIdx === store.groups.length - 1;
 
-                        return (
-                          <Fragment key={group.id}>
-                            {!isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
-                              <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                            )}
-                            <div
-                              data-group-idx={groupVisualIdx}
-                              className="rounded-xl overflow-hidden"
-                              style={{
-                                opacity: isGroupDragging ? 0 : 1,
-                                transition: "opacity 120ms ease",
-                                boxShadow: `inset 0 0 0 1.5px rgba(var(--color-brand-deep-green-rgb), 0.15)`,
-                              }}
-                            >
-                              {/* Group header */}
+                          return (
+                            <Fragment key={group.id}>
+                              {!isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
+                                <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+                              )}
                               <div
-                                className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer select-none"
+                                data-group-idx={groupVisualIdx}
+                                className="rounded-xl overflow-hidden"
                                 style={{
-                                  backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
+                                  opacity: isGroupDragging ? 0 : 1,
+                                  transition: "opacity 120ms ease",
+                                  boxShadow: `inset 0 0 0 1.5px rgba(var(--color-brand-deep-green-rgb), 0.15)`,
                                 }}
-                                onClick={() => toggleGroup(group.id)}
                               >
-                                {/* Drag handle */}
+                                {/* Group header */}
                                 <div
-                                  className="touch-none cursor-grab active:cursor-grabbing p-1 -m-1 shrink-0"
-                                  onClick={(e) => e.stopPropagation()}
-                                  onPointerDown={(e) => {
-                                    e.stopPropagation();
-                                    handleGroupDragPointerDown(e, groupVisualIdx);
-                                  }}
-                                >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                                    style={{ color: "var(--color-brand-teal)", opacity: 0.55 }}>
-                                    <line x1="4" y1="7" x2="20" y2="7" />
-                                    <line x1="4" y1="12" x2="20" y2="12" />
-                                    <line x1="4" y1="17" x2="20" y2="17" />
-                                  </svg>
-                                </div>
-
-                                {/* Chevron */}
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                                  className="shrink-0"
+                                  className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer select-none"
                                   style={{
-                                    color: "var(--color-brand-teal)",
-                                    opacity: 0.75,
-                                    transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                                    transition: "transform 200ms ease-out",
-                                  }}>
-                                  <path d="M9 18l6-6-6-6" />
-                                </svg>
-
-                                {/* Group name */}
-                                <span className="flex-1 text-sm font-semibold tracking-[-0.01em]"
-                                  style={{ color: "var(--color-text-primary)" }}>
-                                  {group.name}
-                                </span>
-
-                                {/* Category count badge */}
-                                {groupCategories.length > 0 && (
-                                  <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full"
-                                    style={{
-                                      backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.14)`,
-                                      color: "var(--color-brand-teal)",
-                                    }}>
-                                    {groupCategories.length}
-                                  </span>
-                                )}
-
-                                {/* Rename */}
-                                <button
-                                  className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
-                                  style={{ opacity: 0.55 }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRenameGroupName(group.name);
-                                    setGroupToRename({ id: group.id, name: group.name });
+                                    backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
                                   }}
+                                  onClick={() => toggleGroup(group.id)}
                                 >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                    stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                    <path d="m15 5 4 4" />
-                                  </svg>
-                                </button>
-
-                                {/* Delete */}
-                                <button
-                                  className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
-                                  style={{ opacity: 0.55 }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setGroupToDelete({ id: group.id, name: group.name });
-                                  }}
-                                >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                    stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                  </svg>
-                                </button>
-                              </div>
-
-                              {/* Collapsible category sub-list */}
-                              <div
-                                className="overflow-hidden"
-                                style={{
-                                  maxHeight: isExpanded ? "600px" : "0px",
-                                  transition: "max-height 220ms ease-out",
-                                }}
-                              >
-                                {/* Left-border accent column + rows */}
-                                <div className="relative"
-                                  style={{ backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.05)` }}>
-                                  {/* Teal left accent bar */}
-                                  <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full"
-                                    style={{ backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.35)` }} />
-
-                                  <div className="flex flex-col pl-8 pr-2 py-1.5 gap-0.5">
-                                    {groupCategories.map((category, visualIdx) => {
-                                      const flatIdx = store.categories.indexOf(category);
-                                      const isDragging = dragIndex === flatIdx;
-                                      const isLast = visualIdx === groupCategories.length - 1;
-                                      return (
-                                        <Fragment key={category.id}>
-                                          {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                            <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                          )}
-                                          <div
-                                            data-cat-idx={flatIdx}
-                                            className="flex items-center gap-2.5 px-2 py-2 rounded-lg"
-                                            style={{
-                                              opacity: isDragging ? 0 : 1,
-                                              transition: "opacity 120ms ease",
-                                            }}
-                                          >
-                                            {/* Drag handle */}
-                                            <div
-                                              className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
-                                              onPointerDown={(e) => handleDragPointerDown(e, visualIdx, group.id)}
-                                            >
-                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                                                style={{ color: "var(--color-brand-teal)", opacity: 0.4 }}>
-                                                <line x1="4" y1="7" x2="20" y2="7" />
-                                                <line x1="4" y1="12" x2="20" y2="12" />
-                                                <line x1="4" y1="17" x2="20" y2="17" />
-                                              </svg>
-                                            </div>
-
-                                            <span className="flex-1 text-sm" style={{ color: "var(--color-text-primary)" }}>
-                                              {category.name}
-                                            </span>
-
-                                            <button
-                                              className="p-1.5 rounded-md transition-all active:scale-[0.9]"
-                                              style={{ opacity: 0.5 }}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setRenameCategoryName(category.name);
-                                                setCategoryToRename({ id: category.id, name: category.name });
-                                              }}
-                                            >
-                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                                stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                                <path d="m15 5 4 4" />
-                                              </svg>
-                                            </button>
-
-                                            <button
-                                              className="p-1.5 rounded-md transition-all active:scale-[0.9] disabled:opacity-20"
-                                              style={{ opacity: 0.5 }}
-                                              disabled={!store.canDeleteCategories}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setCategoryToDelete({ id: category.id, name: category.name });
-                                              }}
-                                            >
-                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                                stroke="var(--color-danger)"
-                                                strokeWidth="2"
-                                                strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="3 6 5 6 21 6" />
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                              </svg>
-                                            </button>
-                                          </div>
-                                          {/* Trailing indicator — shown when dragging to the bottom of this group */}
-                                          {isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                            <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                          )}
-                                        </Fragment>
-                                      );
-                                    })}
-                                    {groupCategories.length === 0 && (
-                                      <p className="text-xs py-2 pl-1" style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>
-                                        No categories yet
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Trailing indicator — shown when dragging to the bottom of the group list */}
-                            {isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
-                              <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                            )}
-                          </Fragment>
-                        );
-                      })}
-                    </div>
-
-                    {/* No Group section */}
-                    {(() => {
-                      const ungrouped = store.categories.filter(c => !c.groupID);
-                      if (ungrouped.length === 0) return null;
-                      return (
-                        <div className="mt-2">
-                          {/* Divider */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <hr className="flex-1 border-t" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.2 }} />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest px-1"
-                              style={{ color: "var(--color-text-secondary)", opacity: 0.5 }}>
-                              No Group
-                            </span>
-                            <hr className="flex-1 border-t" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.2 }} />
-                          </div>
-
-                          <div className="flex flex-col gap-1">
-                            {ungrouped.map((category, visualIdx) => {
-                              const flatIdx = store.categories.indexOf(category);
-                              const isDragging = dragIndex === flatIdx;
-                              const isLast = visualIdx === ungrouped.length - 1;
-                              return (
-                                <Fragment key={category.id}>
-                                  {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                    <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                  )}
+                                  {/* Drag handle */}
                                   <div
-                                    data-cat-idx={flatIdx}
-                                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                                    style={{
-                                      backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
-                                      opacity: isDragging ? 0 : 1,
-                                      transition: "opacity 120ms ease",
+                                    className="touch-none cursor-grab active:cursor-grabbing p-1 -m-1 shrink-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => {
+                                      e.stopPropagation();
+                                      handleGroupDragPointerDown(e, groupVisualIdx);
                                     }}
                                   >
-                                    {/* Drag handle */}
-                                    <div
-                                      className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
-                                      onPointerDown={(e) => handleDragPointerDown(e, visualIdx, null)}
-                                    >
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                                        style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
-                                        <line x1="4" y1="7" x2="20" y2="7" />
-                                        <line x1="4" y1="12" x2="20" y2="12" />
-                                        <line x1="4" y1="17" x2="20" y2="17" />
-                                      </svg>
-                                    </div>
-
-                                    <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                                      {category.name}
-                                    </span>
-
-                                    {/* Assign chip */}
-                                    <button
-                                      className="flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all active:scale-[0.94]"
-                                      style={{
-                                        backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.12)`,
-                                        color: "var(--color-brand-teal)",
-                                      }}
-                                      onClick={() => {
-                                        setSelectedCategoryForGroup({ id: category.id, name: category.name });
-                                        setIsGroupActionSheetOpen(true);
-                                      }}
-                                    >
-                                      + Assign
-                                    </button>
-
-                                    <button
-                                      className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
-                                      style={{ opacity: 0.55 }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setRenameCategoryName(category.name);
-                                        setCategoryToRename({ id: category.id, name: category.name });
-                                      }}
-                                    >
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                        stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                        <path d="m15 5 4 4" />
-                                      </svg>
-                                    </button>
-
-                                    <button
-                                      className="p-1.5 rounded-lg transition-all active:scale-[0.9] disabled:opacity-20"
-                                      style={{ opacity: 0.55 }}
-                                      disabled={!store.canDeleteCategories}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCategoryToDelete({ id: category.id, name: category.name });
-                                      }}
-                                    >
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                        stroke="var(--color-danger)"
-                                        strokeWidth="2"
-                                        strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                      </svg>
-                                    </button>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                      style={{ color: "var(--color-brand-teal)", opacity: 0.55 }}>
+                                      <line x1="4" y1="7" x2="20" y2="7" />
+                                      <line x1="4" y1="12" x2="20" y2="12" />
+                                      <line x1="4" y1="17" x2="20" y2="17" />
+                                    </svg>
                                   </div>
-                                  {/* Trailing indicator — shown when dragging to the bottom of the ungrouped section */}
-                                  {isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                    <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+
+                                  {/* Chevron */}
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                    className="shrink-0"
+                                    style={{
+                                      color: "var(--color-brand-teal)",
+                                      opacity: 0.75,
+                                      transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                                      transition: "transform 200ms ease-out",
+                                    }}>
+                                    <path d="M9 18l6-6-6-6" />
+                                  </svg>
+
+                                  {/* Group name */}
+                                  <span className="flex-1 text-sm font-semibold tracking-[-0.01em]"
+                                    style={{ color: "var(--color-text-primary)" }}>
+                                    {group.name}
+                                  </span>
+
+                                  {/* Category count badge */}
+                                  {groupCategories.length > 0 && (
+                                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full"
+                                      style={{
+                                        backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.14)`,
+                                        color: "var(--color-brand-teal)",
+                                      }}>
+                                      {groupCategories.length}
+                                    </span>
                                   )}
-                                </Fragment>
-                              );
-                            })}
+
+                                  {/* Rename */}
+                                  <button
+                                    className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
+                                    style={{ opacity: 0.55 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setRenameGroupName(group.name);
+                                      setGroupToRename({ id: group.id, name: group.name });
+                                    }}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                      stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                      <path d="m15 5 4 4" />
+                                    </svg>
+                                  </button>
+
+                                  {/* Delete */}
+                                  <button
+                                    className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
+                                    style={{ opacity: 0.55 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setGroupToDelete({ id: group.id, name: group.name });
+                                    }}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                      stroke="var(--color-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                  </button>
+                                </div>
+
+                                {/* Collapsible category sub-list */}
+                                <div
+                                  className="overflow-hidden"
+                                  style={{
+                                    maxHeight: isExpanded ? "600px" : "0px",
+                                    transition: "max-height 220ms ease-out",
+                                  }}
+                                >
+                                  {/* Left-border accent column + rows */}
+                                  <div className="relative"
+                                    style={{ backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.05)` }}>
+                                    {/* Teal left accent bar */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full"
+                                      style={{ backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.35)` }} />
+
+                                    <div className="flex flex-col pl-8 pr-2 py-1.5 gap-0.5">
+                                      {groupCategories.map((category, visualIdx) => {
+                                        const flatIdx = store.categories.indexOf(category);
+                                        const isDragging = dragIndex === flatIdx;
+                                        const isLast = visualIdx === groupCategories.length - 1;
+                                        return (
+                                          <Fragment key={category.id}>
+                                            {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
+                                              <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+                                            )}
+                                            <div
+                                              data-cat-idx={flatIdx}
+                                              className="flex items-center gap-2.5 px-2 py-2 rounded-lg"
+                                              style={{
+                                                opacity: isDragging ? 0 : 1,
+                                                transition: "opacity 120ms ease",
+                                              }}
+                                            >
+                                              {/* Drag handle */}
+                                              <div
+                                                className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
+                                                onPointerDown={(e) => handleDragPointerDown(e, visualIdx, group.id)}
+                                              >
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                                  style={{ color: "var(--color-brand-teal)", opacity: 0.4 }}>
+                                                  <line x1="4" y1="7" x2="20" y2="7" />
+                                                  <line x1="4" y1="12" x2="20" y2="12" />
+                                                  <line x1="4" y1="17" x2="20" y2="17" />
+                                                </svg>
+                                              </div>
+
+                                              <span className="flex-1 text-sm" style={{ color: "var(--color-text-primary)" }}>
+                                                {category.name}
+                                              </span>
+
+                                              <button
+                                                className="p-1.5 rounded-md transition-all active:scale-[0.9]"
+                                                style={{ opacity: 0.5 }}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setRenameCategoryName(category.name);
+                                                  setCategoryToRename({ id: category.id, name: category.name });
+                                                }}
+                                              >
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                                  stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                                  <path d="m15 5 4 4" />
+                                                </svg>
+                                              </button>
+
+                                              <button
+                                                className="p-1.5 rounded-md transition-all active:scale-[0.9] disabled:opacity-20"
+                                                style={{ opacity: 0.5 }}
+                                                disabled={!store.canDeleteCategories}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setCategoryToDelete({ id: category.id, name: category.name });
+                                                }}
+                                              >
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                                  stroke="var(--color-danger)"
+                                                  strokeWidth="2"
+                                                  strokeLinecap="round" strokeLinejoin="round">
+                                                  <polyline points="3 6 5 6 21 6" />
+                                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                </svg>
+                                              </button>
+                                            </div>
+                                            {/* Trailing indicator — shown when dragging to the bottom of this group */}
+                                            {isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
+                                              <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+                                            )}
+                                          </Fragment>
+                                        );
+                                      })}
+                                      {groupCategories.length === 0 && (
+                                        <p className="text-xs py-2 pl-1" style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>
+                                          No categories yet
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Trailing indicator — shown when dragging to the bottom of the group list */}
+                              {isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
+                                <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+                              )}
+                            </Fragment>
+                          );
+                        })}
+                      </div>
+
+                      {/* No Group section */}
+                      {(() => {
+                        const ungrouped = store.categories.filter(c => !c.groupID);
+                        if (ungrouped.length === 0) return null;
+                        return (
+                          <div className="mt-2">
+                            {/* Divider */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <hr className="flex-1 border-t" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.2 }} />
+                              <span className="text-[10px] font-semibold uppercase tracking-widest px-1"
+                                style={{ color: "var(--color-text-secondary)", opacity: 0.5 }}>
+                                No Group
+                              </span>
+                              <hr className="flex-1 border-t" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.2 }} />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                              {ungrouped.map((category, visualIdx) => {
+                                const flatIdx = store.categories.indexOf(category);
+                                const isDragging = dragIndex === flatIdx;
+                                const isLast = visualIdx === ungrouped.length - 1;
+                                return (
+                                  <Fragment key={category.id}>
+                                    {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
+                                      <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+                                    )}
+                                    <div
+                                      data-cat-idx={flatIdx}
+                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                                      style={{
+                                        backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
+                                        opacity: isDragging ? 0 : 1,
+                                        transition: "opacity 120ms ease",
+                                      }}
+                                    >
+                                      {/* Drag handle */}
+                                      <div
+                                        className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
+                                        onPointerDown={(e) => handleDragPointerDown(e, visualIdx, null)}
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                          style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
+                                          <line x1="4" y1="7" x2="20" y2="7" />
+                                          <line x1="4" y1="12" x2="20" y2="12" />
+                                          <line x1="4" y1="17" x2="20" y2="17" />
+                                        </svg>
+                                      </div>
+
+                                      <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                                        {category.name}
+                                      </span>
+
+                                      {/* Assign chip */}
+                                      <button
+                                        className="flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all active:scale-[0.94]"
+                                        style={{
+                                          backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.12)`,
+                                          color: "var(--color-brand-teal)",
+                                        }}
+                                        onClick={() => {
+                                          setSelectedCategoryForGroup({ id: category.id, name: category.name });
+                                          setIsGroupActionSheetOpen(true);
+                                        }}
+                                      >
+                                        + Assign
+                                      </button>
+
+                                      <button
+                                        className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
+                                        style={{ opacity: 0.55 }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setRenameCategoryName(category.name);
+                                          setCategoryToRename({ id: category.id, name: category.name });
+                                        }}
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                          stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                          <path d="m15 5 4 4" />
+                                        </svg>
+                                      </button>
+
+                                      <button
+                                        className="p-1.5 rounded-lg transition-all active:scale-[0.9] disabled:opacity-20"
+                                        style={{ opacity: 0.55 }}
+                                        disabled={!store.canDeleteCategories}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setCategoryToDelete({ id: category.id, name: category.name });
+                                        }}
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                          stroke="var(--color-danger)"
+                                          strokeWidth="2"
+                                          strokeLinecap="round" strokeLinejoin="round">
+                                          <polyline points="3 6 5 6 21 6" />
+                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                    {/* Trailing indicator — shown when dragging to the bottom of the ungrouped section */}
+                                    {isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
+                                      <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
+                                    )}
+                                  </Fragment>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
+
+                {/* ── Flat layout (no groups) ── */}
+                {store.groups.length === 0 && (
+                  <ul
+                    ref={listRef}
+                    className="flex flex-col gap-1.5"
+                  >
+                    {store.categories.map((category, idx) => {
+                      const isDragging = idx === dragIndex;
+                      const isLast = idx === store.categories.length - 1;
+                      return (
+                        <Fragment key={category.id}>
+                          {!isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
+                            <li style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
+                          )}
+                          <li
+                            data-cat-idx={idx}
+                            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                            style={{
+                              backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
+                              opacity: isDragging ? 0 : 1,
+                              transition: "opacity 120ms ease",
+                            }}
+                          >
+                            <div
+                              className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
+                              onPointerDown={(e) => handleDragPointerDown(e, idx)}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
+                                <line x1="4" y1="7" x2="20" y2="7" />
+                                <line x1="4" y1="12" x2="20" y2="12" />
+                                <line x1="4" y1="17" x2="20" y2="17" />
+                              </svg>
+                            </div>
+
+                            <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                              {category.name}
+                            </span>
+
+                            <button
+                              className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
+                              style={{ opacity: 0.55 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRenameCategoryName(category.name);
+                                setCategoryToRename({ id: category.id, name: category.name });
+                              }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                <path d="m15 5 4 4" />
+                              </svg>
+                            </button>
+
+                            <button
+                              className="p-1.5 rounded-lg transition-all active:scale-[0.9] disabled:opacity-20"
+                              style={{ opacity: 0.55 }}
+                              disabled={!store.canDeleteCategories}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCategoryToDelete({ id: category.id, name: category.name });
+                              }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="var(--color-danger)"
+                                strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              </svg>
+                            </button>
+                          </li>
+                          {/* Trailing indicator — shown when dragging to the bottom of the flat list */}
+                          {isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
+                            <li aria-hidden style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
+                          )}
+                        </Fragment>
                       );
-                    })()}
-                  </div>
-                </>
-              )}
+                    })}
+                  </ul>
+                )}
 
-              {/* ── Flat layout (no groups) ── */}
-              {store.groups.length === 0 && (
-                <ul
-                  ref={listRef}
-                  className="flex flex-col gap-1.5"
-                >
-                  {store.categories.map((category, idx) => {
-                    const isDragging = idx === dragIndex;
-                    const isLast = idx === store.categories.length - 1;
-                    return (
-                      <Fragment key={category.id}>
-                        {!isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
-                          <li style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
-                        )}
-                        <li
-                          data-cat-idx={idx}
-                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                          style={{
-                            backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
-                            opacity: isDragging ? 0 : 1,
-                            transition: "opacity 120ms ease",
-                          }}
-                        >
-                          <div
-                            className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
-                            onPointerDown={(e) => handleDragPointerDown(e, idx)}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                              style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
-                              <line x1="4" y1="7" x2="20" y2="7" />
-                              <line x1="4" y1="12" x2="20" y2="12" />
-                              <line x1="4" y1="17" x2="20" y2="17" />
-                            </svg>
-                          </div>
+                {!store.canDeleteCategories && (
+                  <p className="text-xs px-1" style={{ color: "var(--color-text-secondary)" }}>
+                    At least one category is required.
+                  </p>
+                )}
 
-                          <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                            {category.name}
-                          </span>
+                {/* ── Add controls ── */}
+                <div className="pt-1">
+                  {/* Separator */}
+                  <div className="border-t mb-3" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.1 }} />
 
-                          <button
-                            className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
-                            style={{ opacity: 0.55 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRenameCategoryName(category.name);
-                              setCategoryToRename({ id: category.id, name: category.name });
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                              stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                              <path d="m15 5 4 4" />
-                            </svg>
-                          </button>
+                  {/* Unified "+ Add" pill button */}
+                  <button
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.97] active:opacity-80"
+                    style={{
+                      color: "var(--color-brand-green)",
+                      backgroundColor: `rgba(var(--color-brand-green-rgb), 0.10)`,
+                      touchAction: "manipulation",
+                    }}
+                    onClick={() => setIsAddActionSheetOpen(true)}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add Category or Group
+                  </button>
+                </div>
+              </SettingsCard>
 
-                          <button
-                            className="p-1.5 rounded-lg transition-all active:scale-[0.9] disabled:opacity-20"
-                            style={{ opacity: 0.55 }}
-                            disabled={!store.canDeleteCategories}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCategoryToDelete({ id: category.id, name: category.name });
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                              stroke="var(--color-danger)"
-                              strokeWidth="2"
-                              strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                          </button>
-                        </li>
-                        {/* Trailing indicator — shown when dragging to the bottom of the flat list */}
-                        {isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
-                          <li aria-hidden style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {!store.canDeleteCategories && (
-                <p className="text-xs px-1" style={{ color: "var(--color-text-secondary)" }}>
-                  At least one category is required.
-                </p>
-              )}
-
-              {/* ── Add controls ── */}
-              <div className="pt-1">
-                {/* Separator */}
-                <div className="border-t mb-3" style={{ borderColor: "var(--color-text-secondary)", opacity: 0.1 }} />
-
-                {/* Unified "+ Add" pill button */}
-                <button
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.97] active:opacity-80"
-                  style={{
-                    color: "var(--color-brand-green)",
-                    backgroundColor: `rgba(var(--color-brand-green-rgb), 0.10)`,
-                    touchAction: "manipulation",
+              {/* Appearance */}
+              <SettingsCard>
+                <SectionLabel>Appearance</SectionLabel>
+                <ToggleGroup
+                  value={[settings.appearanceMode]}
+                  onValueChange={(values: string[]) => {
+                    if (values.length > 0) {
+                      settings.setAppearanceMode(
+                        values[0] as "system" | "light" | "dark"
+                      );
+                    }
+                    // Ignore empty values to prevent deselection
                   }}
-                  onClick={() => setIsAddActionSheetOpen(true)}
+                  className="w-full rounded-xl p-1"
+                  style={{
+                    backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+                  }}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
+                  {(["system", "light", "dark"] as const).map((mode) => (
+                    <ToggleGroupItem
+                      key={mode}
+                      value={mode}
+                      className="flex-1 !rounded-lg text-xs font-semibold capitalize hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {APPEARANCE_ICONS[mode]}
+                        {mode === "system" ? "System" : mode === "light" ? "Light" : "Dark"}
+                      </span>
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </SettingsCard>
+
+              {/* Text Size */}
+              <SettingsCard>
+                <SectionLabel>Text Size</SectionLabel>
+                <ToggleGroup
+                  value={[settings.textSize]}
+                  onValueChange={(values: string[]) => {
+                    if (values.length > 0) {
+                      settings.setTextSize(values[0] as TextSize);
+                    }
+                    // Ignore empty values to prevent deselection
+                  }}
+                  className="w-full rounded-xl p-1"
+                  style={{
+                    backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+                  }}
+                >
+                  {(["xs", "s", "m", "l", "xl"] as const).map((size) => (
+                    <ToggleGroupItem
+                      key={size}
+                      value={size}
+                      className={cn(
+                        "flex-1 !rounded-lg font-semibold hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all",
+                        TEXT_SIZE_TAILWIND[size],
+                      )}
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {size.toUpperCase()}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </SettingsCard>
+
+              {/* Name */}
+              <SettingsCard>
+                <SectionLabel>Name</SectionLabel>
+                <Input
+                  value={settings.userName}
+                  onChange={(e) => settings.setUserName(e.target.value)}
+                  placeholder="Your name"
+                  className={inputClass}
+                  style={{ color: "var(--color-text-primary)" }}
+                />
+              </SettingsCard>
+
+              {/* Sync & Backup */}
+              <SettingsCard>
+                <SectionLabel>Sync & Backup</SectionLabel>
+                {sync.isSyncEnabled ? (
+                  <>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                        Sync Code
+                      </span>
+                      {/* Sync status badge */}
+                      <span
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: sync.syncStatus === "error"
+                            ? `rgba(var(--color-danger-rgb), 0.12)`
+                            : `rgba(var(--color-brand-green-rgb), 0.12)`,
+                          color: sync.syncStatus === "error"
+                            ? "var(--color-danger)"
+                            : "var(--color-brand-green)",
+                        }}
+                      >
+                        {sync.syncStatus === "syncing" ? "Syncing…" : sync.syncStatus === "error" ? "Error" : "Synced"}
+                      </span>
+                      <button
+                        className="text-xs font-semibold px-2 py-1 rounded-lg transition-all hover:opacity-80 active:scale-[0.96]"
+                        style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.1)" }}
+                        onClick={() => navigator.clipboard.writeText(sync.syncCode)}
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <div className="font-mono text-sm p-2 rounded-lg break-all" style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}>
+                      {sync.syncCode}
+                    </div>
+                    <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                      Share this code with others to sync your list, or use it on another device.
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                        style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
+                        onClick={() => setIsAdoptingCode(true)}
+                      >
+                        Switch Code
+                      </button>
+                      <button
+                        className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                        style={{ color: "var(--color-danger)", backgroundColor: "rgba(var(--color-danger-rgb), 0.08)" }}
+                        onClick={() => setIsDisableSyncDialogOpen(true)}
+                      >
+                        Disable
+                      </button>
+                    </div>
+                    <p className="text-xs mt-2" style={{ color: "var(--color-text-secondary)" }}>
+                      Switching to a different code will replace your current data.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
+                      Enable cloud sync to backup your data and share it across devices.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                        style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.1)" }}
+                        onClick={sync.enableSync}
+                        disabled={sync.syncStatus === "syncing"}
+                      >
+                        {sync.syncStatus === "syncing" ? "Enabling..." : "New Code"}
+                      </button>
+                      <button
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
+                        style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
+                        onClick={() => setIsAdoptingCode(true)}
+                        disabled={sync.syncStatus === "syncing"}
+                      >
+                        Enter Code
+                      </button>
+                    </div>
+                  </>
+                )}
+              </SettingsCard>
+
+              {/* Account Management */}
+              <SettingsCard>
+                <SectionLabel>Data</SectionLabel>
+                <button
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96] active:opacity-75"
+                  style={{
+                    color: "var(--color-danger)",
+                    backgroundColor: `rgba(var(--color-danger-rgb), 0.08)`,
+                  }}
+                  onClick={() => setIsResetDialogOpen(true)}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
                   </svg>
-                  Add Category or Group
+                  Reset to New User
                 </button>
-              </div>
-            </SettingsCard>
+                <p className="text-xs text-center mt-1.5 px-2" style={{ color: "var(--color-text-secondary)" }}>
+                  Clears all data and restarts the onboarding process.
+                </p>
+              </SettingsCard>
 
-            {/* Appearance */}
-            <SettingsCard>
-              <SectionLabel>Appearance</SectionLabel>
-              <ToggleGroup
-                value={[settings.appearanceMode]}
-                onValueChange={(values: string[]) => {
-                  if (values.length > 0) {
-                    settings.setAppearanceMode(
-                      values[0] as "system" | "light" | "dark"
-                    );
-                  }
-                  // Ignore empty values to prevent deselection
-                }}
-                className="w-full rounded-xl p-1"
-                style={{
-                  backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
-                }}
-              >
-                {(["system", "light", "dark"] as const).map((mode) => (
-                  <ToggleGroupItem
-                    key={mode}
-                    value={mode}
-                    className="flex-1 !rounded-lg text-xs font-semibold capitalize hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      {APPEARANCE_ICONS[mode]}
-                      {mode === "system" ? "System" : mode === "light" ? "Light" : "Dark"}
-                    </span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </SettingsCard>
-
-            {/* Text Size */}
-            <SettingsCard>
-              <SectionLabel>Text Size</SectionLabel>
-              <ToggleGroup
-                value={[settings.textSize]}
-                onValueChange={(values: string[]) => {
-                  if (values.length > 0) {
-                    settings.setTextSize(values[0] as TextSize);
-                  }
-                  // Ignore empty values to prevent deselection
-                }}
-                className="w-full rounded-xl p-1"
-                style={{
-                  backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
-                }}
-              >
-                {(["xs", "s", "m", "l", "xl"] as const).map((size) => (
-                  <ToggleGroupItem
-                    key={size}
-                    value={size}
-                    className={cn(
-                      "flex-1 !rounded-lg font-semibold hover:!bg-transparent aria-pressed:!bg-[var(--color-surface-card)] aria-pressed:!text-[var(--color-brand-green)] aria-pressed:shadow-sm aria-pressed:!opacity-100 opacity-75 transition-all",
-                      TEXT_SIZE_TAILWIND[size],
-                    )}
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    {size.toUpperCase()}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </SettingsCard>
-
-            {/* Name */}
-            <SettingsCard>
-              <SectionLabel>Name</SectionLabel>
-              <Input
-                value={settings.userName}
-                onChange={(e) => settings.setUserName(e.target.value)}
-                placeholder="Your name"
-                className={inputClass}
-                style={{ color: "var(--color-text-primary)" }}
-              />
-            </SettingsCard>
-
-            {/* Sync & Backup */}
-            <SettingsCard>
-              <SectionLabel>Sync & Backup</SectionLabel>
-              {sync.isSyncEnabled ? (
-                <>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                      Sync Code
-                    </span>
-                    {/* Sync status badge */}
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: sync.syncStatus === "error"
-                          ? `rgba(var(--color-danger-rgb), 0.12)`
-                          : `rgba(var(--color-brand-green-rgb), 0.12)`,
-                        color: sync.syncStatus === "error"
-                          ? "var(--color-danger)"
-                          : "var(--color-brand-green)",
-                      }}
-                    >
-                      {sync.syncStatus === "syncing" ? "Syncing…" : sync.syncStatus === "error" ? "Error" : "Synced"}
-                    </span>
-                    <button
-                      className="text-xs font-semibold px-2 py-1 rounded-lg transition-all hover:opacity-80 active:scale-[0.96]"
-                      style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.1)" }}
-                      onClick={() => navigator.clipboard.writeText(sync.syncCode)}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <div className="font-mono text-sm p-2 rounded-lg break-all" style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}>
-                    {sync.syncCode}
-                  </div>
-                  <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                    Share this code with others to sync your list, or use it on another device.
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
-                      style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
-                      onClick={() => setIsAdoptingCode(true)}
-                    >
-                      Switch Code
-                    </button>
-                    <button
-                      className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
-                      style={{ color: "var(--color-danger)", backgroundColor: "rgba(var(--color-danger-rgb), 0.08)" }}
-                      onClick={() => setIsDisableSyncDialogOpen(true)}
-                    >
-                      Disable
-                    </button>
-                  </div>
-                  <p className="text-xs mt-2" style={{ color: "var(--color-text-secondary)" }}>
-                    Switching to a different code will replace your current data.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
-                    Enable cloud sync to backup your data and share it across devices.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
-                      style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.1)" }}
-                      onClick={sync.enableSync}
-                      disabled={sync.syncStatus === "syncing"}
-                    >
-                      {sync.syncStatus === "syncing" ? "Enabling..." : "New Code"}
-                    </button>
-                    <button
-                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96]"
-                      style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
-                      onClick={() => setIsAdoptingCode(true)}
-                      disabled={sync.syncStatus === "syncing"}
-                    >
-                      Enter Code
-                    </button>
-                  </div>
-                </>
-              )}
-            </SettingsCard>
-
-            {/* Account Management */}
-            <SettingsCard>
-              <SectionLabel>Data</SectionLabel>
-              <button
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80 active:scale-[0.96] active:opacity-75"
-                style={{
-                  color: "var(--color-danger)",
-                  backgroundColor: `rgba(var(--color-danger-rgb), 0.08)`,
-                }}
-                onClick={() => setIsResetDialogOpen(true)}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                </svg>
-                Reset to New User
-              </button>
-              <p className="text-xs text-center mt-1.5 px-2" style={{ color: "var(--color-text-secondary)" }}>
-                Clears all data and restarts the onboarding process.
-              </p>
-            </SettingsCard>
-
-          </div>
+            </div>
+          </div>{/* end inner scroll container */}
         </SheetContent>
       </Sheet>
 
@@ -1567,22 +1585,49 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
             autoCapitalize="words"
           />
           {store.groups.length > 0 && (
-            <select
-              value={addCategoryGroupID ?? ""}
-              onChange={(e) => setAddCategoryGroupID(e.target.value || null)}
-              className="h-11 w-full rounded-xl border-transparent px-3 text-sm"
-              style={{
-                backgroundColor: "var(--color-surface-input)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              <option value="">No Group (ungrouped)</option>
-              {store.groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs font-medium px-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                Group
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {/* "No Group" option */}
+                <button
+                  type="button"
+                  onClick={() => setAddCategoryGroupID(null)}
+                  className="h-9 rounded-xl px-3 text-sm font-medium transition-colors"
+                  style={{
+                    touchAction: "manipulation",
+                    backgroundColor: addCategoryGroupID === null
+                      ? "var(--color-brand-green)"
+                      : "var(--color-surface-input)",
+                    color: addCategoryGroupID === null
+                      ? "#fff"
+                      : "var(--color-text-secondary)",
+                  }}
+                >
+                  No Group
+                </button>
+                {store.groups.map((group) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => setAddCategoryGroupID(group.id)}
+                    className="h-9 rounded-xl px-3 text-sm font-medium transition-colors"
+                    style={{
+                      touchAction: "manipulation",
+                      backgroundColor: addCategoryGroupID === group.id
+                        ? "var(--color-brand-green)"
+                        : "var(--color-surface-input)",
+                      color: addCategoryGroupID === group.id
+                        ? "#fff"
+                        : "var(--color-text-primary)",
+                    }}
+                  >
+                    {group.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
           <DialogFooter className="flex-row gap-2 mt-1">
             <Button
