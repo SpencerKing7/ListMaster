@@ -6,6 +6,7 @@ import { useSettingsStore } from "./store/useSettingsStore";
 import { useCategoriesStore } from "./store/useCategoriesStore";
 import { OnboardingWelcomeScreen } from "./screens/OnboardingWelcomeScreen";
 import { OnboardingSetupScreen } from "./screens/OnboardingSetupScreen";
+import { OnboardingSyncScreen } from "./screens/OnboardingSyncScreen";
 import { OnboardingInstallScreen } from "./screens/OnboardingInstallScreen";
 import { MainScreen } from "./screens/MainScreen";
 import { SplashScreen } from "./screens/SplashScreen";
@@ -74,6 +75,7 @@ export function App(): JSX.Element {
             <>
               <Route path="/" element={<OnboardingWelcomeScreen />} />
               <Route path="/setup" element={<OnboardingSetupScreen />} />
+              <Route path="/sync" element={<OnboardingSyncScreen />} />
               <Route path="/install" element={<OnboardingInstallScreen />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>

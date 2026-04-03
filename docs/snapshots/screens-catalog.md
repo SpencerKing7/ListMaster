@@ -10,6 +10,7 @@
 - [OnboardingInstallScreen](#onboardinginstallscreen)
 - [OnboardingWelcomeScreen](#onboardingwelcomescreen)
 - [OnboardingSetupScreen](#onboardingsetupscreen)
+- [OnboardingSyncScreen](#onboardingsyncscreen)
 - [MainScreen](#mainscreen)
 - [SettingsSheet](#settingssheet)
 
@@ -19,12 +20,13 @@
 
 The full routing table as defined in `App.tsx`:
 
-| Route path | Component                 | Entry condition                                                  |
-| ---------- | ------------------------- | ---------------------------------------------------------------- |
-| `/welcome` | `OnboardingWelcomeScreen` | Default redirect for all new users                               |
-| `/setup`   | `OnboardingSetupScreen`   | Navigated to by `OnboardingWelcomeScreen` CTA                    |
-| `/install` | `OnboardingInstallScreen` | Navigated to by `OnboardingSetupScreen` for non-standalone users |
-| `/`        | `MainScreen`              | `hasCompletedOnboarding === true`                                |
+| Route path | Component                 | Entry condition                                                 |
+| ---------- | ------------------------- | --------------------------------------------------------------- |
+| `/welcome` | `OnboardingWelcomeScreen` | Default redirect for all new users                              |
+| `/setup`   | `OnboardingSetupScreen`   | Navigated to by `OnboardingWelcomeScreen` CTA                   |
+| `/sync`    | `OnboardingSyncScreen`    | Navigated to by `OnboardingSetupScreen` for all users           |
+| `/install` | `OnboardingInstallScreen` | Navigated to by `OnboardingSyncScreen` for non-standalone users |
+| `/`        | `MainScreen`              | `hasCompletedOnboarding === true`                               |
 
 All routes are wrapped by `PageTransitionWrapper` in `App.tsx`, which provides push/pop slide animations. `HashRouter` is used throughout — required for GitHub Pages static hosting.
 
@@ -208,8 +210,57 @@ The 350 ms delay waits for the iOS software keyboard to dismiss before the route
 
 ### Navigation
 
-- → `/install` (for non-standalone users after `finishSetup()`)
+- → `/sync` (for all users after `finishSetup()`)
 - → Main app (for standalone users after `settings.completeOnboarding()`)
+
+---
+
+## `OnboardingSyncScreen`
+
+**File:** `src/screens/OnboardingSyncScreen.tsx`  
+**Route:** `/sync`
+
+### Entry condition
+
+Navigated to from `/setup` for all users. Offers cloud sync before the user finishes onboarding.
+
+### Props
+
+None. Uses `useSyncStore()`, `useSettingsStore()`, and `useNavigate()` internally.
+
+### Local state
+
+| Variable    | Type      | Initial | Description                                                              |
+| ----------- | --------- | ------- | ------------------------------------------------------------------------ |
+| `isLoading` | `boolean` | `false` | `true` while `enableSync()` is in flight — disables both buttons         |
+| `isEntered` | `boolean` | `false` | `true` after 60ms — drives entry animations                              |
+| `hasError`  | `boolean` | `false` | `true` when `enableSync()` fails — shows inline error, re-enables button |
+
+### `isSyncEnabled` early-exit behaviour
+
+If `sync.isSyncEnabled` is `true` on mount (user joined sync via a code on `/setup`), a mount-only `useEffect` calls `navigateForward()` immediately, and the component returns `null`. One blank frame is visible before the effect fires — this is acceptable and matches the existing pattern in `OnboardingInstallScreen`.
+
+### `handleEnable` flow
+
+1. Sets `hasError = false`, `isLoading = true`.
+2. Calls `await sync.enableSync()`.
+3. A watcher `useEffect` on `[sync.syncStatus, isLoading]` detects the settled state:
+   - `"synced"` → sets `isLoading = false`, calls `navigateForward()`.
+   - `"error"` → sets `isLoading = false`, sets `hasError = true`.
+4. Reading `syncStatus` inline after `await` is unsafe (stale closure) — the watcher is the correct pattern.
+
+### `navigateForward` targets
+
+| Mode       | Action                          |
+| ---------- | ------------------------------- |
+| Standalone | `settings.completeOnboarding()` |
+| Browser    | `navigate("/install")`          |
+
+### Navigation targets
+
+- → `/install` (on enable success or skip, browser mode)
+- → Main app (on enable success or skip, standalone mode)
+- → Stays on screen (on `enableSync()` error — shows inline error for retry)
 
 ---
 

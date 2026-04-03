@@ -1,6 +1,6 @@
 // src/screens/OnboardingInstallScreen.tsx
-// NOTE: 184 lines — exceeds the 150-line page target because it handles three
-// mutually exclusive install-prompt states (iOS Safari, Android/Chrome, fallback)
+// Final step in onboarding — reached from /sync (non-standalone users only).
+// Handles three mutually exclusive install-prompt states (iOS Safari, Android/Chrome, fallback)
 // plus the PWA beforeinstallprompt event, which all share the same screen context.
 import { useEffect, useMemo } from "react";
 import type { JSX } from "react";

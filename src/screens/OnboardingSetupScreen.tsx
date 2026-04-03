@@ -49,7 +49,7 @@ export function OnboardingSetupScreen(): JSX.Element {
       if (isStandalone) {
         settings.completeOnboarding();
       } else {
-        navigate("/install");
+        navigate("/sync");
       }
     }, 350);
   }
