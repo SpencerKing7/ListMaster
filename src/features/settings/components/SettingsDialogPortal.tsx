@@ -3,14 +3,12 @@
 
 import type { JSX } from "react";
 import type { CategoryGroup } from "@/models/types";
-import type { UseSettingsDialogsReturn } from "../hooks/useSettingsDialogs";
-import {
-  RenameCategoryDialog,
-  RenameGroupDialog,
-  DeleteCategoryDialog,
-  DeleteGroupDialog,
-  GroupAssignmentSheet,
-} from "./SettingsDialogs";
+import type { UseSettingsDialogsReturn } from "@/features/settings/hooks/useSettingsDialogs";
+import { RenameCategoryDialog } from "./RenameCategoryDialog";
+import { RenameGroupDialog } from "./RenameGroupDialog";
+import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
+import { DeleteGroupDialog } from "./DeleteGroupDialog";
+import { GroupAssignmentSheet } from "./GroupAssignmentSheet";
 import { AddFlow } from "./AddFlow";
 
 // MARK: - Props

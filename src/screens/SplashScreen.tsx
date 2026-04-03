@@ -6,7 +6,8 @@ interface SplashScreenProps {
   onFinished: () => void;
 }
 
-const SplashScreen = ({ onFinished }: SplashScreenProps): JSX.Element => {
+/** Full-screen animated splash/loading screen with fade-in logo and progress indicator. */
+export function SplashScreen({ onFinished }: SplashScreenProps): JSX.Element {
   const [isFading, setIsFading] = useState(false);
   const [isEntered, setIsEntered] = useState(false);
 
@@ -100,4 +101,3 @@ const SplashScreen = ({ onFinished }: SplashScreenProps): JSX.Element => {
   );
 };
 
-export { SplashScreen };

@@ -1,5 +1,5 @@
 // src/services/persistenceService.ts
-import type { Category, CategoryGroup } from "../models/types";
+import type { Category, CategoryGroup } from "@/models/types";
 
 const STORAGE_KEY = "grocery-lists-state";
 

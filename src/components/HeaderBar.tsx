@@ -12,7 +12,8 @@ interface HeaderBarProps {
   onRefresh?: () => void;
 }
 
-const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps): JSX.Element => {
+/** Top header bar — greeting, settings button, optional refresh, group tabs, and category picker. */
+export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps): JSX.Element {
   const { userName } = useSettingsStore();
   const { hasGroups, groups, selectedGroupID, selectGroup } = useCategoriesStore();
   const trimmedName = userName.trim();
@@ -111,4 +112,4 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
   );
 };
 
-export { HeaderBar };
+

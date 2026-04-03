@@ -4,17 +4,8 @@
 import type { JSX } from "react";
 import type { Category } from "@/models/types";
 import type { CatDragState } from "@/features/settings/hooks/useCategoryDrag";
+import { computeCatLiveOffset } from "@/features/settings/utils/dragUtils";
 import { CategoryRow } from "./CategoryRow";
-
-/** Compute the cumulative Y offset of a slot in the live order. */
-function computeCatLiveOffset(ds: CatDragState, liveIdx: number): number {
-  let offset = 0;
-  for (let i = 0; i < liveIdx; i++) {
-    const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
-    offset += (ds.heights[origI] ?? ds.rowHeight) + ds.gap;
-  }
-  return offset;
-}
 
 /** Props for the flat (no-groups) category list layout. */
 export interface FlatLayoutProps {

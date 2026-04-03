@@ -6,8 +6,8 @@ import {
   createElement,
   type ReactNode,
 } from "react";
-import { PersistenceService } from "../services/persistenceService";
-import { SettingsService } from "../services/settingsService";
+import { PersistenceService } from "@/services/persistenceService";
+import { SettingsService } from "@/services/settingsService";
 import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
 import type { TextSize } from "@/models/types";
 

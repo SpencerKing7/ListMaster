@@ -10,7 +10,7 @@ interface SwipeableRowProps {
   onDelete: () => void;
 }
 
-const SwipeableRow = ({ children, onDelete }: SwipeableRowProps): JSX.Element => {
+export function SwipeableRow({ children, onDelete }: SwipeableRowProps): JSX.Element {
   const [offsetX, setOffsetX] = useState(0);
   // isDragging is kept as state (not just a ref) so that the transition style
   // re-evaluates on the same render cycle as offsetX, preventing stale closures
@@ -155,4 +155,3 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps): JSX.Element =>
   );
 };
 
-export { SwipeableRow };

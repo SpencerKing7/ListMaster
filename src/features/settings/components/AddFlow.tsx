@@ -1,39 +1,42 @@
 // src/features/settings/components/AddFlow.tsx
-// ActionSheet + Dialog pair for the unified "Add Category or Group" flow.
+// ActionSheet orchestrator for the unified "Add Category or Group" flow.
+// Composes AddCategoryDialog and AddGroupDialog for the two add modes.
 
 import type { JSX } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ActionSheet } from "@/components/ui/action-sheet";
 import type { CategoryGroup } from "@/models/types";
-
-// MARK: - Constants
-
-const INPUT_CLASS =
-  "h-11 rounded-xl border-transparent bg-[color:var(--color-surface-input)] text-[color:var(--color-text-primary)] placeholder:text-[color:var(--color-text-secondary)] focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30";
+import { AddCategoryDialog } from "./AddCategoryDialog";
+import { AddGroupDialog } from "./AddGroupDialog";
 
 // MARK: - Props
 
+/** Props for the {@link AddFlow} component. */
 interface AddFlowProps {
+  /** Whether the ActionSheet chooser is open. */
   isAddActionSheetOpen: boolean;
+  /** Closes the ActionSheet chooser. */
   onCloseAddActionSheet: () => void;
+  /** Which add dialog is active: `"category"`, `"group"`, or `null`. */
   addMode: "category" | "group" | null;
+  /** Sets the active add mode (opens the corresponding dialog). */
   onSetAddMode: (mode: "category" | "group" | null) => void;
+  /** Current category name input value. */
   addCategoryName: string;
+  /** Called when the user types in the category name input. */
   onSetAddCategoryName: (name: string) => void;
+  /** Currently selected group ID for the new category. */
   addCategoryGroupID: string | null;
+  /** Called when the user picks a group for the new category. */
   onSetAddCategoryGroupID: (id: string | null) => void;
+  /** Current group name input value. */
   addGroupDialogName: string;
+  /** Called when the user types in the group name input. */
   onSetAddGroupDialogName: (name: string) => void;
+  /** Confirms creation of the new category. */
   onAddCategoryConfirm: () => void;
+  /** Confirms creation of the new group. */
   onAddGroupConfirm: () => void;
+  /** All available groups for the category group picker. */
   groups: CategoryGroup[];
 }
 
@@ -82,150 +85,31 @@ export function AddFlow({
         ]}
       />
 
-      {/* Add Category Dialog */}
-      <Dialog
-        open={addMode === "category"}
-        onOpenChange={(open) => {
-          if (!open) {
-            onSetAddMode(null);
-            onSetAddCategoryName("");
-            onSetAddCategoryGroupID(null);
-          }
+      <AddCategoryDialog
+        isOpen={addMode === "category"}
+        categoryName={addCategoryName}
+        onNameChange={onSetAddCategoryName}
+        selectedGroupID={addCategoryGroupID}
+        onGroupChange={onSetAddCategoryGroupID}
+        onConfirm={onAddCategoryConfirm}
+        onClose={() => {
+          onSetAddMode(null);
+          onSetAddCategoryName("");
+          onSetAddCategoryGroupID(null);
         }}
-      >
-        <DialogContent showCloseButton={false} className="gap-3">
-          <DialogHeader>
-            <DialogTitle>New Category</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={addCategoryName}
-            onChange={(e) => onSetAddCategoryName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                if (groups.length === 0) onAddCategoryConfirm();
-              }
-            }}
-            placeholder="Category name"
-            className={INPUT_CLASS}
-            autoFocus
-            autoCapitalize="words"
-          />
-          {groups.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <p className="text-xs font-medium px-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                Group
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSetAddCategoryGroupID(null)}
-                  className="h-9 rounded-xl px-3 text-sm font-medium transition-colors"
-                  style={{
-                    touchAction: "manipulation",
-                    backgroundColor: addCategoryGroupID === null
-                      ? "var(--color-brand-green)"
-                      : "var(--color-surface-input)",
-                    color: addCategoryGroupID === null ? "#fff" : "var(--color-text-secondary)",
-                  }}
-                >
-                  No Group
-                </button>
-                {groups.map((group) => (
-                  <button
-                    key={group.id}
-                    type="button"
-                    onClick={() => onSetAddCategoryGroupID(group.id)}
-                    className="h-9 rounded-xl px-3 text-sm font-medium transition-colors"
-                    style={{
-                      touchAction: "manipulation",
-                      backgroundColor: addCategoryGroupID === group.id
-                        ? "var(--color-brand-green)"
-                        : "var(--color-surface-input)",
-                      color: addCategoryGroupID === group.id ? "#fff" : "var(--color-text-primary)",
-                    }}
-                  >
-                    {group.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <DialogFooter className="flex-row gap-2 mt-1">
-            <Button
-              variant="ghost"
-              className="flex-1 rounded-xl hover:!bg-[color:var(--color-surface-input)]"
-              style={{ color: "var(--color-text-secondary)" }}
-              onClick={() => {
-                onSetAddMode(null);
-                onSetAddCategoryName("");
-                onSetAddCategoryGroupID(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="ghost"
-              className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
-              style={{ color: "var(--color-brand-green)" }}
-              disabled={addCategoryName.trim().length === 0}
-              onClick={onAddCategoryConfirm}
-            >
-              Add
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        groups={groups}
+      />
 
-      {/* Add Group Dialog */}
-      <Dialog
-        open={addMode === "group"}
-        onOpenChange={(open) => {
-          if (!open) {
-            onSetAddMode(null);
-            onSetAddGroupDialogName("");
-          }
+      <AddGroupDialog
+        isOpen={addMode === "group"}
+        groupName={addGroupDialogName}
+        onNameChange={onSetAddGroupDialogName}
+        onConfirm={onAddGroupConfirm}
+        onClose={() => {
+          onSetAddMode(null);
+          onSetAddGroupDialogName("");
         }}
-      >
-        <DialogContent showCloseButton={false} className="gap-3">
-          <DialogHeader>
-            <DialogTitle>New Group</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={addGroupDialogName}
-            onChange={(e) => onSetAddGroupDialogName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); onAddGroupConfirm(); }
-            }}
-            placeholder="Group name"
-            className={INPUT_CLASS}
-            autoFocus
-            autoCapitalize="words"
-          />
-          <DialogFooter className="flex-row gap-2 mt-1">
-            <Button
-              variant="ghost"
-              className="flex-1 rounded-xl hover:!bg-[color:var(--color-surface-input)]"
-              style={{ color: "var(--color-text-secondary)" }}
-              onClick={() => {
-                onSetAddMode(null);
-                onSetAddGroupDialogName("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="ghost"
-              className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
-              style={{ color: "var(--color-brand-green)" }}
-              disabled={addGroupDialogName.trim().length === 0}
-              onClick={onAddGroupConfirm}
-            >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      />
     </>
   );
 }

@@ -22,7 +22,8 @@ function getRouteDepth(pathname: string): number {
 
 // MARK: - Component
 
-const PageTransitionWrapper = ({ children }: PageTransitionWrapperProps): JSX.Element => {
+/** Animated page-transition wrapper — slides pages in/out based on route depth changes. */
+export function PageTransitionWrapper({ children }: PageTransitionWrapperProps): JSX.Element {
   const location = useLocation();
 
   // Snapshot of the previous page's rendered children kept alive during exit.
@@ -106,4 +107,3 @@ const PageTransitionWrapper = ({ children }: PageTransitionWrapperProps): JSX.El
   );
 };
 
-export { PageTransitionWrapper };

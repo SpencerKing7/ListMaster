@@ -4,7 +4,8 @@ import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 
-const CategoryPicker = (): JSX.Element => {
+/** Horizontally scrollable pill row for selecting a category. Supports drag-to-scroll. */
+export function CategoryPicker(): JSX.Element {
   const { categoriesInSelectedGroup, selectedCategoryID, selectCategory } =
     useCategoriesStore();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -147,4 +148,4 @@ const CategoryPicker = (): JSX.Element => {
   );
 };
 
-export { CategoryPicker };
+

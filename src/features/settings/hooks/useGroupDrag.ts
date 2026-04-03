@@ -1,11 +1,10 @@
 // src/features/settings/hooks/useGroupDrag.ts
 // Custom hook encapsulating group drag-to-reorder logic for SettingsSheet.
-// NOTE: 230 lines — exceeds the 120-line hook target because pointer-event drag
-// logic (down/move/up/cancel), collapse tracking, and commit-on-drop are a single
-// cohesive interaction that cannot be split without breaking the drag state machine.
+// Composes useExpandedGroups for expand/collapse state.
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { CategoryGroup } from "@/models/types";
+import { useExpandedGroups } from "./useExpandedGroups";
 
 // MARK: - Types
 
@@ -63,9 +62,9 @@ export function useGroupDrag(
   const [groupDragState, setGroupDragState] = useState<GroupDragState | null>(
     null,
   );
-  const [expandedGroupIDs, setExpandedGroupIDs] = useState<Set<string>>(
-    () => new Set(),
-  );
+
+  const { expandedGroupIDs, setExpandedGroupIDs, toggleGroup } =
+    useExpandedGroups(groups);
 
   const groupDragStateRef = useRef<GroupDragState | null>(null);
   const groupDragPointerStartY = useRef(0);
@@ -84,34 +83,6 @@ export function useGroupDrag(
   useEffect(() => {
     moveGroupsRef.current = moveGroups;
   }, [moveGroups]);
-
-  /** Toggles a single group's expanded/collapsed state. */
-  const toggleGroup = useCallback((groupID: string) => {
-    setExpandedGroupIDs((prev) => {
-      const next = new Set(prev);
-      if (next.has(groupID)) {
-        next.delete(groupID);
-      } else {
-        next.add(groupID);
-      }
-      return next;
-    });
-  }, []);
-
-  // Initialize expandedGroupIDs when groups change (add new, remove stale).
-  useEffect(() => {
-    setExpandedGroupIDs((prev) => {
-      const currentGroupIDs = new Set(groups.map((g) => g.id));
-      const next = new Set(prev);
-      for (const id of currentGroupIDs) {
-        if (!next.has(id)) next.add(id);
-      }
-      for (const id of next) {
-        if (!currentGroupIDs.has(id)) next.delete(id);
-      }
-      return next;
-    });
-  }, [groups]);
 
   const handleGroupDragPointerDown = useCallback(
     (e: React.PointerEvent, idx: number) => {
@@ -229,7 +200,7 @@ export function useGroupDrag(
         };
       }, 240);
     },
-    [],
+    [setExpandedGroupIDs],
   );
 
   const handleGroupDragPointerMove = useCallback((e: PointerEvent) => {
@@ -309,7 +280,7 @@ export function useGroupDrag(
     if (originalIdx !== -1 && finalIdx !== -1 && originalIdx !== finalIdx) {
       moveGroupsRef.current(originalIdx, finalIdx);
     }
-  }, []);
+  }, [setExpandedGroupIDs]);
 
   // Attach handlers to window once on mount.
   useEffect(() => {

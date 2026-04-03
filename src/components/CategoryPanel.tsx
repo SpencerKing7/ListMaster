@@ -44,7 +44,7 @@ const noItemsIcon = (
 
 /** Displays the selected category's items with add input, sort controls, and
  *  swipeable checklist rows. Shows contextual empty states when appropriate. */
-const CategoryPanel = ({ category }: CategoryPanelProps): JSX.Element | null => {
+export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | null {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
 
@@ -144,4 +144,4 @@ const CategoryPanel = ({ category }: CategoryPanelProps): JSX.Element | null => 
   );
 };
 
-export { CategoryPanel };
+

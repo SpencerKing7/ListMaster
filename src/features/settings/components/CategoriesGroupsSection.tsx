@@ -6,21 +6,12 @@ import type { JSX } from "react";
 import type { Category, CategoryGroup } from "@/models/types";
 import type { CatDragState } from "@/features/settings/hooks/useCategoryDrag";
 import type { GroupDragState } from "@/features/settings/hooks/useGroupDrag";
+import { computeGroupLiveOffset } from "@/features/settings/utils/dragUtils";
 import { SettingsCard } from "./SettingsCard";
 import { SectionLabel } from "./SectionLabel";
 import { GroupRow } from "./GroupRow";
 import { UngroupedSection } from "./UngroupedSection";
 import { FlatLayout } from "./FlatLayout";
-
-/** Compute the cumulative Y offset of a slot in the live order (groups). */
-function computeGroupLiveOffset(ds: GroupDragState, liveIdx: number): number {
-  let offset = 0;
-  for (let i = 0; i < liveIdx; i++) {
-    const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
-    offset += (ds.heights[origI] ?? ds.rowHeight) + ds.gap;
-  }
-  return offset;
-}
 
 // MARK: - Props
 

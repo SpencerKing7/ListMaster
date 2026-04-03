@@ -6,7 +6,7 @@ import { ActionSheet } from "@/components/ui/action-sheet";
 import { HapticService } from "@/services/hapticService";
 
 /** Bottom bar — shows chevron navigation and clear-checked button when checked items exist. */
-const BottomBar = (): JSX.Element => {
+export function BottomBar(): JSX.Element {
   const store = useCategoriesStore();
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
@@ -148,4 +148,4 @@ const BottomBar = (): JSX.Element => {
   );
 };
 
-export { BottomBar };
+
