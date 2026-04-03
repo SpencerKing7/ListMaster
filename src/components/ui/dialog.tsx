@@ -1,12 +1,40 @@
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+// MARK: - Dialog open-state context (drives the manual blur overlay)
+
+const DialogOpenContext = React.createContext(false)
+
+function Dialog({ open, onOpenChange, ...props }: DialogPrimitive.Root.Props) {
+  const [internalOpen, setInternalOpen] = React.useState(open ?? false)
+
+  React.useEffect(() => {
+    if (open !== undefined) setInternalOpen(open)
+  }, [open])
+
+  const handleOpenChange = React.useCallback(
+    (next: boolean, eventDetails: DialogPrimitive.Root.ChangeEventDetails) => {
+      setInternalOpen(next)
+      onOpenChange?.(next, eventDetails)
+    },
+    [onOpenChange]
+  )
+
+  return (
+    <DialogOpenContext.Provider value={internalOpen}>
+      <DialogPrimitive.Root
+        data-slot="dialog"
+        open={open}
+        onOpenChange={handleOpenChange}
+        {...props}
+      />
+    </DialogOpenContext.Provider>
+  )
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -23,22 +51,26 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogOverlay({
   className,
+  visible,
   ...props
-}: DialogPrimitive.Backdrop.Props) {
-  return (
-    <DialogPrimitive.Backdrop
+}: React.ComponentProps<"div"> & { visible?: boolean }) {
+  return createPortal(
+    <div
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-[70] duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-[70] transition-opacity duration-100",
         className
       )}
       style={{
         backgroundColor: "var(--color-surface-overlay)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? "auto" : "none",
       }}
       {...props}
-    />
+    />,
+    document.body
   )
 }
 
@@ -51,9 +83,11 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const isOpen = React.useContext(DialogOpenContext)
+
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay visible={isOpen} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
