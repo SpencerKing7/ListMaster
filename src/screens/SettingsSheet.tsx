@@ -136,10 +136,10 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
               <DataSection onReset={d.handleReset} />
             </div>
           </div>
+
+          <SettingsDialogPortal d={d} groups={store.groups} />
         </SheetContent>
       </Sheet>
-
-      <SettingsDialogPortal d={d} groups={store.groups} />
     </>
   );
 }

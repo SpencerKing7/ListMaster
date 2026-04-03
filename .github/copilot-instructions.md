@@ -1,5 +1,37 @@
 # ListMaster PWA — Agent Instructions
 
+## Output Format
+
+Every response is a checklist. Nothing else.
+
+Before doing any work, list every step as unchecked boxes. Complete the work. Return the same list with boxes checked. That is the entire response.
+
+```
+- [ ] Read docs/snapshots/main-screen-ui-snapshot.md
+- [ ] Extract ItemRow into src/components/ItemRow.tsx
+- [ ] Update MainScreen.tsx to import ItemRow
+```
+
+becomes:
+
+```
+- [x] Read docs/snapshots/main-screen-ui-snapshot.md
+- [x] Extract ItemRow into src/components/ItemRow.tsx
+- [x] Update MainScreen.tsx to import ItemRow
+```
+
+**These are banned in every response, without exception:**
+
+- Preamble of any kind before the task list
+- Explanations of what you are doing or why
+- Descriptions of your approach or reasoning
+- Summaries, recaps, or closing remarks
+- Phrases like "I will...", "Here is...", "Note that...", "This ensures..."
+
+**The only permitted prose** is a single sentence when a blocker requires a decision — e.g. `MainScreen.tsx exceeds 200-line ceiling — extracting HeaderActions first.` — followed immediately by the updated checklist. No other prose is ever acceptable.
+
+---
+
 ## Project Identity
 
 This is **ListMaster PWA** — a React + TypeScript Progressive Web App built with Vite. It is a web port of the ListMaster iOS app.
@@ -49,7 +81,7 @@ Every `src/` file has a target and a hard ceiling. The hard ceiling is absolute 
 | Hook (standalone `use*.ts`) | 80 lines  | **120 lines** |
 | Utility (`lib/`)            | 80 lines  | **120 lines** |
 
-**If the file you are about to edit is already over its hard ceiling:** state this explicitly in your response before making any changes. Then extract before you add — do not append to an already-bloated file.
+**If the file you are about to edit is already over its hard ceiling:** add one sentence to the task list flagging this, then extract before adding.
 
 **If adding your code would push a file past its ceiling:** extract first, then add. Choose the right extraction type:
 
@@ -57,7 +89,7 @@ Every `src/` file has a target and a hard ceiling. The hard ceiling is absolute 
 - Clustered `useState`/`useEffect` logic → new `use*.ts` in `store/`
 - A pure function with no React dependency → `lib/utils.ts` or a new file in `lib/`
 
-**If a file needs more than three `// MARK: -` sections to stay navigable:** that is a signal to split the file, not add another marker.
+**If a file needs more than three `// MARK: -` sections to stay navigable:** split the file, do not add another marker.
 
 ---
 
@@ -111,8 +143,6 @@ src/
 ---
 
 ## Architecture Rules
-
-These define how the layers interact. Each rule names the layer and its constraint.
 
 **Models** — `src/models/types.ts` holds only `interface` and `type` declarations. No functions, no classes, no imports of any kind.
 
