@@ -13,13 +13,14 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
-import type { Category } from "@/models/types";
+import type { Category, CategoryGroup } from "@/models/types";
 
 // MARK: - Types
 
 interface SyncPayload {
   lists: Category[];
   selectedCategoryID: string | null;
+  groups?: CategoryGroup[]; // optional for backwards compatibility with older clients
   updatedAt: number; // Unix ms — used to detect stale writes
 }
 
@@ -63,10 +64,12 @@ export async function saveState(
   syncCode: string,
   categories: Category[],
   selectedCategoryID: string | null,
+  groups: CategoryGroup[],
 ): Promise<void> {
   const payload: SyncPayload = {
     lists: categories,
     selectedCategoryID,
+    groups,
     updatedAt: Date.now(),
   };
   await setDoc(syncDocRef(syncCode), payload);
@@ -79,6 +82,7 @@ export async function saveState(
 export async function loadState(syncCode: string): Promise<{
   categories: Category[];
   selectedCategoryID: string | null;
+  groups: CategoryGroup[];
 } | null> {
   const timeoutPromise = new Promise<null>((resolve) =>
     setTimeout(() => resolve(null), 5000),
@@ -90,6 +94,7 @@ export async function loadState(syncCode: string): Promise<{
     return {
       categories: data.lists,
       selectedCategoryID: data.selectedCategoryID,
+      groups: data.groups ?? [], // critical fallback here, not in the caller
     };
   });
 
@@ -102,14 +107,18 @@ export async function loadState(syncCode: string): Promise<{
  */
 export function subscribeToState(
   syncCode: string,
-  callback: (categories: Category[], selectedCategoryID: string | null) => void,
+  callback: (
+    categories: Category[],
+    selectedCategoryID: string | null,
+    groups: CategoryGroup[],
+  ) => void,
 ): Unsubscribe {
   return onSnapshot(
     syncDocRef(syncCode),
     (snap) => {
       if (!snap.exists()) return;
       const data = snap.data() as SyncPayload;
-      callback(data.lists, data.selectedCategoryID);
+      callback(data.lists, data.selectedCategoryID, data.groups ?? []);
     },
     (error) => {
       console.error(

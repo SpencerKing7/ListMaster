@@ -3,6 +3,7 @@
  * mirroring UIAlertController action sheets.
  */
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // Module-level counter so multiple simultaneous ActionSheets (e.g. rapid open/close)
 // don't prematurely re-enable body scroll when one closes while another is still open.
@@ -63,9 +64,9 @@ const ActionSheet = ({
 
   if (!isMounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -155,7 +156,8 @@ const ActionSheet = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

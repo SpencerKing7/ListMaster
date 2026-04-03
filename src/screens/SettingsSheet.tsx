@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import ActionSheet from "@/components/ui/action-sheet";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useSyncStore } from "@/store/useSyncStore";
@@ -45,13 +46,32 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [isAdoptingCode, setIsAdoptingCode] = useState(false);
 
+  // ── Groups state ──
+  const [newGroupName, setNewGroupName] = useState("");
+  const [groupToRename, setGroupToRename] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [renameGroupName, setRenameGroupName] = useState("");
+  const [selectedCategoryForGroup, setSelectedCategoryForGroup] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isGroupActionSheetOpen, setIsGroupActionSheetOpen] = useState(false);
+
   // ── Drag-to-reorder state ──
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [groupDragIndex, setGroupDragIndex] = useState<number | null>(null);
+  const [groupOverIndex, setGroupOverIndex] = useState<number | null>(null);
   const dragOffsetY = useRef(0);
   const dragNodeY = useRef(0);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRects = useRef<DOMRect[]>([]);
+  const groupListRef = useRef<HTMLUListElement>(null);
+  const groupItemRects = useRef<DOMRect[]>([]);
+  const groupDragOffsetY = useRef(0);
+  const groupDragNodeY = useRef(0);
 
   const renameInputRef = useRef<HTMLInputElement>(null);
   const addCategoryInputRef = useRef<HTMLInputElement>(null);
@@ -107,9 +127,26 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     itemRects.current = Array.from(items).map((el) => el.getBoundingClientRect());
   }, []);
 
+  // Snapshot all group item rects when drag begins
+  const snapshotGroupRects = useCallback(() => {
+    if (!groupListRef.current) return;
+    const items = groupListRef.current.querySelectorAll<HTMLElement>("[data-group-idx]");
+    groupItemRects.current = Array.from(items).map((el) => el.getBoundingClientRect());
+  }, []);
+
   // Determine which index the pointer is over
   const getDropIndex = useCallback((clientY: number) => {
     const rects = itemRects.current;
+    for (let i = 0; i < rects.length; i++) {
+      const mid = rects[i].top + rects[i].height / 2;
+      if (clientY < mid) return i;
+    }
+    return rects.length - 1;
+  }, []);
+
+  // Determine which group index the pointer is over
+  const getGroupDropIndex = useCallback((clientY: number) => {
+    const rects = groupItemRects.current;
     for (let i = 0; i < rects.length; i++) {
       const mid = rects[i].top + rects[i].height / 2;
       if (clientY < mid) return i;
@@ -158,6 +195,47 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     setOverIndex(null);
   }, [dragIndex, overIndex, store]);
 
+  const handleGroupDragPointerDown = useCallback(
+    (e: React.PointerEvent, idx: number) => {
+      // Only primary button (touch or left-click)
+      if (e.button !== 0) return;
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      snapshotGroupRects();
+      const rect = groupItemRects.current[idx];
+      groupDragOffsetY.current = e.clientY - rect.top;
+      groupDragNodeY.current = e.clientY;
+      setGroupDragIndex(idx);
+      setGroupOverIndex(idx);
+    },
+    [snapshotGroupRects],
+  );
+
+  const handleGroupDragPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (groupDragIndex === null) return;
+      // On mouse, only track while the primary button is held — prevents
+      // accidental reorder highlights when hovering without dragging.
+      if (e.pointerType === "mouse" && e.buttons === 0) return;
+      groupDragNodeY.current = e.clientY;
+      setGroupOverIndex(getGroupDropIndex(e.clientY));
+    },
+    [groupDragIndex, getGroupDropIndex],
+  );
+
+  const handleGroupDragPointerUp = useCallback(() => {
+    if (groupDragIndex === null || groupOverIndex === null) {
+      setGroupDragIndex(null);
+      setGroupOverIndex(null);
+      return;
+    }
+    if (groupDragIndex !== groupOverIndex) {
+      store.moveGroups(groupDragIndex, groupOverIndex);
+    }
+    setGroupDragIndex(null);
+    setGroupOverIndex(null);
+  }, [groupDragIndex, groupOverIndex, store]);
+
   function addCategory() {
     if (!trimmedNewCategoryName) return;
     store.addCategory(trimmedNewCategoryName);
@@ -195,6 +273,30 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     settings.resetToNewUser();
     setIsResetDialogOpen(false);
     onOpenChange(false);
+  }
+
+  // ── Group handlers ──
+  function addGroup() {
+    const trimmed = newGroupName.trim();
+    if (!trimmed) return;
+    store.addGroup(trimmed);
+    setNewGroupName("");
+  }
+
+  function handleRenameGroupSave() {
+    if (!groupToRename) return;
+    const trimmed = renameGroupName.trim();
+    if (!trimmed) return;
+    store.renameGroup(groupToRename.id, trimmed);
+    setGroupToRename(null);
+    setRenameGroupName("");
+  }
+
+  function handleCategoryGroupChange(groupID: string | null) {
+    if (!selectedCategoryForGroup) return;
+    store.setCategoryGroup(selectedCategoryForGroup.id, groupID ?? undefined);
+    setSelectedCategoryForGroup(null);
+    setIsGroupActionSheetOpen(false);
   }
 
   return (
@@ -315,9 +417,40 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                           {category.name}
                         </span>
 
+                        {/* Group assignment button — only shown when groups exist */}
+                        {store.hasGroups && (() => {
+                          const assignedGroup = store.groups.find(g => g.id === category.groupID);
+                          return (
+                            <button
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all active:scale-[0.96] active:opacity-75"
+                              style={{
+                                backgroundColor: assignedGroup
+                                  ? `rgba(var(--color-brand-teal-rgb), 0.12)`
+                                  : `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+                                color: assignedGroup
+                                  ? "var(--color-brand-teal)"
+                                  : "var(--color-text-secondary)",
+                              }}
+                              onClick={() => {
+                                setSelectedCategoryForGroup({ id: category.id, name: category.name });
+                                setIsGroupActionSheetOpen(true);
+                              }}
+                            >
+                              {/* Folder icon */}
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                              </svg>
+                              <span>{assignedGroup ? assignedGroup.name : "None"}</span>
+                            </button>
+                          );
+                        })()}
+
                         <button
                           className="p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-all active:scale-[0.96] active:opacity-75"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setRenameCategoryName(category.name);
                             setCategoryToRename({ id: category.id, name: category.name });
                           }}
@@ -333,7 +466,10 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                         <button
                           className="p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-all active:scale-[0.96] active:opacity-75 disabled:opacity-20"
                           disabled={!store.canDeleteCategories}
-                          onClick={() => store.deleteCategory(category.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            store.deleteCategory(category.id);
+                          }}
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                             stroke="var(--color-danger)" strokeWidth="2"
@@ -376,6 +512,135 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                   style={{ backgroundColor: "var(--color-brand-green)" }}
                   disabled={trimmedNewCategoryName.length === 0}
                   onClick={addCategory}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </button>
+              </div>
+            </SettingsCard>
+
+            {/* Groups List */}
+            <SettingsCard>
+              <SectionLabel>Groups</SectionLabel>
+              {store.groups.length > 0 && (
+                <ul
+                  ref={groupListRef}
+                  className="flex flex-col gap-1.5"
+                  onPointerMove={handleGroupDragPointerMove}
+                  onPointerUp={handleGroupDragPointerUp}
+                  onPointerCancel={handleGroupDragPointerUp}
+                >
+                  {(() => {
+                    // Compute visual order during drag
+                    const grps = store.groups;
+                    const indices = grps.map((_, i) => i);
+                    if (groupDragIndex !== null && groupOverIndex !== null && groupDragIndex !== groupOverIndex) {
+                      const [moved] = indices.splice(groupDragIndex, 1);
+                      indices.splice(groupOverIndex, 0, moved);
+                    }
+                    return indices.map((srcIdx) => {
+                      const group = grps[srcIdx];
+                      const isDragging = srcIdx === groupDragIndex;
+                      return (
+                        <li
+                          key={group.id}
+                          data-group-idx={srcIdx}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-transform duration-150"
+                          style={{
+                            backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.06)`,
+                            opacity: isDragging ? 0.5 : 1,
+                            transform: isDragging ? "scale(0.97)" : undefined,
+                          }}
+                        >
+                          {/* Drag handle */}
+                          <div
+                            className="touch-none cursor-grab active:cursor-grabbing select-none p-1 -m-1 active:scale-[0.96] transition-transform"
+                            onPointerDown={(e) => handleGroupDragPointerDown(e, srcIdx)}
+                          >
+                            <svg
+                              width="15" height="15" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" strokeWidth="2"
+                              style={{ color: "var(--color-brand-teal)", opacity: 0.5, flexShrink: 0 }}
+                            >
+                              <line x1="4" y1="6" x2="20" y2="6" />
+                              <line x1="4" y1="12" x2="20" y2="12" />
+                              <line x1="4" y1="18" x2="20" y2="18" />
+                            </svg>
+                          </div>
+
+                          <span
+                            className="flex-1 text-sm font-medium"
+                            style={{ color: "var(--color-text-primary)" }}
+                          >
+                            {group.name}
+                          </span>
+
+                          <button
+                            className="p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-all active:scale-[0.96] active:opacity-75"
+                            onClick={() => {
+                              setRenameGroupName(group.name);
+                              setGroupToRename({ id: group.id, name: group.name });
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                              stroke="var(--color-brand-teal)" strokeWidth="2"
+                              strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                              <path d="m15 5 4 4" />
+                            </svg>
+                          </button>
+
+                          <button
+                            className="p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-all active:scale-[0.96] active:opacity-75"
+                            onClick={() => store.deleteGroup(group.id)}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                              stroke="var(--color-danger)" strokeWidth="2"
+                              strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </li>
+                      );
+                    });
+                  })()}
+                </ul>
+              )}
+
+              {/* Add group inline */}
+              <div className="flex gap-2 items-center mt-1">
+                <Input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addGroup();
+                    }
+                  }}
+                  placeholder="Add new group"
+                  className={`flex-1 ${inputClass}`}
+                  style={{ color: "var(--color-text-primary)" }}
+                  enterKeyHint="send"
+                  autoCapitalize="words"
+                />
+                <button
+                  className="h-11 w-11 flex items-center justify-center rounded-xl text-white shrink-0 transition-all disabled:opacity-30 active:scale-[0.96] active:opacity-75"
+                  style={{ backgroundColor: "var(--color-brand-green)" }}
+                  disabled={newGroupName.trim().length === 0}
+                  onClick={addGroup}
                 >
                   <svg
                     width="20"
@@ -730,6 +995,80 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rename Group Dialog */}
+      <Dialog
+        open={groupToRename !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGroupToRename(null);
+            setRenameGroupName("");
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="gap-3"
+        >
+          <DialogHeader>
+            <DialogTitle>Rename Group</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Choose a new name for "{groupToRename?.name}".
+          </p>
+          <Input
+            value={renameGroupName}
+            onChange={(e) => setRenameGroupName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleRenameGroupSave();
+              }
+            }}
+            className={inputClass}
+            autoFocus
+          />
+          <DialogFooter className="flex-row gap-2 mt-1">
+            <Button
+              variant="ghost"
+              className="flex-1 rounded-xl hover:!bg-[color:var(--color-surface-input)]"
+              style={{ color: "var(--color-text-secondary)" }}
+              onClick={() => {
+                setGroupToRename(null);
+                setRenameGroupName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
+              style={{ color: "var(--color-brand-green)" }}
+              onClick={handleRenameGroupSave}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Group Assignment ActionSheet */}
+      <ActionSheet
+        isOpen={isGroupActionSheetOpen}
+        onClose={() => setIsGroupActionSheetOpen(false)}
+        title={`Assign "${selectedCategoryForGroup?.name}" to Group`}
+        actions={[
+          {
+            label: "No Group",
+            onClick: () => handleCategoryGroupChange(null),
+          },
+          ...store.groups.map(group => ({
+            label: group.name,
+            onClick: () => handleCategoryGroupChange(group.id),
+          })),
+        ]}
+      />
+
     </>
   );
 };

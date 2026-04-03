@@ -33,18 +33,40 @@ interface Category {
   items: ChecklistItem[];
   sortOrder?: SortOrder;
   sortDirection?: SortDirection;
+  groupID?: string;
 }
 ```
 
-| Field           | Type                         | Notes                                                                   |
-| --------------- | ---------------------------- | ----------------------------------------------------------------------- |
-| `id`            | `string`                     | UUID v4                                                                 |
-| `name`          | `string`                     | The list name as displayed in the category picker                       |
-| `items`         | `ChecklistItem[]`            | All items belonging to this list                                        |
-| `sortOrder`     | `SortOrder \| undefined`     | Optional — defaults to `"date"` when absent (legacy data compatibility) |
-| `sortDirection` | `SortDirection \| undefined` | Optional — defaults to `"asc"` when absent (legacy data compatibility)  |
+| Field           | Type                         | Notes                                                                                                                                                                             |
+| --------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | `string`                     | UUID v4                                                                                                                                                                           |
+| `name`          | `string`                     | The list name as displayed in the category picker                                                                                                                                 |
+| `items`         | `ChecklistItem[]`            | All items belonging to this list                                                                                                                                                  |
+| `sortOrder`     | `SortOrder \| undefined`     | Optional — defaults to `"date"` when absent (legacy data compatibility)                                                                                                           |
+| `sortDirection` | `SortDirection \| undefined` | Optional — defaults to `"asc"` when absent (legacy data compatibility)                                                                                                            |
+| `groupID`       | `string \| undefined`        | Optional — UUID of the owning `CategoryGroup`. `undefined` means the category is ungrouped and appears under "All" and in the dimmed trailing section of any specific group view. |
 
-`sortOrder` and `sortDirection` are optional to maintain backwards compatibility with data saved before per-category sort settings were introduced. Any code reading these fields must use the `?? "date"` / `?? "asc"` fallback pattern.
+`sortOrder` and `sortDirection` are optional to maintain backwards compatibility with data saved before per-category sort settings were introduced. Any code reading these fields must use the `?? "date"` / `?? "asc"` fallback pattern. `groupID` is also optional for backwards compatibility — existing persisted data with no `groupID` is treated as ungrouped with zero migration needed.
+
+---
+
+## `CategoryGroup`
+
+```ts
+interface CategoryGroup {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+```
+
+| Field       | Type     | Notes                                                                    |
+| ----------- | -------- | ------------------------------------------------------------------------ |
+| `id`        | `string` | UUID v4                                                                  |
+| `name`      | `string` | User-visible label — e.g. `"Shopping"`, `"Work"`                         |
+| `sortOrder` | `number` | Display order among groups. Managed by the `MOVE_GROUPS` reducer action. |
+
+`CategoryGroup` is a power-user feature. If `groups` is an empty array, the `GroupTabBar` is not rendered and the app behaves identically to before groups were introduced.
 
 ---
 

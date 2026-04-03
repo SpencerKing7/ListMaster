@@ -1,7 +1,9 @@
 // src/components/HeaderBar.tsx
 import { useState } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useCategoriesStore } from "@/store/useCategoriesStore";
 import CategoryPicker from "./CategoryPicker";
+import GroupTabBar from "./GroupTabBar";
 
 interface HeaderBarProps {
   onOpenSettings: () => void;
@@ -11,6 +13,7 @@ interface HeaderBarProps {
 
 const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps) => {
   const { userName } = useSettingsStore();
+  const { hasGroups, groups, selectedGroupID, selectGroup } = useCategoriesStore();
   const trimmedName = userName.trim();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -95,6 +98,13 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
           </svg>
         </button>
       </div>
+      {hasGroups && (
+        <GroupTabBar
+          groups={groups}
+          selectedGroupID={selectedGroupID}
+          onSelectGroup={selectGroup}
+        />
+      )}
       <CategoryPicker />
     </header>
   );

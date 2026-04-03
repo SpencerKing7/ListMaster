@@ -4,7 +4,6 @@ import type { Category } from "@/models/types";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 import SwipeableRow from "./SwipeableRow";
-
 interface CategoryPanelProps {
   category: Category | null;
 }
@@ -97,6 +96,48 @@ const CategoryPanel = ({ category }: CategoryPanelProps) => {
   }, []);
 
   if (!category) {
+    // When groups are enabled but the selected group has no categories,
+    // show a contextual empty-state prompt instead of a silent blank.
+    if (store.hasGroups && store.categoriesInSelectedGroup.length === 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8">
+          <div
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? "translateY(0) scale(1)" : "translateY(12px) scale(0.92)",
+              transition: "opacity 220ms cubic-bezier(0,0,0.2,1), transform 220ms cubic-bezier(0,0,0.2,1)",
+            }}
+            className="flex flex-col items-center gap-2"
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)" }}
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ color: "var(--color-brand-teal)" }}
+              >
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              </svg>
+            </div>
+            <p className="text-base font-medium" style={{ color: "var(--color-brand-teal)" }}>
+              No lists in this group
+            </p>
+            <p className="text-sm text-center" style={{ color: "var(--color-text-secondary)" }}>
+              Assign lists to this group in Settings.
+            </p>
+          </div>
+        </div>
+      );
+    }
     return <div className="flex-1" />;
   }
 

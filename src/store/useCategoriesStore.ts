@@ -11,6 +11,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import type {
   Category,
+  CategoryGroup,
   ChecklistItem,
   SortOrder,
   SortDirection,
@@ -24,6 +25,8 @@ import React from "react";
 interface StoreState {
   categories: Category[];
   selectedCategoryID: string;
+  groups: CategoryGroup[];
+  selectedGroupID: string | null;
 }
 
 function loadInitialState(): StoreState {
@@ -32,9 +35,16 @@ function loadInitialState(): StoreState {
     return {
       categories: saved.categories,
       selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
+      groups: saved.groups ?? [],
+      selectedGroupID: null, // Always start on "All"
     };
   }
-  return { categories: [], selectedCategoryID: "" };
+  return {
+    categories: [],
+    selectedCategoryID: "",
+    groups: [],
+    selectedGroupID: null,
+  };
 }
 
 // MARK: - Actions
@@ -64,6 +74,17 @@ type StoreAction =
       type: "SYNC_LOAD";
       categories: Category[];
       selectedCategoryID: string | null;
+      groups?: CategoryGroup[];
+    }
+  | { type: "ADD_GROUP"; name: string }
+  | { type: "RENAME_GROUP"; id: string; newName: string }
+  | { type: "DELETE_GROUP"; id: string }
+  | { type: "MOVE_GROUPS"; from: number; to: number }
+  | { type: "SELECT_GROUP"; id: string | null }
+  | {
+      type: "SET_CATEGORY_GROUP";
+      categoryID: string;
+      groupID: string | undefined;
     };
 
 // MARK: - Helpers
@@ -80,6 +101,17 @@ function isNameAvailable(
   return !categories.some((category) => {
     if (excludingID && category.id === excludingID) return false;
     return category.name.toLowerCase() === name.toLowerCase();
+  });
+}
+
+function isGroupNameAvailable(
+  groups: CategoryGroup[],
+  name: string,
+  excludingID?: string,
+): boolean {
+  return !groups.some((group) => {
+    if (excludingID && group.id === excludingID) return false;
+    return group.name.toLowerCase() === name.toLowerCase();
   });
 }
 
@@ -104,6 +136,7 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
         items: [],
       };
       next = {
+        ...state,
         categories: [...state.categories, newCategory],
         selectedCategoryID: newCategory.id,
       };
@@ -125,6 +158,7 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       }
       if (newCategories.length === 0) return state;
       next = {
+        ...state,
         categories: newCategories,
         selectedCategoryID: newCategories[0].id,
       };
@@ -152,6 +186,7 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
         state.categories[idx].id === state.selectedCategoryID;
       const remaining = state.categories.filter((c) => c.id !== action.id);
       next = {
+        ...state,
         categories: remaining,
         selectedCategoryID: deletedWasSelected
           ? remaining[0].id
@@ -291,14 +326,25 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       next = {
         categories: saved.categories,
         selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
+        groups: saved.groups ?? [],
+        selectedGroupID: null, // reset to "All" on reload
       };
       // Don't re-save on reload
       return next;
     }
 
     case "RESET_CATEGORIES": {
-      next = { categories: [], selectedCategoryID: "" };
-      PersistenceService.save(next.categories, next.selectedCategoryID);
+      next = {
+        categories: [],
+        selectedCategoryID: "",
+        groups: [],
+        selectedGroupID: null,
+      };
+      PersistenceService.save(
+        next.categories,
+        next.selectedCategoryID,
+        next.groups,
+      );
       return next;
     }
 
@@ -307,10 +353,98 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
         categories: action.categories,
         selectedCategoryID:
           action.selectedCategoryID ?? action.categories[0]?.id ?? "",
+        groups: action.groups ?? [],
+        selectedGroupID: null, // reset to "All" on sync load
       };
       // Persist to localStorage so remote data survives an app close.
-      PersistenceService.save(next.categories, next.selectedCategoryID);
+      PersistenceService.save(
+        next.categories,
+        next.selectedCategoryID,
+        next.groups,
+      );
       return next;
+    }
+
+    case "ADD_GROUP": {
+      const trimmed = normalizedName(action.name);
+      if (!trimmed || !isGroupNameAvailable(state.groups, trimmed))
+        return state;
+      const newGroup: CategoryGroup = {
+        id: uuidv4(),
+        name: trimmed,
+        sortOrder: state.groups.length,
+      };
+      next = {
+        ...state,
+        groups: [...state.groups, newGroup],
+      };
+      break;
+    }
+
+    case "RENAME_GROUP": {
+      const trimmed = normalizedName(action.newName);
+      if (!trimmed || !isGroupNameAvailable(state.groups, trimmed, action.id))
+        return state;
+      const updated = state.groups.map((g) =>
+        g.id === action.id ? { ...g, name: trimmed } : g,
+      );
+      next = { ...state, groups: updated };
+      break;
+    }
+
+    case "DELETE_GROUP": {
+      const groupToDelete = state.groups.find((g) => g.id === action.id);
+      if (!groupToDelete) return state;
+      const remainingGroups = state.groups.filter((g) => g.id !== action.id);
+      // Clear groupID for all categories that belonged to this group
+      const updatedCategories = state.categories.map((c) =>
+        c.groupID === action.id ? { ...c, groupID: undefined } : c,
+      );
+      next = {
+        ...state,
+        groups: remainingGroups,
+        categories: updatedCategories,
+      };
+      break;
+    }
+
+    case "MOVE_GROUPS": {
+      const arr = [...state.groups];
+      const [moved] = arr.splice(action.from, 1);
+      arr.splice(action.to, 0, moved);
+      // Update sortOrder to match new positions
+      const updatedGroups = arr.map((g, i) => ({ ...g, sortOrder: i }));
+      next = { ...state, groups: updatedGroups };
+      break;
+    }
+
+    case "SELECT_GROUP": {
+      const categoriesInGroup =
+        action.id === null
+          ? state.categories
+          : state.categories.filter(
+              (c) => c.groupID === action.id || c.groupID === undefined,
+            );
+      const currentCategoryInGroup = categoriesInGroup.some(
+        (c) => c.id === state.selectedCategoryID,
+      );
+      const newSelectedCategoryID = currentCategoryInGroup
+        ? state.selectedCategoryID
+        : (categoriesInGroup[0]?.id ?? "");
+      next = {
+        ...state,
+        selectedGroupID: action.id,
+        selectedCategoryID: newSelectedCategoryID,
+      };
+      break;
+    }
+
+    case "SET_CATEGORY_GROUP": {
+      const updated = state.categories.map((c) =>
+        c.id === action.categoryID ? { ...c, groupID: action.groupID } : c,
+      );
+      next = { ...state, categories: updated };
+      break;
     }
 
     default:
@@ -318,7 +452,11 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
   }
 
   // Auto-save after every mutation (except RELOAD and RESET which handle their own)
-  PersistenceService.save(next.categories, next.selectedCategoryID);
+  PersistenceService.save(
+    next.categories,
+    next.selectedCategoryID,
+    next.groups,
+  );
   return next;
 }
 
@@ -351,6 +489,17 @@ interface StoreContextValue {
   uncheckAllItemsInSelectedCategory: () => void;
   reload: () => void;
   resetCategories: () => void;
+  // New group-related properties
+  groups: CategoryGroup[];
+  selectedGroupID: string | null;
+  categoriesInSelectedGroup: Category[];
+  hasGroups: boolean;
+  selectGroup: (id: string | null) => void;
+  addGroup: (name: string) => void;
+  renameGroup: (id: string, newName: string) => void;
+  deleteGroup: (id: string) => void;
+  moveGroups: (from: number, to: number) => void;
+  setCategoryGroup: (categoryID: string, groupID: string | undefined) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
@@ -367,7 +516,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Schedules a cloud save 1 second after the last local mutation.
   const scheduleCloudSave = useCallback(
-    (categories: Category[], selectedCategoryID: string | null) => {
+    (
+      categories: Category[],
+      selectedCategoryID: string | null,
+      groups: CategoryGroup[],
+    ) => {
       // If this render was triggered by a SYNC_LOAD, skip — no echo writes.
       if (isLoadingFromSync.current) {
         isLoadingFromSync.current = false;
@@ -380,7 +533,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         cloudSaveTimer.current = null;
         try {
           const { saveState } = await import("../services/syncService");
-          await saveState(syncCode, categories, selectedCategoryID);
+          await saveState(syncCode, categories, selectedCategoryID, groups);
         } catch (error) {
           console.error("Failed to save to cloud:", error);
         }
@@ -411,16 +564,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             type: "SYNC_LOAD",
             categories: cloudState.categories,
             selectedCategoryID: cloudState.selectedCategoryID,
+            groups: cloudState.groups,
           });
         }
 
         unsubscribe = subscribeToState(
           syncCode,
-          (categories, selectedCategoryID) => {
+          (categories, selectedCategoryID, groups) => {
             // Mark synchronously before dispatch so the subsequent useEffect
             // that calls scheduleCloudSave sees it on the same render cycle.
             isLoadingFromSync.current = true;
-            dispatch({ type: "SYNC_LOAD", categories, selectedCategoryID });
+            dispatch({
+              type: "SYNC_LOAD",
+              categories,
+              selectedCategoryID,
+              groups,
+            });
           },
         );
       } catch (error) {
@@ -442,8 +601,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Trigger a debounced cloud save whenever local state changes.
   useEffect(() => {
-    scheduleCloudSave(state.categories, state.selectedCategoryID);
-  }, [state.categories, state.selectedCategoryID, scheduleCloudSave]);
+    scheduleCloudSave(state.categories, state.selectedCategoryID, state.groups);
+  }, [
+    state.categories,
+    state.selectedCategoryID,
+    state.groups,
+    scheduleCloudSave,
+  ]);
 
   const selectedCategoryIndex = state.categories.findIndex(
     (c) => c.id === state.selectedCategoryID,
@@ -454,19 +618,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ? state.categories[selectedCategoryIndex]
       : null;
 
+  // New derived values for groups
+  const categoriesInSelectedGroup = React.useMemo(
+    () =>
+      state.selectedGroupID === null
+        ? state.categories
+        : [
+            ...state.categories.filter(
+              (c) => c.groupID === state.selectedGroupID,
+            ),
+            ...state.categories.filter((c) => c.groupID === undefined),
+          ],
+    [state.categories, state.selectedGroupID],
+  );
+
+  const hasGroups = state.groups.length > 0;
+
+  const selectedCategoryIndexInGroup = categoriesInSelectedGroup.findIndex(
+    (c) => c.id === state.selectedCategoryID,
+  );
+
   const canSelectNextCategory =
-    selectedCategoryIndex !== -1 &&
-    selectedCategoryIndex < state.categories.length - 1;
+    selectedCategoryIndexInGroup !== -1 &&
+    selectedCategoryIndexInGroup < categoriesInSelectedGroup.length - 1;
 
   const canSelectPreviousCategory =
-    selectedCategoryIndex !== -1 && selectedCategoryIndex > 0;
+    selectedCategoryIndexInGroup !== -1 && selectedCategoryIndexInGroup > 0;
 
   const nextCategory = canSelectNextCategory
-    ? state.categories[selectedCategoryIndex + 1]
+    ? categoriesInSelectedGroup[selectedCategoryIndexInGroup + 1]
     : null;
 
   const previousCategory = canSelectPreviousCategory
-    ? state.categories[selectedCategoryIndex - 1]
+    ? categoriesInSelectedGroup[selectedCategoryIndexInGroup - 1]
     : null;
 
   const selectCategory = useCallback(
@@ -475,24 +659,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
   const selectNextCategory = useCallback(() => {
     if (
-      selectedCategoryIndex !== -1 &&
-      selectedCategoryIndex < state.categories.length - 1
+      selectedCategoryIndexInGroup !== -1 &&
+      selectedCategoryIndexInGroup < categoriesInSelectedGroup.length - 1
     ) {
       dispatch({
         type: "SELECT_CATEGORY",
-        id: state.categories[selectedCategoryIndex + 1].id,
+        id: categoriesInSelectedGroup[selectedCategoryIndexInGroup + 1].id,
       });
     }
-  }, [selectedCategoryIndex, state.categories]);
+  }, [selectedCategoryIndexInGroup, categoriesInSelectedGroup]);
 
   const selectPreviousCategory = useCallback(() => {
-    if (selectedCategoryIndex !== -1 && selectedCategoryIndex > 0) {
+    if (
+      selectedCategoryIndexInGroup !== -1 &&
+      selectedCategoryIndexInGroup > 0
+    ) {
       dispatch({
         type: "SELECT_CATEGORY",
-        id: state.categories[selectedCategoryIndex - 1].id,
+        id: categoriesInSelectedGroup[selectedCategoryIndexInGroup - 1].id,
       });
     }
-  }, [selectedCategoryIndex, state.categories]);
+  }, [selectedCategoryIndexInGroup, categoriesInSelectedGroup]);
 
   const addCategory = useCallback(
     (name: string) => dispatch({ type: "ADD_CATEGORY", name }),
@@ -556,6 +743,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  // New group-related callbacks
+  const selectGroup = useCallback(
+    (id: string | null) => dispatch({ type: "SELECT_GROUP", id }),
+    [],
+  );
+  const addGroup = useCallback(
+    (name: string) => dispatch({ type: "ADD_GROUP", name }),
+    [],
+  );
+  const renameGroup = useCallback(
+    (id: string, newName: string) =>
+      dispatch({ type: "RENAME_GROUP", id, newName }),
+    [],
+  );
+  const deleteGroup = useCallback(
+    (id: string) => dispatch({ type: "DELETE_GROUP", id }),
+    [],
+  );
+  const moveGroups = useCallback(
+    (from: number, to: number) => dispatch({ type: "MOVE_GROUPS", from, to }),
+    [],
+  );
+  const setCategoryGroup = useCallback(
+    (categoryID: string, groupID: string | undefined) =>
+      dispatch({ type: "SET_CATEGORY_GROUP", categoryID, groupID }),
+    [],
+  );
+
   const value: StoreContextValue = {
     categories: state.categories,
     selectedCategoryID: state.selectedCategoryID,
@@ -583,6 +798,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     uncheckAllItemsInSelectedCategory,
     reload,
     resetCategories,
+    // New group-related properties
+    groups: state.groups,
+    selectedGroupID: state.selectedGroupID,
+    categoriesInSelectedGroup,
+    hasGroups,
+    selectGroup,
+    addGroup,
+    renameGroup,
+    deleteGroup,
+    moveGroups,
+    setCategoryGroup,
   };
 
   return React.createElement(StoreContext.Provider, { value }, children);
