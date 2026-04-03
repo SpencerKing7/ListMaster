@@ -489,8 +489,14 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
               style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.25 }}
             />
           </div>
-          {/* Header */}
-          <SheetHeader className="flex flex-row items-center justify-between px-5 pb-3 pt-1">
+          {/* Header — also a swipe-to-dismiss grab target */}
+          <SheetHeader
+            className="flex flex-row items-center justify-between px-5 pb-3 pt-1 touch-none select-none"
+            onPointerDown={handleDismissPointerDown}
+            onPointerMove={handleDismissPointerMove}
+            onPointerUp={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
+            onPointerCancel={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
+          >
             <SheetTitle
               className="text-2xl font-bold"
               style={{ color: "var(--color-brand-green)" }}
@@ -544,7 +550,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
 
                         return (
                           <Fragment key={group.id}>
-                            {groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
+                            {!isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
                               <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
                             )}
                             <div
@@ -666,7 +672,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                                       const isLast = visualIdx === groupCategories.length - 1;
                                       return (
                                         <Fragment key={category.id}>
-                                          {dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
+                                          {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
                                             <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
                                           )}
                                           <div
@@ -776,7 +782,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                               const isLast = visualIdx === ungrouped.length - 1;
                               return (
                                 <Fragment key={category.id}>
-                                  {dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
+                                  {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
                                     <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
                                   )}
                                   <div
@@ -880,7 +886,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                     const isLast = idx === store.categories.length - 1;
                     return (
                       <Fragment key={category.id}>
-                        {dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
+                        {!isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
                           <li style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
                         )}
                         <li

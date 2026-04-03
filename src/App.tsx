@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useCategoriesStore } from "./store/useCategoriesStore";
@@ -16,12 +16,20 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = useState(
     () => hasCompletedOnboarding,
   );
+  // Skip the very first visibilitychange event which fires on initial page
+  // load (the tab transitions hidden → visible before React mounts).
+  // We only want to reload on genuine tab-switch returns.
+  const hasHandledFirstVisibility = useRef(false);
 
   // Foreground-reload: re-read localStorage when the tab becomes visible
   // Mirrors scenePhase == .active → store.reload() in ListMasterApp.swift
   useEffect(() => {
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
+        if (!hasHandledFirstVisibility.current) {
+          hasHandledFirstVisibility.current = true;
+          return;
+        }
         reload();
       }
     }

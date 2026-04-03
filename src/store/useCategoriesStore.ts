@@ -364,12 +364,23 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
     }
 
     case "SYNC_LOAD": {
+      const syncGroups = action.groups ?? [];
+      // Preserve the current group selection if it still exists in the synced data.
+      // Fall back to the first group, or null ("All") if there are no groups.
+      const syncGroupStillExists =
+        state.selectedGroupID !== null &&
+        syncGroups.some((g) => g.id === state.selectedGroupID);
+      const syncGroupID = syncGroupStillExists
+        ? state.selectedGroupID
+        : syncGroups.length > 0
+          ? syncGroups[0].id
+          : null;
       next = {
         categories: action.categories,
         selectedCategoryID:
           action.selectedCategoryID ?? action.categories[0]?.id ?? "",
-        groups: action.groups ?? [],
-        selectedGroupID: null, // reset to "All" on sync load
+        groups: syncGroups,
+        selectedGroupID: syncGroupID,
       };
       // Persist to localStorage so remote data survives an app close.
       PersistenceService.save(
