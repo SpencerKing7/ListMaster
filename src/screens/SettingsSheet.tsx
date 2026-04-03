@@ -125,6 +125,8 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const overIndexRef = useRef<number | null>(null);
   const groupDragIndexRef = useRef<number | null>(null);
   const groupOverIndexRef = useRef<number | null>(null);
+  const hasGroupDraggedRef = useRef(false);
+  const groupDragStartYRef = useRef(0);
   // catContainerRef wraps all category rows (both grouped and ungrouped) for snapshotRects
   const catContainerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -256,12 +258,10 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
       }
       groupDragIndexRef.current = idx;
       groupOverIndexRef.current = idx;
+      hasGroupDraggedRef.current = false;
+      groupDragStartYRef.current = e.clientY;
       setGroupDragIndex(idx);
       setGroupOverIndex(idx);
-      setExpandedGroupIDs(prev => {
-        savedExpandedGroupIDsRef.current = new Set(prev);
-        return new Set();
-      });
     },
     [snapshotGroupRects],
   );
@@ -269,6 +269,17 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const handleGroupDragPointerMove = useCallback((e: PointerEvent) => {
     if (groupDragIndexRef.current === null) return;
     if (e.pointerType === "mouse" && e.buttons === 0) return;
+
+    // Confirm drag intent before collapsing groups or updating ghost position
+    if (!hasGroupDraggedRef.current) {
+      const dy = Math.abs(e.clientY - groupDragStartYRef.current);
+      if (dy < 5) return;
+      hasGroupDraggedRef.current = true;
+      setExpandedGroupIDs(prev => {
+        savedExpandedGroupIDsRef.current = new Set(prev);
+        return new Set();
+      });
+    }
 
     const newGhostY = e.clientY - groupDragOffsetY.current;
     setGroupGhostY(newGhostY);
@@ -287,14 +298,19 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const handleGroupDragPointerUp = useCallback(() => {
     const di = groupDragIndexRef.current;
     const oi = groupOverIndexRef.current;
+    const didDrag = hasGroupDraggedRef.current;
     groupDragIndexRef.current = null;
     groupOverIndexRef.current = null;
+    hasGroupDraggedRef.current = false;
     if (di !== null && oi !== null && di !== oi) {
       store.moveGroups(di, oi);
     }
     setGroupDragIndex(null);
     setGroupOverIndex(null);
-    setExpandedGroupIDs(savedExpandedGroupIDsRef.current);
+    // Only restore saved expanded state if a real drag occurred (groups were collapsed)
+    if (didDrag) {
+      setExpandedGroupIDs(savedExpandedGroupIDsRef.current);
+    }
   }, [store]);
 
   // Attach group drag handlers to window once on mount
@@ -506,11 +522,10 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                               >
                                 {/* Group header */}
                                 <div
-                                  className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer select-none"
+                                  className="flex items-center gap-2.5 px-3 py-2.5 select-none"
                                   style={{
                                     backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
                                   }}
-                                  onClick={() => toggleGroup(group.id)}
                                 >
                                   {/* Drag handle */}
                                   <div
@@ -529,23 +544,36 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                                     </svg>
                                   </div>
 
-                                  {/* Chevron */}
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                                    className="shrink-0"
-                                    style={{
-                                      color: "var(--color-brand-teal)",
-                                      opacity: 0.75,
-                                      transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                                      transition: "transform 200ms ease-out",
-                                    }}>
-                                    <path d="M9 18l6-6-6-6" />
-                                  </svg>
+                                  {/* Chevron — dedicated button for toggling expand/collapse */}
+                                  <button
+                                    className="flex items-center justify-center p-1 -m-1 shrink-0 rounded-md transition-all active:opacity-50"
+                                    style={{ touchAction: "manipulation" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleGroup(group.id);
+                                    }}
+                                    aria-label={isExpanded ? `Collapse ${group.name}` : `Expand ${group.name}`}
+                                    aria-expanded={isExpanded}
+                                  >
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                      style={{
+                                        color: "var(--color-brand-teal)",
+                                        opacity: 0.75,
+                                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                                        transition: "transform 200ms ease-out",
+                                      }}>
+                                      <path d="M9 18l6-6-6-6" />
+                                    </svg>
+                                  </button>
 
-                                  {/* Group name */}
-                                  <span className="flex-1 text-sm font-semibold tracking-[-0.01em]"
-                                    style={{ color: "var(--color-text-primary)" }}>
+                                  {/* Group name — also acts as a tap target for toggling */}
+                                  <button
+                                    className="flex-1 text-left text-sm font-semibold tracking-[-0.01em] py-0.5"
+                                    style={{ color: "var(--color-text-primary)", touchAction: "manipulation" }}
+                                    onClick={() => toggleGroup(group.id)}
+                                  >
                                     {group.name}
-                                  </span>
+                                  </button>
 
                                   {/* Category count badge */}
                                   {groupCategories.length > 0 && (
