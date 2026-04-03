@@ -1,7 +1,7 @@
 // src/features/settings/hooks/useAddFlowDialogs.ts
 // State and handlers for the "Add Category or Group" flow (action sheet + dialogs).
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 
 // MARK: - Types
@@ -55,18 +55,35 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
   );
   const [addGroupDialogName, setAddGroupDialogName] = useState("");
 
+  // Refs mirror the latest state to prevent stale closures in callbacks
+  // that fire during @base-ui dialog open/close transitions.
+  const categoryNameRef = useRef(addCategoryName);
+  const categoryGroupIDRef = useRef(addCategoryGroupID);
+  const groupDialogNameRef = useRef(addGroupDialogName);
+
+  useEffect(() => {
+    categoryNameRef.current = addCategoryName;
+  }, [addCategoryName]);
+  useEffect(() => {
+    categoryGroupIDRef.current = addCategoryGroupID;
+  }, [addCategoryGroupID]);
+  useEffect(() => {
+    groupDialogNameRef.current = addGroupDialogName;
+  }, [addGroupDialogName]);
+
   const confirmAddCategory = useCallback(() => {
-    const trimmed = addCategoryName.trim();
+    const trimmed = categoryNameRef.current.trim();
     if (!trimmed) return;
-    if (addCategoryGroupID) {
-      store.addCategoryWithGroup(trimmed, addCategoryGroupID);
+    const groupID = categoryGroupIDRef.current;
+    if (groupID) {
+      store.addCategoryWithGroup(trimmed, groupID);
     } else {
       store.addCategory(trimmed);
     }
     setAddMode(null);
     setAddCategoryName("");
     setAddCategoryGroupID(null);
-  }, [addCategoryName, addCategoryGroupID, store]);
+  }, [store]);
 
   /**
    * Opens the Add Category dialog pre-populated with the currently selected
@@ -81,12 +98,12 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
   }, [store.selectedGroupID]);
 
   const confirmAddGroup = useCallback(() => {
-    const trimmed = addGroupDialogName.trim();
+    const trimmed = groupDialogNameRef.current.trim();
     if (!trimmed) return;
     store.addGroup(trimmed);
     setAddMode(null);
     setAddGroupDialogName("");
-  }, [addGroupDialogName, store]);
+  }, [store]);
 
   return {
     isAddActionSheetOpen,

@@ -80,7 +80,11 @@ export type StoreAction =
   | { type: "MOVE_CATEGORIES"; from: number; to: number }
   | { type: "REORDER_CATEGORIES"; orderedIDs: string[] }
   | { type: "SET_CATEGORY_SORT_ORDER"; id: string; sortOrder: SortOrder }
-  | { type: "SET_CATEGORY_SORT_DIRECTION"; id: string; sortDirection: SortDirection }
+  | {
+      type: "SET_CATEGORY_SORT_DIRECTION";
+      id: string;
+      sortDirection: SortDirection;
+    }
   | { type: "ADD_ITEM"; name: string }
   | { type: "TOGGLE_ITEM"; itemID: string }
   | { type: "DELETE_ITEM"; itemID: string }
@@ -100,7 +104,11 @@ export type StoreAction =
   | { type: "DELETE_GROUP"; id: string }
   | { type: "MOVE_GROUPS"; from: number; to: number }
   | { type: "SELECT_GROUP"; id: string | null }
-  | { type: "SET_CATEGORY_GROUP"; categoryID: string; groupID: string | undefined }
+  | {
+      type: "SET_CATEGORY_GROUP";
+      categoryID: string;
+      groupID: string | undefined;
+    }
   | { type: "ADD_CATEGORY_WITH_GROUP"; name: string; groupID: string };
 
 // MARK: - Reducer
@@ -139,7 +147,11 @@ export function categoriesReducer(
       next = handleSetCategorySortOrder(state, action.id, action.sortOrder);
       break;
     case "SET_CATEGORY_SORT_DIRECTION":
-      next = handleSetCategorySortDirection(state, action.id, action.sortDirection);
+      next = handleSetCategorySortDirection(
+        state,
+        action.id,
+        action.sortDirection,
+      );
       break;
     case "SET_CATEGORY_GROUP":
       next = handleSetCategoryGroup(state, action.categoryID, action.groupID);
@@ -214,7 +226,11 @@ export function categoriesReducer(
         groups: [],
         selectedGroupID: null,
       };
-      PersistenceService.save(reset.categories, reset.selectedCategoryID, reset.groups);
+      PersistenceService.save(
+        reset.categories,
+        reset.selectedCategoryID,
+        reset.groups,
+      );
       return reset;
     }
 
@@ -248,7 +264,11 @@ export function categoriesReducer(
         groups: syncGroups,
         selectedGroupID: syncGroupID,
       };
-      PersistenceService.save(syncNext.categories, syncNext.selectedCategoryID, syncNext.groups);
+      PersistenceService.save(
+        syncNext.categories,
+        syncNext.selectedCategoryID,
+        syncNext.groups,
+      );
       return syncNext;
     }
 
@@ -260,6 +280,10 @@ export function categoriesReducer(
   if (next === null) return state;
 
   // Auto-save after every mutation
-  PersistenceService.save(next.categories, next.selectedCategoryID, next.groups);
+  PersistenceService.save(
+    next.categories,
+    next.selectedCategoryID,
+    next.groups,
+  );
   return next;
 }
