@@ -172,11 +172,22 @@ export function useGroupDrag(
     // the correct (collapsed) dimensions.
     if (!hasGroupDraggedRef.current) {
       hasGroupDraggedRef.current = true;
+
+      // Snapshot the dragged row's screen position before collapse.
+      let preDragTop = 0;
+      const draggedEl = groupsContainerRef.current?.querySelector<HTMLElement>(
+        `[data-group-idx="${ds.idx}"]`,
+      );
+      if (draggedEl) {
+        preDragTop = draggedEl.getBoundingClientRect().top;
+      }
+
       setExpandedGroupIDs((prev) => {
         savedExpandedGroupIDsRef.current = new Set(prev);
         return new Set();
       });
       // Re-snapshot heights after collapse animation (220ms ease-out).
+      // Also adjust pointerStartY so the dragged group stays under the finger.
       setTimeout(() => {
         if (!groupsContainerRef.current || !groupDragStateRef.current) return;
         const heights: number[] = [];
@@ -194,6 +205,17 @@ export function useGroupDrag(
         for (let i = 0; i < heights.length; i++) {
           originalOffsets.push(acc);
           acc += heights[i] + GAP;
+        }
+
+        // Measure how far the dragged row shifted due to collapse,
+        // then adjust the pointer baseline so translateY stays accurate.
+        const postEl = groupsContainerRef.current.querySelector<HTMLElement>(
+          `[data-group-idx="${groupDragStateRef.current.idx}"]`,
+        );
+        if (postEl) {
+          const postDragTop = postEl.getBoundingClientRect().top;
+          const layoutShift = postDragTop - preDragTop;
+          groupDragPointerStartY.current += layoutShift;
         }
 
         const cur = groupDragStateRef.current;
