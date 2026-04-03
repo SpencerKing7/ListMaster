@@ -29,7 +29,6 @@ interface CategoriesGroupsSectionProps {
   // ── Group drag ──
   groupDragState: GroupDragState | null;
   groupsContainerRef: React.RefObject<HTMLDivElement | null>;
-  groupRowHeightsRef: React.RefObject<number[]>;
   handleGroupDragPointerDown: (e: React.PointerEvent, idx: number) => void;
 
   // ── Expanded groups ──
@@ -58,7 +57,6 @@ export function CategoriesGroupsSection({
   handleDragPointerDown,
   groupDragState,
   groupsContainerRef,
-  groupRowHeightsRef,
   handleGroupDragPointerDown,
   expandedGroupIDs,
   toggleGroup,
@@ -87,14 +85,14 @@ export function CategoriesGroupsSection({
             {/* Group sections */}
             <div ref={groupsContainerRef} className="flex flex-col gap-2">
               {(() => {
-                const orderedGroups = groupDragState
-                  ? groupDragState.liveOrder.map(id => groups.find(g => g.id === id)!).filter(Boolean)
-                  : groups;
+                // Always render in original DOM order; visual reorder is
+                // driven entirely by translateY for smooth animation.
                 const draggingGroupID = groupDragState
                   ? groups[groupDragState.idx]?.id
                   : null;
+                const GAP = 8; // matches gap-2 (8px)
 
-                return orderedGroups.map((group, groupVisualIdx) => {
+                return groups.map((group, groupVisualIdx) => {
                   const isExpanded = expandedGroupIDs.has(group.id);
                   const groupCategories = categories.filter(c => c.groupID === group.id);
                   const isGroupDragging = group.id === draggingGroupID;
@@ -106,11 +104,8 @@ export function CategoriesGroupsSection({
                     } else {
                       const origIdx = groupDragState.originalOrder.indexOf(group.id);
                       const liveIdx = groupDragState.liveOrder.indexOf(group.id);
-                      const draggedOrigIdx = groupDragState.originalOrder.indexOf(draggingGroupID ?? "");
                       if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-                        const dir = liveIdx > origIdx ? -1 : 1;
-                        const h = (groupRowHeightsRef.current ?? [])[draggedOrigIdx] ?? groupDragState.rowHeight;
-                        groupTranslateY = dir * (h + 8);
+                        groupTranslateY = (liveIdx - origIdx) * (groupDragState.rowHeight + GAP);
                       }
                     }
                   }

@@ -58,6 +58,7 @@ export type StoreAction =
   | { type: "RENAME_CATEGORY"; id: string; newName: string }
   | { type: "DELETE_CATEGORY"; id: string }
   | { type: "MOVE_CATEGORIES"; from: number; to: number }
+  | { type: "REORDER_CATEGORIES"; orderedIDs: string[] }
   | { type: "SET_CATEGORY_SORT_ORDER"; id: string; sortOrder: SortOrder }
   | {
       type: "SET_CATEGORY_SORT_DIRECTION";
@@ -207,6 +208,18 @@ export function categoriesReducer(
       const [moved] = arr.splice(action.from, 1);
       arr.splice(action.to, 0, moved);
       next = { ...state, categories: arr };
+      break;
+    }
+
+    case "REORDER_CATEGORIES": {
+      const idSet = new Set(action.orderedIDs);
+      if (idSet.size !== state.categories.length) return state;
+      const lookup = new Map(state.categories.map((c) => [c.id, c]));
+      const reordered = action.orderedIDs
+        .map((id) => lookup.get(id))
+        .filter((c): c is Category => c !== undefined);
+      if (reordered.length !== state.categories.length) return state;
+      next = { ...state, categories: reordered };
       break;
     }
 

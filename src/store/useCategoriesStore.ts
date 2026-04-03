@@ -54,6 +54,7 @@ interface StoreContextValue {
   renameCategory: (id: string, newName: string) => void;
   deleteCategory: (id: string) => void;
   moveCategories: (from: number, to: number) => void;
+  reorderCategories: (orderedIDs: string[]) => void;
   setCategorySortOrder: (id: string, sortOrder: SortOrder) => void;
   setCategorySortDirection: (id: string, sortDirection: SortDirection) => void;
   addItemToSelectedCategory: (name: string) => void;
@@ -336,6 +337,11 @@ export function StoreProvider({
       dispatch({ type: "MOVE_CATEGORIES", from, to }),
     [],
   );
+  const reorderCategories = useCallback(
+    (orderedIDs: string[]) =>
+      dispatch({ type: "REORDER_CATEGORIES", orderedIDs }),
+    [],
+  );
   const setCategorySortOrder = useCallback(
     (id: string, sortOrder: SortOrder) =>
       dispatch({ type: "SET_CATEGORY_SORT_ORDER", id, sortOrder }),
@@ -427,6 +433,7 @@ export function StoreProvider({
     renameCategory,
     deleteCategory,
     moveCategories,
+    reorderCategories,
     setCategorySortOrder,
     setCategorySortDirection,
     addItemToSelectedCategory,

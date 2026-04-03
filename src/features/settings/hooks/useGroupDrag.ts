@@ -148,13 +148,32 @@ export function useGroupDrag(
     if (!ds) return;
     if (e.pointerType === "mouse" && e.buttons === 0) return;
 
-    // Collapse groups on first move.
+    // Collapse groups on first move, then re-snapshot row heights
+    // after the collapse animation completes so hit-testing uses
+    // the correct (collapsed) dimensions.
     if (!hasGroupDraggedRef.current) {
       hasGroupDraggedRef.current = true;
       setExpandedGroupIDs((prev) => {
         savedExpandedGroupIDsRef.current = new Set(prev);
         return new Set();
       });
+      // Re-snapshot heights after collapse animation (220ms ease-out).
+      setTimeout(() => {
+        if (!groupsContainerRef.current || !groupDragStateRef.current) return;
+        const heights: number[] = [];
+        groupsRef.current.forEach((_, i) => {
+          const el = groupsContainerRef.current!.querySelector<HTMLElement>(
+            `[data-group-idx="${i}"]`,
+          );
+          heights.push(el ? el.getBoundingClientRect().height : 48);
+        });
+        groupRowHeightsRef.current = heights;
+        const ds = groupDragStateRef.current;
+        groupDragStateRef.current = {
+          ...ds,
+          rowHeight: heights[ds.idx] ?? 48,
+        };
+      }, 240);
     }
 
     const dy = e.clientY - groupDragPointerStartY.current;

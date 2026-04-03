@@ -181,11 +181,11 @@ export function GroupRow({
               const draggingCatID = scopedDS
                 ? categories[scopedDS.flatIdx]?.id
                 : null;
-              const orderedCats = scopedDS
-                ? scopedDS.liveOrder.map(id => categories.find(c => c.id === id)!).filter(Boolean)
-                : groupCategories;
 
-              return orderedCats.map((category, visualIdx) => {
+              // Always render in original DOM order; visual reorder is
+              // driven entirely by translateY for smooth animation.
+              const GAP = 2; // matches gap-0.5 (2px)
+              return groupCategories.map((category, visualIdx) => {
                 const flatIdx = categories.indexOf(category);
                 const isDragging = category.id === draggingCatID;
 
@@ -197,8 +197,7 @@ export function GroupRow({
                     const origIdx = scopedDS.originalOrder.indexOf(category.id);
                     const liveIdx = scopedDS.liveOrder.indexOf(category.id);
                     if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-                      const dir = liveIdx > origIdx ? -1 : 1;
-                      catTranslateY = dir * (scopedDS.rowHeight + 4);
+                      catTranslateY = (liveIdx - origIdx) * (scopedDS.rowHeight + GAP);
                     }
                   }
                 }

@@ -49,7 +49,7 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
   const settings = useSettingsStore();
   const sync = useSyncStore();
 
-  const catDrag = useCategoryDrag(store.categories, store.moveCategories);
+  const catDrag = useCategoryDrag(store.categories, store.reorderCategories);
   const groupDrag = useGroupDrag(store.groups, store.moveGroups);
   const d = useSettingsDialogs(() => onOpenChange(false));
 
@@ -103,7 +103,6 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
                 handleDragPointerDown={catDrag.handleDragPointerDown}
                 groupDragState={groupDrag.groupDragState}
                 groupsContainerRef={groupDrag.groupsContainerRef}
-                groupRowHeightsRef={groupDrag.groupRowHeightsRef}
                 handleGroupDragPointerDown={groupDrag.handleGroupDragPointerDown}
                 expandedGroupIDs={groupDrag.expandedGroupIDs}
                 toggleGroup={groupDrag.toggleGroup}
@@ -116,15 +115,15 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
               />
               <AppearanceSection
                 appearanceMode={settings.appearanceMode}
-                onSetAppearanceMode={settings.setAppearanceMode}
+                onChangeMode={settings.setAppearanceMode}
               />
               <TextSizeSection
                 textSize={settings.textSize}
-                onSetTextSize={settings.setTextSize}
+                onChangeSize={settings.setTextSize}
               />
               <NameSection
                 userName={settings.userName}
-                onSetUserName={settings.setUserName}
+                onChangeName={settings.setUserName}
               />
               <SyncSection
                 isSyncEnabled={sync.isSyncEnabled}

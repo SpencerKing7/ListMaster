@@ -31,14 +31,14 @@ export function FlatLayout({
 }: FlatLayoutProps): JSX.Element {
   const scopedDS = catDragState?.groupID === null ? catDragState : null;
   const draggingCatID = scopedDS ? categories[scopedDS.flatIdx]?.id : null;
-  const orderedCats = scopedDS
-    ? scopedDS.liveOrder.map(id => categories.find(c => c.id === id)!).filter(Boolean)
-    : categories;
 
+  // Always render in the original DOM order; visual reorder is driven
+  // entirely by translateY so siblings animate smoothly.
+  const GAP = 6; // matches gap-1.5 (6px)
   return (
     <ul ref={listRef} className="flex flex-col gap-1.5">
-      {orderedCats.map((category, idx) => {
-        const flatIdx = categories.indexOf(category);
+      {categories.map((category, idx) => {
+        const flatIdx = idx;
         const isDragging = category.id === draggingCatID;
 
         let catTranslateY = 0;
@@ -49,8 +49,7 @@ export function FlatLayout({
             const origIdx = scopedDS.originalOrder.indexOf(category.id);
             const liveIdx = scopedDS.liveOrder.indexOf(category.id);
             if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-              const dir = liveIdx > origIdx ? -1 : 1;
-              catTranslateY = dir * (scopedDS.rowHeight + 4);
+              catTranslateY = (liveIdx - origIdx) * (scopedDS.rowHeight + GAP);
             }
           }
         }

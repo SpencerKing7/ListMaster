@@ -47,12 +47,12 @@ export interface UseCategoryDragReturn {
  * pointer capture works correctly even when the pointer leaves the row.
  *
  * @param categories - The full flat array of categories from the store.
- * @param moveCategories - Store action to persist the reorder.
+ * @param reorderCategories - Store action to persist a full reorder by ID array.
  * @returns Drag state, container refs, and a pointerDown handler.
  */
 export function useCategoryDrag(
   categories: Category[],
-  moveCategories: (from: number, to: number) => void,
+  reorderCategories: (orderedIDs: string[]) => void,
 ): UseCategoryDragReturn {
   const [catDragState, setCatDragState] = useState<CatDragState | null>(null);
 
@@ -69,10 +69,10 @@ export function useCategoryDrag(
     categoriesRef.current = categories;
   }, [categories]);
 
-  const moveCategoriesRef = useRef(moveCategories);
+  const reorderCategoriesRef = useRef(reorderCategories);
   useEffect(() => {
-    moveCategoriesRef.current = moveCategories;
-  }, [moveCategories]);
+    reorderCategoriesRef.current = reorderCategories;
+  }, [reorderCategories]);
 
   const handleDragPointerDown = useCallback(
     (
@@ -191,22 +191,21 @@ export function useCategoryDrag(
     const draggedID = cats[ds.flatIdx]?.id;
     if (!draggedID) return;
 
-    const originalFlatIdx = ds.flatIdx;
+    // Build the desired full flat order by replacing each scoped slot
+    // with the corresponding item from liveOrder.
     const scopedCategories =
       ds.groupID !== null
         ? cats.filter((c) => c.groupID === ds.groupID)
         : cats.filter((c) => !c.groupID);
 
+    // Map each scoped slot's flat index to the new ID from liveOrder.
     const newFullOrder = cats.map((c) => c.id);
     scopedCategories.forEach((cat, scopedPos) => {
       const flatIdx = cats.indexOf(cat);
       newFullOrder[flatIdx] = ds.liveOrder[scopedPos];
     });
 
-    const finalFlatIdx = newFullOrder.indexOf(draggedID);
-    if (finalFlatIdx !== -1 && finalFlatIdx !== originalFlatIdx) {
-      moveCategoriesRef.current(originalFlatIdx, finalFlatIdx);
-    }
+    reorderCategoriesRef.current(newFullOrder);
   }, []);
 
   // Attach handlers to window once on mount.
