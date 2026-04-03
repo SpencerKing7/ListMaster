@@ -16,6 +16,8 @@ interface AddFlowProps {
   isAddActionSheetOpen: boolean;
   /** Closes the ActionSheet chooser. */
   onCloseAddActionSheet: () => void;
+  /** Opens the Add Category dialog pre-populated with the current group. */
+  onOpenAddCategoryDialog: () => void;
   /** Which add dialog is active: `"category"`, `"group"`, or `null`. */
   addMode: "category" | "group" | null;
   /** Sets the active add mode (opens the corresponding dialog). */
@@ -46,6 +48,7 @@ interface AddFlowProps {
 export function AddFlow({
   isAddActionSheetOpen,
   onCloseAddActionSheet,
+  onOpenAddCategoryDialog,
   addMode,
   onSetAddMode,
   addCategoryName,
@@ -69,9 +72,7 @@ export function AddFlow({
             label: "Add a Category",
             onClick: () => {
               onCloseAddActionSheet();
-              onSetAddCategoryGroupID(null);
-              onSetAddCategoryName("");
-              onSetAddMode("category");
+              onOpenAddCategoryDialog();
             },
           },
           {

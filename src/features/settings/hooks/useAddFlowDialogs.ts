@@ -14,6 +14,11 @@ export interface UseAddFlowDialogsReturn {
   openAddActionSheet: () => void;
   /** Closes the add ActionSheet. */
   closeAddActionSheet: () => void;
+  /**
+   * Opens the Add Category dialog, pre-populating the group picker with the
+   * currently selected group so the category lands in the right place.
+   */
+  openAddCategoryDialog: () => void;
   /** Which add dialog is active: `"category"`, `"group"`, or `null`. */
   addMode: "category" | "group" | null;
   /** Sets the active add mode. */
@@ -63,6 +68,18 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     setAddCategoryGroupID(null);
   }, [addCategoryName, addCategoryGroupID, store]);
 
+  /**
+   * Opens the Add Category dialog pre-populated with the currently selected
+   * group. This ensures the new category lands in the group the user is
+   * already viewing rather than silently going into an invisible "No Group"
+   * bucket when a group is active.
+   */
+  const openAddCategoryDialog = useCallback(() => {
+    setAddCategoryGroupID(store.selectedGroupID);
+    setAddCategoryName("");
+    setAddMode("category");
+  }, [store.selectedGroupID]);
+
   const confirmAddGroup = useCallback(() => {
     const trimmed = addGroupDialogName.trim();
     if (!trimmed) return;
@@ -75,6 +92,7 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     isAddActionSheetOpen,
     openAddActionSheet: () => setIsAddActionSheetOpen(true),
     closeAddActionSheet: () => setIsAddActionSheetOpen(false),
+    openAddCategoryDialog,
     addMode,
     setAddMode,
     addCategoryName,
