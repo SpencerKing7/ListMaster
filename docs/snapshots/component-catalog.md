@@ -7,25 +7,26 @@
 ## Table of Contents
 
 - [HeaderBar](#headerbar)
+- [GroupTabBar](#grouptabbar)
 - [CategoryPicker](#categorypicker)
 - [CategoryPanel](#categorypanel)
+- [AddItemInput](#additeminput)
+- [ChecklistItemRow](#checklistitemrow)
+- [ListMetaBar](#listmetabar)
+- [EmptyState](#emptystate)
 - [BottomBar](#bottombar)
 - [SwipeableRow](#swipeablerow)
 - [PageIndicator](#pageindicator)
 - [PageTransitionWrapper](#pagetransitionwrapper)
+- [OnboardingCategoryInput](#onboardingcategoryinput)
+- [OnboardingSyncCodeInput](#onboardingsynccodedinput)
 - [UI Primitives (shadcn/ui)](#ui-primitives-shadcnui)
-  - [ActionSheet](#actionsheet)
-  - [Button](#button)
-  - [Dialog](#dialog)
-  - [Input](#input)
-  - [Sheet](#sheet)
-  - [Toggle / ToggleGroup](#toggle--togglegroup)
 
 ---
 
 ## `HeaderBar`
 
-**File:** `src/components/HeaderBar.tsx`  
+**File:** `src/components/HeaderBar.tsx`
 **Used by:** `MainScreen`
 
 ### Props
@@ -36,150 +37,240 @@
 | `onOpenSettings` | `() => void` | Yes      | Called when the settings gear icon is tapped            |
 | `onRefresh`      | `() => void` | No       | Called ~800 ms after the refresh button is tapped       |
 
+### Internal store access
+
+Reads `useSettingsStore()` for `userName` and `useCategoriesStore()` for `hasGroups`, `groups`, `selectedGroupID`, and `selectGroup`.
+
 ### Behavior
 
-The header is a `<header>` element with `sticky top-0 z-10`. Its `paddingTop` is set inline to `calc(env(safe-area-inset-top, 0px) + 8px)` to clear the iOS notch, overriding the Tailwind `pt-2` class. A downward gradient fades list content scrolling below.
+The header is a `<header>` element with `sticky top-0 z-10`. Its `paddingTop` is set inline to `calc(env(safe-area-inset-top, 0px) + 8px)` to clear the iOS notch. A downward gradient (`linear-gradient(to top, transparent 0%, var(--color-surface-background) 35%, ...)`) fades list content scrolling below.
 
 #### Greeting title (scroll-shrink animation)
 
-The greeting reads `"Good morning, {userName}"` (or `"Good evening"` / `"Good afternoon"` depending on the hour). When `scrolled` is `true`, the title transitions:
+The greeting reads `"Welcome, {userName}"` with the name rendered in `var(--color-brand-green)`. When `scrolled` is `true`, the title transitions:
 
 - Size: `text-2xl` → `text-base opacity-60`
 - Transform: `scale(1)` → `scale(0.88) translateX(-6%)` (keeps the text visually left-aligned)
 - Letter spacing: `-0.01em` → `0`
 - Duration: `220ms ease-out`
 
-The `scrolled` prop is driven by the `onScroll` handler in `MainScreen`, which monitors the `CategoryPanel` scroll container.
+If `trimmedName` is empty, a flex spacer replaces the greeting text.
 
 #### Refresh button
 
-A circular `w-9 h-9` button tinted with `rgba(var(--color-brand-green-rgb), 0.15)`. On tap:
-
-1. `isRefreshing` local state is set to `true` — applies `animation: spin 0.7s linear infinite` to the icon.
-2. After 800 ms, `onRefresh?.()` is called.
-
-`@keyframes spin` is defined in `index.css`. The delay gives tactile confirmation before the reload happens.
+A circular `w-9 h-9` button tinted with `rgba(var(--color-brand-deep-green-rgb), 0.10)`. Uses `.press-scale` class. On tap: `isRefreshing` → `true`, icon spins for 800 ms (`animation: spin 0.7s linear infinite`), then `onRefresh?.()` fires.
 
 #### Settings button
 
-A circular `w-9 h-9` button with a gear icon. Calls `onOpenSettings` on tap.
+A circular `w-9 h-9` button with a gear icon filled with `var(--color-brand-teal)`. Same tinted background. Calls `onOpenSettings` on tap.
 
-#### `CategoryPicker` placement
+#### Child components
 
-`CategoryPicker` renders as the last child of the `<header>`, below the greeting row, inside `HeaderBar`. `HeaderBar` passes the `categories`, `selectedCategoryID`, and `onSelectCategory` props through to it.
+- `GroupTabBar` — conditionally rendered when `hasGroups` is `true`, between greeting row and `CategoryPicker`.
+- `CategoryPicker` — always rendered as the last child of `<header>`.
+
+---
+
+## `GroupTabBar`
+
+**File:** `src/components/GroupTabBar.tsx`
+**Used by:** `HeaderBar` (conditional on `store.hasGroups`)
+
+### Props
+
+| Prop              | Type                                                | Required | Description                          |
+| ----------------- | --------------------------------------------------- | -------- | ------------------------------------ |
+| `groups`          | `{ id: string; name: string; sortOrder: number }[]` | Yes      | Sorted list of user-defined groups   |
+| `selectedGroupID` | `string \| null`                                    | Yes      | Active group ID, or `null` for "All" |
+| `onSelectGroup`   | `(id: string \| null) => void`                      | Yes      | Called when a tab is tapped          |
+
+### Behavior
+
+Renders a horizontal tab bar: "All" tab first, followed by user-defined groups sorted by `sortOrder`. The container is `overflow-x: auto` with `scrollbarWidth: "none"` and `touchAction: "pan-y"`. Uses `role="tablist"` with `aria-label="Groups"`.
+
+#### Tab buttons
+
+Flat text buttons (no `rounded` class). `role="tab"`, `aria-pressed`. Text style: `text-sm`, active `fontWeight: 600` in `var(--color-brand-green)`, inactive `fontWeight: 500` in `var(--color-text-secondary)`. Press feedback: `active:opacity-50`. `select-none` prevents text selection during drag. `touchAction: "manipulation"` kills 300ms tap delay.
+
+#### Sliding underline indicator
+
+`useLayoutEffect` on `selectedGroupID` reads `getBoundingClientRect()` on the active button and container, writes `left` and `width` to the underline `ref`'s inline style. Transition: `var(--duration-element) var(--spring-snap)` — must stay in inline `style`, not Tailwind classes.
+
+#### Drag-to-scroll
+
+Pointer Events pattern matching `CategoryPicker`: `setPointerCapture` after |Δx| > 5px, `hasDraggedRef` prevents accidental tab selection, `setTimeout(..., 0)` resets after click propagation. Uses `onPointerCancel` alongside `onPointerUp`.
 
 ---
 
 ## `CategoryPicker`
 
-**File:** `src/components/CategoryPicker.tsx`  
+**File:** `src/components/CategoryPicker.tsx`
 **Used by:** `HeaderBar`
 
 ### Props
 
-| Prop                 | Type                   | Required | Description                                         |
-| -------------------- | ---------------------- | -------- | --------------------------------------------------- |
-| `categories`         | `Category[]`           | Yes      | Full list of categories                             |
-| `selectedCategoryID` | `string \| null`       | Yes      | ID of the currently selected category               |
-| `onSelectCategory`   | `(id: string) => void` | Yes      | Called when a pill is tapped (and no drag occurred) |
+None. Reads `categoriesInSelectedGroup`, `selectedCategoryID`, and `selectCategory` from `useCategoriesStore()` internally.
 
 ### Behavior
 
-Renders a horizontally scrollable row of pill buttons — one per category. Lives inside `HeaderBar`.
+Renders a horizontally scrollable row of pill buttons — one per category in the selected group. Wrapped in a pill-shaped tinted container (`rgba(var(--color-brand-deep-green-rgb), 0.12)`).
 
-#### Layout
+#### Empty group state
 
-```
-<div class="rounded-full px-1 py-1 w-full" style="background: rgba(--color-brand-deep-green-rgb, 0.12)">
-  └── <div ref={scrollRef} class="overflow-x-auto cursor-grab w-full">
-        └── <div class="flex gap-1 p-0.5">
-              └── <button> × N   (one per category)
-```
-
-Native horizontal scroll is enabled on `scrollRef`. Scrollbars are globally hidden (`* { scrollbar-width: none }` in `index.css`).
+When `categoriesInSelectedGroup.length === 0`, renders a centered "No lists in this group yet" message instead of the pill row.
 
 #### Pill styles
 
-- Selected: `backgroundColor: var(--color-surface-card)`, `color: var(--color-brand-green)`
-- Unselected: `backgroundColor: transparent`, `color: var(--color-text-secondary)`
-- Both: `transition: background-color 200ms ease-out, color 200ms ease-out, box-shadow 200ms ease-out`
-- `flex-1 min-w-max` — pills fill the row when few categories exist; overflow to enable drag-scroll when many exist
-- `active:scale-[0.97]` — press feedback
+- Selected: `backgroundColor: var(--color-surface-card)`, `color: var(--color-brand-green)`, `fontWeight: 700`, box-shadow with `rgba(var(--color-brand-deep-green-rgb), 0.16)`.
+- Unselected: `backgroundColor: transparent`, `color: var(--color-text-secondary)`.
+- Transitions: `var(--duration-element) var(--ease-decelerate)`.
+- `flex-1 min-w-max` — pills fill when few; overflow to enable drag-scroll when many.
+- `active:scale-[0.97]` — press feedback. Pill tap triggers `HapticService.selection()`.
 
 #### Selection-follow behavior
 
-A `useEffect` on `selectedCategoryID` calls `selectedEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })`. This fires on both direct pill tap and store-driven category changes (e.g., from `BottomBar` chevrons).
+A `useEffect` on `selectedCategoryID` calls `selectedEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })`.
 
 #### Drag-to-scroll (`hasDraggedRef`)
 
-Pointer Events (`onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerLeave`) drive manual `scrollLeft` updates on `scrollRef.current`. Once pointer movement exceeds 5px, `hasDraggedRef.current` is set to `true`. The `onClick` handler on each pill reads `hasDraggedRef.current` and returns early if `true`, preventing a drag from accidentally selecting a category. `hasDraggedRef` is reset to `false` in `onPointerUp`/`onPointerLeave` (after the `onClick` fires).
+Same Pointer Events pattern as `GroupTabBar`.
 
 ---
 
 ## `CategoryPanel`
 
-**File:** `src/components/CategoryPanel.tsx`  
+**File:** `src/components/CategoryPanel.tsx`
 **Used by:** `MainScreen` (single instance, passed `store.selectedCategory`)
 
 ### Props
 
-| Prop       | Type                    | Required | Description                                          |
-| ---------- | ----------------------- | -------- | ---------------------------------------------------- |
-| `category` | `Category \| undefined` | Yes      | The category to render; `undefined` renders a spacer |
+| Prop       | Type               | Required | Description                                                          |
+| ---------- | ------------------ | -------- | -------------------------------------------------------------------- |
+| `category` | `Category \| null` | Yes      | The category to render; `null` renders a spacer or empty-group state |
 
 ### Behavior
 
-#### Three render paths
+#### Four render paths
 
-| Condition                     | Output                                                                    |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| `category` is `undefined`     | `<div className="flex-1" />` — empty spacer                               |
-| `category.items.length === 0` | Empty-state view with icon, heading, subtext, and `AddItemInput`          |
-| `category.items.length > 0`   | Full layout: sticky header (input + sort controls) + scrollable item list |
+| Condition                                                                      | Output                                                                                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `!category && store.hasGroups && store.categoriesInSelectedGroup.length === 0` | `<EmptyState>` with folder icon + "No lists in this group" + "Assign lists to this group in Settings."             |
+| `!category` (generic)                                                          | `<div className="flex-1" />` — empty spacer                                                                        |
+| `category.items.length === 0`                                                  | `<AddItemInput>` above `<EmptyState>` with checklist icon + "No items yet" + "Add your first item above."          |
+| `category.items.length > 0`                                                    | Full layout: sticky header (`AddItemInput` + `ListMetaBar`) + scrollable list of `SwipeableRow`/`ChecklistItemRow` |
+
+The empty-group check must come **before** the generic `!category` guard.
 
 #### Full layout structure
 
-The outer column is `flex-1 flex flex-col min-h-0 px-4 pt-1`. The `min-h-0` is load-bearing — without it the flex item refuses to shrink and the scroll container inside never gets a bounded height.
-
-The **sticky header** (`shrink-0`) contains:
-
-- `AddItemInput` sub-component (always visible above the keyboard)
-- Sort meta row: item count + `SortOrder` toggle (date / alpha) + `SortDirection` toggle (asc / desc) + check-all button
-
-The **scroll container** (`flex-1 overflow-y-auto overscroll-contain`) contains a `<ul>` of `<SwipeableRow>` wrappers, with `pt-3 pb-10` spacing. CSS mask fades are applied:
-
-```ts
-maskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)";
-```
-
-This dissolves the top 24px (under the header) and bottom 32px (approaching the page indicator) of list content.
-
-#### `AddItemInput` sub-component
-
-Declared as a local function component inside `CategoryPanel.tsx`. Maintains a `value` string in local state. On submit (Enter key or `+` button tap), calls `store.addItem(category.id, trimmedValue)` if the value is non-empty. Input `font-size` is forced to `16px` by a global rule in `index.css` to suppress iOS Safari's auto-zoom.
+Outer column: `flex-1 flex flex-col min-h-0 px-4 pt-1`. Sticky header: `shrink-0 pb-1` containing `AddItemInput` and `ListMetaBar`. Scroll container: `flex-1 overflow-y-auto overscroll-contain` with CSS mask fade. Item list: `<ul>` with `SwipeableRow` wrapping `ChecklistItemRow`.
 
 #### Sort logic
 
-`sortOrder` defaults to `"date"` and `sortDirection` defaults to `"asc"` if not set on the category (supports legacy data). Sort algorithm:
-
-1. Unchecked items before checked items.
-2. Within each group: sort by `createdAt` (Unix ms) ascending/descending, or by `name.localeCompare()` ascending/descending.
-
-#### Check-all toggle
-
-A button in the sort meta row. If any item is unchecked, it calls `store.checkAll(category.id)`. If all are checked, it calls `store.uncheckAll(category.id)`. Icon and label update to reflect the current state.
+`sortOrder` defaults to `"date"`, `sortDirection` defaults to `"asc"`. Unchecked before checked. Within group: `createdAt` or `name.localeCompare()` with `sensitivity: "base"`.
 
 #### Item tap feedback
 
-`tappedId` (local state) is set on `pointerdown` and cleared after 150 ms on `pointerup`/`pointercancel`. While set, the item row applies `scale-[0.97] opacity-80` with `transition: none` (instant press), then springs back with `transform 200ms ease-out` after release.
+`tappedId` state set on tap, cleared after 120 ms. Tap also calls `store.toggleItemInSelectedCategory(item.id)` and `HapticService.light()`.
 
-Vertical row padding is driven by `var(--row-padding-y)`, which scales with the user's text size setting (see `src/store/useTheme.ts`).
+---
+
+## `AddItemInput`
+
+**File:** `src/components/AddItemInput.tsx`
+**Used by:** `CategoryPanel`
+
+### Props
+
+None. Reads `useCategoriesStore()` internally.
+
+### Behavior
+
+Inline input row for adding new checklist items. Card styling: `h-12 rounded-[16px]`, `var(--color-surface-card)`, `var(--elevation-card)`.
+
+- `newItemName` local state drives the controlled input.
+- On submit (Enter key or `+` button): calls `store.addItemToSelectedCategory(trimmedValue)`, clears input, triggers `HapticService.light()`, blur→refocus cycle resets iOS auto-capitalize.
+- `+` button disabled when trimmed input is empty. Uses `.press-scale` class.
+- Input: `enterKeyHint="send"`, `autoCapitalize="sentences"`, `autoComplete="off"`, `autoCorrect="off"`.
+- Input caret color: `var(--color-brand-green)`.
+- 16px font-size forced by global CSS to prevent iOS auto-zoom.
+
+---
+
+## `ChecklistItemRow`
+
+**File:** `src/components/ChecklistItemRow.tsx`
+**Used by:** `CategoryPanel` (inside `SwipeableRow`)
+
+### Props
+
+| Prop       | Type            | Required | Description                                |
+| ---------- | --------------- | -------- | ------------------------------------------ |
+| `item`     | `ChecklistItem` | Yes      | The checklist item data                    |
+| `isTapped` | `boolean`       | Yes      | Whether the row is in press-feedback state |
+| `onTap`    | `() => void`    | Yes      | Called when the row is tapped              |
+
+### Behavior
+
+Renders a `<li>` element with circle icon + item name text.
+
+#### Visual states
+
+- **Unchecked:** `var(--color-surface-card)` background, `var(--elevation-card)` shadow, open circle icon in `var(--color-brand-teal)` at 60% opacity, `font-medium` text in `var(--color-text-primary)`.
+- **Checked:** `rgba(var(--color-brand-deep-green-rgb), 0.04)` background, no shadow, filled green circle + white checkmark, `line-through` text in `var(--color-text-secondary)`, strikethrough color `rgba(var(--color-brand-green-rgb), 0.45)`.
+- **Tapped:** `scale-[0.97] opacity-80` with `80ms ease-out` transitions.
+- Text size: `var(--text-size-base)`. Row padding: `var(--row-padding-y)`.
+
+---
+
+## `ListMetaBar`
+
+**File:** `src/components/ListMetaBar.tsx`
+**Used by:** `CategoryPanel`
+
+### Props
+
+| Prop                    | Type                            | Required | Description                    |
+| ----------------------- | ------------------------------- | -------- | ------------------------------ |
+| `itemCount`             | `number`                        | Yes      | Total items in category        |
+| `allChecked`            | `boolean`                       | Yes      | Whether all items are checked  |
+| `sortOrder`             | `SortOrder`                     | Yes      | Current sort order             |
+| `sortDirection`         | `SortDirection`                 | Yes      | Current sort direction         |
+| `onCheckAll`            | `() => void`                    | Yes      | Check-all callback             |
+| `onUncheckAll`          | `() => void`                    | Yes      | Uncheck-all callback           |
+| `onChangeSortOrder`     | `(next: SortOrder) => void`     | Yes      | Sort order toggle callback     |
+| `onChangeSortDirection` | `(next: SortDirection) => void` | Yes      | Sort direction toggle callback |
+
+### Behavior
+
+Horizontal flex row: left side has check-all toggle button + item count label ("N items"), right side has sort order toggle ("A–Z" / "Date Added") + divider + sort direction toggle (arrow up/down). All buttons use `.press-scale` and `touchAction: "manipulation"`. Colors: `var(--color-text-secondary)`. Haptics: `HapticService.medium()` for check-all, `HapticService.light()` for sort toggles.
+
+---
+
+## `EmptyState`
+
+**File:** `src/components/EmptyState.tsx`
+**Used by:** `CategoryPanel`
+
+### Props
+
+| Prop       | Type        | Required | Description                                   |
+| ---------- | ----------- | -------- | --------------------------------------------- |
+| `icon`     | `ReactNode` | Yes      | SVG icon node rendered inside a tinted circle |
+| `title`    | `string`    | Yes      | Primary message text                          |
+| `subtitle` | `string`    | No       | Optional secondary description text           |
+
+### Behavior
+
+Centered flex column with mount-in animation. On mount, `mounted` transitions from `false` to `true` via `useEffect`. Container animates from `opacity: 0, translateY(12px), scale(0.92)` to visible over `220ms cubic-bezier(0,0,0.2,1)`.
+
+Icon is rendered inside a `w-16 h-16 rounded-full` circle with `rgba(var(--color-brand-deep-green-rgb), 0.10)` background. Title: `text-base font-medium` in `var(--color-brand-teal)`. Subtitle: `text-sm text-center` in `var(--color-text-secondary)`.
 
 ---
 
 ## `BottomBar`
 
-**File:** `src/components/BottomBar.tsx`  
+**File:** `src/components/BottomBar.tsx`
 **Used by:** `MainScreen`
 
 ### Props
@@ -188,43 +279,35 @@ None. Reads all state directly from `useCategoriesStore()`.
 
 ### Behavior
 
-Renders a `<footer>` element that always mounts (ensuring the gradient and safe-area padding are always present at the bottom of the screen).
-
-```
-<footer class="sticky bottom-0 z-10 px-4 pt-2"
-  style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-         background: linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 40%, ...)">
-  └── <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        ├── [left cell]    prev chevron + category name
-        ├── [centre cell]  "Clear N" button
-        └── [right cell]   category name + next chevron
-```
+Renders a `<footer>` element that always mounts (ensuring the gradient and safe-area padding are always present). Uses inline `gridTemplateColumns: "1fr auto 1fr"` for the 3-column layout.
 
 #### Grid columns
 
-| Column        | Content                                     | Render condition                  |
-| ------------- | ------------------------------------------- | --------------------------------- |
-| Left `1fr`    | `ChevronLeft` icon + previous category name | `store.canSelectPreviousCategory` |
-| Centre `auto` | "Clear N" button → `ActionSheet`            | Checked items exist               |
-| Right `1fr`   | Next category name + `ChevronRight` icon    | `store.canSelectNextCategory`     |
+| Column          | Content                                        | Condition                                |
+| --------------- | ---------------------------------------------- | ---------------------------------------- |
+| Left (`1fr`)    | Previous-category chevron + name (pill button) | `canSelectPreviousCategory`              |
+| Centre (`auto`) | "Clear N" trash icon button                    | Checked items exist in selected category |
+| Right (`1fr`)   | Next-category name + chevron (pill button)     | `canSelectNextCategory`                  |
 
 When a column's condition is false, an empty `<div>` placeholder preserves the grid layout.
 
-#### Interaction
+#### Navigation pills
 
-- Chevron tap → `store.selectPreviousCategory()` / `store.selectNextCategory()` + `HapticService.selection()`
-- "Clear N" tap → opens `ActionSheet` asking "Clear N checked items?"
-- ActionSheet confirm → `store.clearCheckedItems()` + `HapticService.impact()`
+`press-scale`, `rounded-xl`, `text-xs font-semibold`, `color: var(--color-brand-green)`, `backgroundColor: rgba(var(--color-brand-deep-green-rgb), 0.10)`, `touchAction: manipulation`. Category name: `max-w-[100px] truncate`. `aria-label` set on each button.
 
-#### Known issue
+#### Clear button
 
-The gradient's opaque stop is `var(--color-surface-background)`, which does not account for the `--gradient-brand-wide` diagonal alpha tint on the actual page background. This can produce a subtle color mismatch on some devices. See `docs/snapshots/main-screen-ui-snapshot.md` — Known Issues.
+`press-scale`, `rounded-xl`, `text-xs font-semibold`, `color: var(--color-danger)`, `backgroundColor: rgba(212, 75, 74, 0.10)`. Trash icon + "Clear N" text. Opens `ActionSheet` on tap (with `HapticService.light()`). Confirm calls `store.clearCheckedItemsInSelectedCategory()` + `HapticService.medium()`.
+
+#### ActionSheet
+
+Rendered outside the `<footer>` as a sibling. Title: "Clear Checked Items?". Message: "This will remove all checked items from this list." Single destructive "Clear" action.
 
 ---
 
 ## `SwipeableRow`
 
-**File:** `src/components/SwipeableRow.tsx`  
+**File:** `src/components/SwipeableRow.tsx`
 **Used by:** `CategoryPanel` (wraps each `<li>` item)
 
 ### Props
@@ -238,68 +321,52 @@ The gradient's opaque stop is `var(--color-surface-background)`, which does not 
 
 #### Structure
 
-```
-<div class="relative overflow-hidden rounded-[14px]">   ← clipping shell
-  ├── [Delete strip]   position:absolute right-0, w-20, background: var(--color-danger)
-  └── [Content row]   translateX(offsetX px)
-```
-
-The delete strip is always in the DOM, translated `+80px` off the right edge when closed. As `offsetX` decreases toward `-80`, the strip slides into view: `translate3d(${80 + offsetX}px, 0, 0)`.
+Clipping shell: `relative overflow-hidden rounded-[14px]`. Delete strip: `absolute right-0, w-20, var(--color-danger)`, `rounded: 0 14px 14px 0`. Content row: `translateX(offsetX)`.
 
 #### Swipe mechanics
 
-- `offsetX` is clamped to `[-80, 0]`.
-- On `pointerdown`, `offsetAtDragStartRef.current` captures the current `offsetX`. Delta during the drag is applied relative to this starting value, enabling right-swipe-to-close from a fully-open state.
-- On `pointerup`: if `offsetX < -40` → snap to `-80` (open); otherwise → snap to `0` (closed).
-- Snap transition: `300ms cubic-bezier(0.34,1.56,0.64,1)` (spring with slight overshoot).
-- During drag: `transition: none` for zero-latency tracking.
+- `offsetX` clamped to `[-80, 0]`.
+- `offsetAtDragStartRef` captures current `offsetX` on `pointerdown`.
+- Snap threshold: `offsetX < -40` → fully open (`-80`), otherwise closed (`0`).
+- Spring transition: `300ms cubic-bezier(0.34,1.56,0.64,1)`.
+- During drag: `transition: none`.
+- `isDragging` as React state (not just ref) — ensures transition style re-evaluates same render cycle.
 
 #### Gesture arbitration
 
-On the first `pointermove`, if `|dy| > |dx|`, `isLockedOutRef.current = true` and all subsequent pointer events are ignored for this gesture. If `|dx| > |dy|`, `setPointerCapture` is called, claiming the pointer.
+First `pointermove`: if `|dy| >= |dx|` → `isLockedOutRef = true` (yield to vertical scroll). If `|dx| > |dy|` and > 5px → `setPointerCapture` + `e.stopPropagation()`.
 
 #### Content click guard
 
-`handleContentClick` is attached to the content row wrapper. If the row is currently open (`offsetX < 0`), it calls `e.stopPropagation()` and snaps closed, preventing the underlying item from being toggled when the user taps to close the swipe.
+If row is open (`offsetX !== 0`), tapping the content row calls `e.stopPropagation()` and snaps closed.
+
+#### Haptics
+
+`HapticService.medium()` on snap open. `HapticService.light()` on snap close. `HapticService.heavy()` on delete.
 
 ---
 
 ## `PageIndicator`
 
-**File:** `src/components/PageIndicator.tsx`  
-**Used by:** `MainScreen`
+**File:** `src/components/PageIndicator.tsx`
+**Used by:** Not currently rendered in `MainScreen` layout (available for future use)
 
 ### Props
 
-| Prop      | Type     | Required | Description                               |
-| --------- | -------- | -------- | ----------------------------------------- |
-| `count`   | `number` | Yes      | Total number of categories                |
-| `current` | `number` | Yes      | Zero-based index of the selected category |
+| Prop          | Type     | Required | Description                               |
+| ------------- | -------- | -------- | ----------------------------------------- |
+| `count`       | `number` | Yes      | Total number of categories                |
+| `activeIndex` | `number` | Yes      | Zero-based index of the selected category |
 
 ### Behavior
 
-Renders `count` dots in a horizontal row. The active dot expands to an 18px pill; inactive dots are 6px circles with 40% opacity.
-
-```ts
-// Active dot
-width: "18px", height: "6px", borderRadius: "999px",
-backgroundColor: "var(--color-brand-green)", opacity: 1,
-transition: "width 280ms cubic-bezier(0.34,1.56,0.64,1), ..."
-
-// Inactive dot
-width: "6px", height: "6px",
-backgroundColor: "var(--color-text-secondary)", opacity: 0.4,
-```
-
-`willChange: "width, background-color, opacity"` pre-promotes the layer for GPU-accelerated animation. The component is `aria-hidden="true"` — it is decorative only.
-
-Only rendered when `count > 1`. The wrapper `<div>` adds `paddingBottom: calc(env(safe-area-inset-bottom, 0px) + 4px)`.
+Renders `count` dots in a horizontal row. Active dot: `18px` wide pill in `var(--color-brand-green)`. Inactive dots: `6px` circles in `var(--color-text-secondary)` at 40% opacity. Spring width animation: `280ms cubic-bezier(0.34,1.56,0.64,1)`. `willChange: "width, background-color, opacity"`. `aria-hidden` — purely decorative.
 
 ---
 
 ## `PageTransitionWrapper`
 
-**File:** `src/components/PageTransitionWrapper.tsx`  
+**File:** `src/components/PageTransitionWrapper.tsx`
 **Used by:** `App.tsx` (wraps all `<Route>` children)
 
 ### Props
@@ -310,102 +377,100 @@ Only rendered when `count > 1`. The wrapper `<div>` adds `paddingBottom: calc(en
 
 ### Behavior
 
-Provides iOS-style push/pop slide animations on route changes. This component does not render any visible chrome — it only manages transition CSS classes.
+Provides iOS-style push/pop slide animations on route changes.
 
 #### Route depth
 
-`getRouteDepth(pathname: string): number` maps route paths to depth integers:
-
-| Route      | Depth |
-| ---------- | ----- |
-| `/install` | 0     |
-| `/welcome` | 1     |
-| `/setup`   | 2     |
-| `/` (main) | 3     |
-
-A higher depth means navigating forward (push); lower means navigating backward (pop).
+`getRouteDepth(pathname)` returns the number of non-empty path segments. Higher depth = forward (push), lower = backward (pop). Examples: `/` = 0, `/setup` = 1, `/sync` = 1, `/install` = 1.
 
 #### Animation classes
-
-When the route changes, the wrapper compares old depth to new depth and applies CSS classes:
 
 | Direction      | Incoming screen         | Outgoing screen      |
 | -------------- | ----------------------- | -------------------- |
 | Forward (push) | `page-enter-from-right` | `page-exit-to-left`  |
 | Backward (pop) | `page-enter-from-left`  | `page-exit-to-right` |
 
-`prevChildren` is snapshotted at the start of the transition and kept in the DOM until the animation completes (380 ms, matching `--duration-page` in `tokens.css`). After 380 ms, `prevChildren` is cleared and the outgoing screen is unmounted.
+`prevChildren` is snapshotted at the start of the transition and kept in the DOM until the animation completes (380 ms, matching `--duration-page` in `tokens.css`). After 380 ms, `prevChildren` is cleared and the outgoing screen is unmounted. All four CSS animation keyframes are defined in `index.css`. Both layers use `willChange: "transform"` during transition.
 
-All four CSS animation keyframes are defined in `index.css`. The easing used is `var(--spring-page)` (`cubic-bezier(0.25, 0.46, 0.45, 0.94)`).
+---
+
+## `OnboardingCategoryInput`
+
+**File:** `src/components/OnboardingCategoryInput.tsx`
+**Used by:** `OnboardingSetupScreen`
+
+### Props
+
+| Prop         | Type                     | Required | Description                        |
+| ------------ | ------------------------ | -------- | ---------------------------------- |
+| `categories` | `string[]`               | Yes      | Current list of pending categories |
+| `onAdd`      | `(name: string) => void` | Yes      | Called when a category is added    |
+| `onRemove`   | `(name: string) => void` | Yes      | Called when a category is removed  |
+
+### Behavior
+
+Category input field with an add button (green circle `+` icon) and animated pending-category list. Local state: `text` (controlled input). Duplicate detection: case-insensitive check against existing `categories`. On add: blur→refocus cycle to reset iOS keyboard.
+
+Pending categories render as animated rows (`animate-in fade-in slide-in-from-top-1 duration-200`) with green checkmark icon, name text, and an `×` remove button. Input: `h-12 rounded-[14px]`, `enterKeyHint="send"`, `autoCapitalize="words"`.
+
+---
+
+## `OnboardingSyncCodeInput`
+
+**File:** `src/components/OnboardingSyncCodeInput.tsx`
+**Used by:** `OnboardingSetupScreen`
+
+### Props
+
+| Prop       | Type                      | Required | Description            |
+| ---------- | ------------------------- | -------- | ---------------------- |
+| `value`    | `string`                  | Yes      | Controlled input value |
+| `onChange` | `(value: string) => void` | Yes      | Called on input change |
+| `onSubmit` | `() => void`              | Yes      | Called on Enter key    |
+
+### Behavior
+
+Sync code input with label ("Enter a Sync Code"), description text, and an `<Input>` element. Input: `h-12 rounded-[14px] font-mono text-sm`, placeholder `"XXXXX-XXXXX-XXXXX-XXXXX"`, `autoCapitalize="characters"`, `spellCheck={false}`.
 
 ---
 
 ## UI Primitives (shadcn/ui)
 
-The files in `src/components/ui/` are generated shadcn/ui primitives. **Do not hand-edit these files.** To update or re-generate a primitive, use the shadcn CLI. The following is a usage reference only.
+The files in `src/components/ui/` are generated shadcn/ui primitives. **Do not hand-edit these files.** The following is a usage reference only.
 
 ### `ActionSheet`
 
-**File:** `src/components/ui/action-sheet.tsx`  
-**Used by:** `BottomBar`
+**File:** `src/components/ui/action-sheet.tsx`
+**Used by:** `BottomBar`, `SettingsSheet` (via `features/settings/`)
 
-An iOS-style bottom action sheet used for destructive confirmations. Not generated by shadcn — this is a custom primitive built to match UIAlertController's appearance.
-
-#### Props
-
-| Prop      | Type                  | Required | Description                                          |
-| --------- | --------------------- | -------- | ---------------------------------------------------- |
-| `isOpen`  | `boolean`             | Yes      | Whether the sheet is visible                         |
-| `onClose` | `() => void`          | Yes      | Called when backdrop is tapped or Cancel is selected |
-| `title`   | `string`              | No       | Bold header text in the sheet                        |
-| `message` | `string`              | No       | Secondary description text                           |
-| `actions` | `ActionSheetAction[]` | Yes      | Array of `{ label, style, onPress }` action buttons  |
-
-`ActionSheetAction.style` is `"default" | "destructive" | "cancel"`.
-
-#### Implementation notes
-
-- `isMounted` state keeps the DOM node alive during the exit animation. `isVisible` drives the CSS opacity/translate transition.
-- A module-level `overlayCount` integer tracks how many `ActionSheet` instances are currently open. This prevents premature re-enabling of `document.body` overflow when multiple sheets are stacked.
-- The backdrop is a `position: fixed` overlay; tapping it calls `onClose`.
-- `paddingBottom: env(safe-area-inset-bottom)` on the sheet panel clears the iPhone home indicator.
-
----
+An iOS-style bottom action sheet for confirmations. Props: `isOpen`, `onClose`, `title?`, `message?`, `actions` (array of `{ label, onClick, destructive? }`). Backdrop overlay calls `onClose` on tap. Safe-area padding on the panel.
 
 ### `Button`
 
 **File:** `src/components/ui/button.tsx`
 
-Standard shadcn `Button` primitive with `variant` and `size` props. Variants available: `default`, `destructive`, `outline`, `secondary`, `ghost`, `link`. Used throughout `SettingsSheet` and onboarding screens.
-
----
+Standard shadcn `Button` with `variant` (`default`, `destructive`, `outline`, `secondary`, `ghost`, `link`) and `size` props. Used in `SettingsSheet`, onboarding screens, and throughout the app.
 
 ### `Dialog`
 
 **File:** `src/components/ui/dialog.tsx`
 
-Standard shadcn `Dialog` primitive (modal overlay). Used in `SettingsSheet` for the Rename Category dialog and the Reset to Factory Settings confirmation dialog.
-
----
+Standard shadcn `Dialog` (modal overlay). Used in `SettingsSheet` for rename/delete/reset confirmation dialogs.
 
 ### `Input`
 
 **File:** `src/components/ui/input.tsx`
 
-Standard shadcn `Input` primitive. A global rule in `index.css` sets `input { font-size: 16px !important }` to prevent iOS Safari auto-zoom on focus.
-
----
+Standard shadcn `Input`. Global 16px font-size rule in `index.css` prevents iOS auto-zoom.
 
 ### `Sheet`
 
 **File:** `src/components/ui/sheet.tsx`
 
-Standard shadcn `Sheet` primitive. Used by `SettingsSheet` with `side="bottom"` to render a bottom drawer. `SettingsSheet` adds its own swipe-to-dismiss gesture layer on top of the sheet's native behavior via `onPointerDown`/`onPointerMove`/`onPointerUp` handlers.
-
----
+Standard shadcn `Sheet`. Used by `SettingsSheet` with `side="bottom"`.
 
 ### `Toggle` / `ToggleGroup`
 
 **Files:** `src/components/ui/toggle.tsx`, `src/components/ui/toggle-group.tsx`
 
-Standard shadcn `Toggle` and `ToggleGroup` primitives. Used in `SettingsSheet` for the Appearance mode selector (light / system / dark) and in `CategoryPanel`'s sort controls (date / alpha, asc / desc).
+Standard shadcn primitives. Used in `SettingsSheet` for Appearance mode and Text Size selectors.

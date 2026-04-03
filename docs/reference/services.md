@@ -14,8 +14,9 @@ Data is stored under the key `"grocery-lists-state"` with the following shape:
 
 ```ts
 {
-  lists: Category[];       // the full category array
+  lists: Category[];              // the full category array
   selectedListID: string | null;
+  groups?: CategoryGroup[];       // optional for backwards compatibility
 }
 ```
 
@@ -23,11 +24,11 @@ The field names (`lists`, `selectedListID`) mirror the Swift `CodingKeys` used i
 
 ### API
 
-| Method                                 | Description                                                                          |
-| -------------------------------------- | ------------------------------------------------------------------------------------ |
-| `save(categories, selectedCategoryID)` | Serializes and writes current state to `localStorage` under `"grocery-lists-state"`  |
-| `load()`                               | Reads and deserializes state; returns `{ categories, selectedCategoryID }` or `null` |
-| `clear()`                              | Removes `"grocery-lists-state"` from `localStorage` entirely                         |
+| Method                                         | Description                                                                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `save(categories, selectedCategoryID, groups)` | Serializes and writes current state (including groups) to `localStorage` under `"grocery-lists-state"`                     |
+| `load()`                                       | Reads and deserializes state; returns `{ categories, selectedCategoryID, groups }` or `null`. Falls back `groups` to `[]`. |
+| `clear()`                                      | Removes `"grocery-lists-state"` from `localStorage` entirely                                                               |
 
 ### Usage Rule
 
@@ -139,13 +140,13 @@ The **only** file that imports from `firebase/firestore` and `firebase/auth`. Ex
 
 ### API
 
-| Function              | Signature                                                           | Description                                                                                                                                          |
-| --------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ensureAnonymousAuth` | `() => Promise<User>`                                               | Signs in anonymously if no user is currently authenticated. Checks current auth state first. Safe to call multiple times.                            |
-| `saveState`           | `(syncCode, categories, selectedCategoryID) => Promise<void>`       | Full-overwrite write to `syncStates/{syncCode}`. Includes a `Date.now()` `updatedAt` timestamp. Last write wins.                                     |
-| `loadState`           | `(syncCode) => Promise<{ categories, selectedCategoryID } \| null>` | One-time Firestore read. Returns `null` if the document does not exist. Races against a 5-second timeout to avoid hanging indefinitely when offline. |
-| `subscribeToState`    | `(syncCode, callback) => Unsubscribe`                               | Opens a real-time `onSnapshot` listener. Calls `callback` on every document change. Returns an unsubscribe function.                                 |
-| `deleteSyncData`      | `(syncCode) => Promise<void>`                                       | Permanently deletes the sync document from Firestore.                                                                                                |
+| Function              | Signature                                                                              | Description                                                                                                                                          |
+| --------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ensureAnonymousAuth` | `() => Promise<User>`                                                                  | Signs in anonymously if no user is currently authenticated. Checks current auth state first. Safe to call multiple times.                            |
+| `saveState`           | `(syncCode, categories, selectedCategoryID, groups, userName) => Promise<void>`        | Full-overwrite write to `syncStates/{syncCode}`. Includes a `Date.now()` `updatedAt` timestamp. Last write wins.                                     |
+| `loadState`           | `(syncCode) => Promise<{ categories, selectedCategoryID, groups, userName? } \| null>` | One-time Firestore read. Returns `null` if the document does not exist. Races against a 5-second timeout to avoid hanging indefinitely when offline. |
+| `subscribeToState`    | `(syncCode, callback) => Unsubscribe`                                                  | Opens a real-time `onSnapshot` listener. Callback receives `(categories, selectedCategoryID, groups, userName)`. Returns an unsubscribe function.    |
+| `deleteSyncData`      | `(syncCode) => Promise<void>`                                                          | Permanently deletes the sync document from Firestore.                                                                                                |
 
 ### Usage Rule
 

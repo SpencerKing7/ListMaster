@@ -13,22 +13,39 @@ src/
 ├── assets/               # Static assets imported by components (images, SVGs)
 ├── models/               # Plain TypeScript interfaces and types — no logic, no I/O
 │   └── types.ts
-├── store/                # React Context + useReducer stores (global state)
-│   ├── useCategoriesStore.ts
-│   ├── useSettingsStore.ts
-│   └── useTheme.ts
+├── store/                # React Context + useReducer/useState stores (global state)
+│   ├── useCategoriesStore.ts   # Provider + public hook
+│   ├── categoriesReducer.ts    # Pure reducer + StoreAction union
+│   ├── useCategoryActions.ts   # Stable dispatch wrappers
+│   ├── useCategoryDerived.ts   # Computed/derived values
+│   ├── useCloudSync.ts         # Firestore sync lifecycle
+│   ├── categoryHandlers.ts     # Category domain reducer handlers
+│   ├── itemHandlers.ts         # Item domain reducer handlers
+│   ├── groupHandlers.ts        # Group domain reducer handlers
+│   ├── reducerHelpers.ts       # Shared pure helpers for handlers
+│   ├── useSettingsStore.ts     # Settings provider + hook
+│   ├── useSyncStore.tsx        # Sync provider + hook
+│   └── useTheme.ts             # DOM theme/text-size application utilities
 ├── screens/              # Full-screen route components (one per route)
 │   ├── MainScreen.tsx
 │   ├── OnboardingInstallScreen.tsx
 │   ├── OnboardingWelcomeScreen.tsx
 │   ├── OnboardingSetupScreen.tsx
+│   ├── OnboardingSyncScreen.tsx
 │   ├── SettingsSheet.tsx
 │   └── SplashScreen.tsx
 ├── components/           # Reusable UI building blocks
+│   ├── AddItemInput.tsx
 │   ├── BottomBar.tsx
 │   ├── CategoryPanel.tsx
 │   ├── CategoryPicker.tsx
+│   ├── ChecklistItemRow.tsx
+│   ├── EmptyState.tsx
+│   ├── GroupTabBar.tsx
 │   ├── HeaderBar.tsx
+│   ├── ListMetaBar.tsx
+│   ├── OnboardingCategoryInput.tsx
+│   ├── OnboardingSyncCodeInput.tsx
 │   ├── PageIndicator.tsx
 │   ├── PageTransitionWrapper.tsx
 │   ├── SwipeableRow.tsx
@@ -40,14 +57,23 @@ src/
 │       ├── sheet.tsx
 │       ├── toggle-group.tsx
 │       └── toggle.tsx
+├── features/             # Feature-scoped modules
+│   └── settings/         # Settings feature (used by SettingsSheet)
+│       ├── index.ts              # Barrel exports
+│       ├── constants.ts          # Settings-specific constants
+│       ├── components/           # Section components (CategoriesGroupsSection, etc.)
+│       ├── hooks/                # useCategoryDrag, useGroupDrag, useSettingsDialogs
+│       └── utils/                # Settings-specific utilities
 ├── services/             # Side-effectful singletons (localStorage, vibration, etc.)
+│   ├── firebaseConfig.ts
 │   ├── hapticService.ts
 │   ├── persistenceService.ts
-│   └── settingsService.ts
+│   ├── settingsService.ts
+│   └── syncService.ts
 ├── styles/               # CSS design token files imported by index.css
 │   └── tokens.css
 └── lib/
-    └── utils.ts          # Shared pure utility functions (cn(), etc.)
+    └── utils.ts          # Shared pure utility functions (cn(), generateSyncCode(), etc.)
 ```
 
 ---
@@ -61,6 +87,7 @@ src/
 | `screens/`       | Top-level components rendered by `<Route>` — one file per screen or sheet     | Reusable building blocks, business logic                  |
 | `components/`    | Reusable UI components not tied to a specific screen's data model             | Screen-level views, store logic                           |
 | `components/ui/` | shadcn/ui generated primitives. **Do not hand-edit these.**                   | Custom app components                                     |
+| `features/`      | Feature-scoped modules with their own `components/`, `hooks/`, `utils/`       | Code not belonging to that feature                        |
 | `services/`      | Stateless singletons that perform I/O (localStorage, fetch, etc.)             | React state, components, types                            |
 | `styles/`        | CSS custom property token files                                               | TypeScript/TSX source files                               |
 | `lib/`           | Pure, framework-agnostic utility functions                                    | React hooks, store logic, components                      |

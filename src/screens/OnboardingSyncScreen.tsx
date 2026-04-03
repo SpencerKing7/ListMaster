@@ -1,8 +1,7 @@
 // src/screens/OnboardingSyncScreen.tsx
 // Step 3 of 4 in onboarding — reached from /setup, navigates to /install (browser) or completes onboarding (standalone).
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { JSX } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSyncStore } from "@/store/useSyncStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -35,30 +34,17 @@ export function OnboardingSyncScreen(): JSX.Element | null {
   // 1. Store hooks
   const sync = useSyncStore();
   const settings = useSettingsStore();
-  const navigate = useNavigate();
 
   // 2. State declarations
   const [isLoading, setIsLoading] = useState(false);
   const [isEntered, setIsEntered] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // 3. Memos
-  const isStandalone = useMemo(
-    () =>
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as { standalone?: boolean }).standalone === true,
-    [],
-  );
-
-  // 4. navigateForward — must be defined before effects that call it
+  // 3. navigateForward — must be defined before effects that call it
   const navigateForward = useCallback((): void => {
-    if (isStandalone) {
-      settings.completeOnboarding();
-      // Do NOT navigate("/") — App.tsx re-renders automatically when hasCompletedOnboarding flips.
-    } else {
-      navigate("/install");
-    }
-  }, [isStandalone, settings, navigate]);
+    settings.completeOnboarding();
+    // App.tsx re-renders automatically when hasCompletedOnboarding flips.
+  }, [settings]);
 
   // 5. Early-exit effect — user already joined sync on /setup
   useEffect(() => {

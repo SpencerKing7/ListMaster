@@ -73,10 +73,10 @@ export function App(): JSX.Element {
             </>
           ) : (
             <>
-              <Route path="/" element={<OnboardingWelcomeScreen />} />
+              <Route path="/" element={<OnboardingInstallScreen />} />
+              <Route path="/welcome" element={<OnboardingWelcomeScreen />} />
               <Route path="/setup" element={<OnboardingSetupScreen />} />
               <Route path="/sync" element={<OnboardingSyncScreen />} />
-              <Route path="/install" element={<OnboardingInstallScreen />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
