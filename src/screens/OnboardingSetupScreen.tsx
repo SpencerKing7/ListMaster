@@ -1,8 +1,9 @@
 // src/screens/OnboardingSetupScreen.tsx
 // Onboarding step where the user enters their name, categories, or a sync code.
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import type { JSX } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
@@ -16,9 +17,12 @@ export function OnboardingSetupScreen(): JSX.Element {
   const store = useCategoriesStore();
   const settings = useSettingsStore();
   const sync = useSyncStore();
+  const navigate = useNavigate();
 
-  const [nameText, setNameText] = useState("");
-  const [pendingCategories, setPendingCategories] = useState<string[]>([]);
+  const isStandalone = useMemo(() => window.matchMedia("(display-mode: standalone)").matches, []);
+
+  const [nameText, setNameText] = useState(settings.userName || "");
+  const [pendingCategories, setPendingCategories] = useState<string[]>(store.categories.map(c => c.name));
   const [syncCodeText, setSyncCodeText] = useState("");
 
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +33,7 @@ export function OnboardingSetupScreen(): JSX.Element {
   const isFormValid = trimmedSyncCode.length > 0 || (trimmedName.length > 0 && pendingCategories.length > 0);
   const isManualSectionDimmed = trimmedSyncCode.length > 0;
 
-  async function completeOnboarding(): Promise<void> {
+  async function finishSetup(): Promise<void> {
     if (!isFormValid) return;
     (document.activeElement as HTMLElement | null)?.blur();
 
@@ -42,7 +46,11 @@ export function OnboardingSetupScreen(): JSX.Element {
 
     setTimeout(() => {
       window.scrollTo(0, 0);
-      settings.completeOnboarding();
+      if (isStandalone) {
+        settings.completeOnboarding();
+      } else {
+        navigate("/install");
+      }
     }, 350);
   }
 
@@ -128,7 +136,7 @@ export function OnboardingSetupScreen(): JSX.Element {
       <OnboardingSyncCodeInput
         value={syncCodeText}
         onChange={setSyncCodeText}
-        onSubmit={completeOnboarding}
+        onSubmit={finishSetup}
       />
 
       <div className="flex-1" />
@@ -145,7 +153,7 @@ export function OnboardingSetupScreen(): JSX.Element {
             boxShadow: "0 6px 24px rgba(57,179,133,0.35)",
           }}
           disabled={!isFormValid}
-          onClick={completeOnboarding}
+          onClick={finishSetup}
         >
           Finish Setup
         </Button>

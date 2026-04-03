@@ -4,10 +4,11 @@ import type { JSX } from "react";
 
 interface SplashScreenProps {
   onFinished: () => void;
+  isReturningUser: boolean;
 }
 
 /** Full-screen animated splash/loading screen with fade-in logo and progress indicator. */
-export function SplashScreen({ onFinished }: SplashScreenProps): JSX.Element {
+export function SplashScreen({ onFinished, isReturningUser }: SplashScreenProps): JSX.Element {
   const [isFading, setIsFading] = useState(false);
   const [isEntered, setIsEntered] = useState(false);
 
@@ -20,13 +21,13 @@ export function SplashScreen({ onFinished }: SplashScreenProps): JSX.Element {
       setTimeout(() => {
         onFinished();
       }, 420);
-    }, 1400);
+    }, isReturningUser ? 1400 : 1000);
 
     return () => {
       clearTimeout(enterTimer);
       clearTimeout(fadeTimer);
     };
-  }, [onFinished]);
+  }, [onFinished, isReturningUser]);
 
   return (
     <div

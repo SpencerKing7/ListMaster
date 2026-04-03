@@ -19,12 +19,12 @@
 
 The full routing table as defined in `App.tsx`:
 
-| Route path | Component                 | Entry condition                                                     |
-| ---------- | ------------------------- | ------------------------------------------------------------------- |
-| `/install` | `OnboardingInstallScreen` | Default redirect for all new users                                  |
-| `/welcome` | `OnboardingWelcomeScreen` | Navigated to by `OnboardingInstallScreen` once standalone confirmed |
-| `/setup`   | `OnboardingSetupScreen`   | Navigated to by `OnboardingWelcomeScreen` CTA                       |
-| `/`        | `MainScreen`              | `hasCompletedOnboarding === true`                                   |
+| Route path | Component                 | Entry condition                                                  |
+| ---------- | ------------------------- | ---------------------------------------------------------------- |
+| `/welcome` | `OnboardingWelcomeScreen` | Default redirect for all new users                               |
+| `/setup`   | `OnboardingSetupScreen`   | Navigated to by `OnboardingWelcomeScreen` CTA                    |
+| `/install` | `OnboardingInstallScreen` | Navigated to by `OnboardingSetupScreen` for non-standalone users |
+| `/`        | `MainScreen`              | `hasCompletedOnboarding === true`                                |
 
 All routes are wrapped by `PageTransitionWrapper` in `App.tsx`, which provides push/pop slide animations. `HashRouter` is used throughout — required for GitHub Pages static hosting.
 
@@ -47,13 +47,14 @@ const [isSplashVisible, setIsSplashVisible] = useState(
 );
 ```
 
-It is `true` (splash shown) only for returning users who have completed onboarding. New users go directly to the `/install` route.
+It is `true` (splash shown) for all users on app launch. The splash always displays before routing begins.
 
 ### Props
 
-| Prop         | Type         | Required | Description                                                                        |
-| ------------ | ------------ | -------- | ---------------------------------------------------------------------------------- |
-| `onFinished` | `() => void` | Yes      | Called when the exit animation completes; `App.tsx` sets `isSplashVisible = false` |
+| Prop              | Type         | Required | Description                                                                              |
+| ----------------- | ------------ | -------- | ---------------------------------------------------------------------------------------- |
+| `onFinished`      | `() => void` | Yes      | Called when the exit animation completes; `App.tsx` sets `isSplashVisible = false`       |
+| `isReturningUser` | `boolean`    | Yes      | Whether this is a returning user; affects splash duration (1000ms new, 1400ms returning) |
 
 ### Local state
 
@@ -66,8 +67,8 @@ It is `true` (splash shown) only for returning users who have completed onboardi
 
 1. Mount: screen is fully opaque, app icon and wordmark are at `opacity: 0, scale: 0.85, translateY: 12px`.
 2. After **40 ms**: `isEntered = true` → icon and wordmark spring into view (`opacity: 1, scale: 1, translateY: 0`, `cubic-bezier(0.34,1.56,0.64,1)`).
-3. After **1400 ms**: `isFading = true` → entire screen fades to `opacity: 0` over `420ms ease-out`.
-4. After **1400 + 420 ms** (in the same timer block): `onFinished()` is called, unmounting the splash.
+3. After **1000-1400 ms** (based on `isReturningUser`): `isFading = true` → entire screen fades to `opacity: 0` over `420ms ease-out`.
+4. After **duration + 420 ms** (in the same timer block): `onFinished()` is called, unmounting the splash.
 
 ### Visual design
 
@@ -85,18 +86,17 @@ It is `true` (splash shown) only for returning users who have completed onboardi
 
 ### Entry condition
 
-This is the default redirect for users who have not yet completed onboarding (`hasCompletedOnboarding === false`). It is also the literal starting route for fresh app loads before onboarding.
+Navigated to by `OnboardingSetupScreen` for users who are not running in standalone (installed PWA) mode. This screen provides a celebratory completion experience for browser-based users.
 
 ### Props
 
-None. Uses `useSettingsStore()` and `useNavigate()` internally.
+None. Uses `useSettingsStore()` internally.
 
 ### Local state
 
 | Variable       | Type      | Description                                                   |
 | -------------- | --------- | ------------------------------------------------------------- |
 | `isStandalone` | `boolean` | Whether the app is running in standalone (installed PWA) mode |
-| `isEntered`    | `boolean` | `true` after 50ms — triggers staggered card entry animations  |
 
 ### Standalone detection
 
@@ -112,18 +112,17 @@ const isStandalone =
 
 **If standalone (installed):**
 
-- Fires `gtag('event', 'pwa_session', { event_category: 'PWA', event_label: 'App Opened' })` if `typeof gtag === "function"` (Google Analytics, injected via `index.html`).
-- Immediately navigates to `/welcome`.
+- Automatically calls `settings.completeOnboarding()` to complete the onboarding process.
+- No UI is rendered (returns `null`).
 
 **If not standalone (browser tab):**
 
-- Renders the install prompt UI: a series of animated cards explaining how to add the app to the home screen.
-- Cards stagger in with a 60ms delay between each (`isEntered` drives `opacity`/`translateY` transitions).
-- No navigation happens; the user must install the PWA and reopen it.
+- Renders a celebratory "You're All Set!" screen with a checkmark icon and welcoming message.
+- Provides a "Get Started" button that calls `settings.completeOnboarding()` when clicked.
 
 ### Navigation
 
-- → `/welcome` (when standalone mode confirmed)
+- → Main app (when onboarding completes via `settings.completeOnboarding()`)
 
 ---
 
@@ -134,7 +133,7 @@ const isStandalone =
 
 ### Entry condition
 
-Navigated to by `OnboardingInstallScreen` when the app detects it is running in standalone mode.
+This is the default redirect for users who have not yet completed onboarding (`hasCompletedOnboarding === false`). It is the starting screen for all new users after the splash screen.
 
 ### Props
 
@@ -197,17 +196,20 @@ A single `<Input>` for the user's name. Drives `name` local state. Required befo
 - Each pending category appears as a pill with a remove button.
 - At least one category is required to proceed.
 
-#### Form submission (`completeOnboarding`)
+#### Form submission (`finishSetup`)
 
 1. Calls `settings.setUserName(name.trim())`.
 2. Calls `store.setCategories(pendingCategories)` — creates `Category` objects with UUIDs and empty item arrays.
-3. After **350 ms** delay (`setTimeout`): calls `settings.completeOnboarding()` which sets `hasCompletedOnboarding = true` in `SettingsService`.
+3. After **350 ms** delay (`setTimeout`):
+   - If standalone: calls `settings.completeOnboarding()` directly
+   - If not standalone: navigates to `/install`
 
-The 350 ms delay waits for the iOS software keyboard to dismiss before the route changes to `/`. Without it, mounting `MainScreen` while the keyboard is still animating can cause layout jank.
+The 350 ms delay waits for the iOS software keyboard to dismiss before the route changes. Without it, navigation while the keyboard is still animating can cause layout jank.
 
 ### Navigation
 
-- → `/` (after `completeOnboarding()` resolves and `hasCompletedOnboarding` becomes `true`, `App.tsx` renders `MainScreen` at `/`)
+- → `/install` (for non-standalone users after `finishSetup()`)
+- → Main app (for standalone users after `settings.completeOnboarding()`)
 
 ---
 

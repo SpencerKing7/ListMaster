@@ -2,19 +2,13 @@
 // NOTE: 184 lines — exceeds the 150-line page target because it handles three
 // mutually exclusive install-prompt states (iOS Safari, Android/Chrome, fallback)
 // plus the PWA beforeinstallprompt event, which all share the same screen context.
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { JSX } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-
-// Declare gtag as a global function (loaded by GA script in index.html)
-declare global {
-  function gtag(command: string, targetId: string, config?: Record<string, unknown>): void;
-}
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export function OnboardingInstallScreen(): JSX.Element | null {
-  const navigate = useNavigate();
-  const [mounted, setMounted] = useState(false);
+  const settings = useSettingsStore();
 
   // Memoised so it doesn't re-evaluate on every render
   const isStandalone = useMemo(
@@ -26,19 +20,11 @@ export function OnboardingInstallScreen(): JSX.Element | null {
 
   useEffect(() => {
     if (isStandalone) {
-      // Track standalone mode sessions as a proxy for PWA installs.
-      // Guard required — gtag may not be loaded if GA is blocked or slow.
-      if (typeof gtag === "function") {
-        gtag('event', 'pwa_session', {
-          event_category: 'PWA',
-          event_label: 'Standalone Mode'
-        });
-      }
-      navigate("/welcome", { replace: true });
+      // Auto-complete onboarding for standalone users
+      settings.completeOnboarding();
       return;
     }
-    setMounted(true);
-  }, [isStandalone, navigate]);
+  }, [isStandalone, settings]);
 
   // Render nothing while redirecting — prevents flash of install screen
   if (isStandalone) return null;
@@ -72,100 +58,40 @@ export function OnboardingInstallScreen(): JSX.Element | null {
 
       {/* Header */}
       <div className="flex flex-col items-center gap-4">
-        {/* Icon — Mobile Device */}
+        {/* Icon — Checkmark */}
         <svg
           width="64"
           height="64"
           viewBox="0 0 24 24"
           fill="none"
           stroke="var(--color-brand-green)"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-          <line x1="12" y1="18" x2="12.01" y2="18" />
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22,4 12,14.01 9,11.01" />
         </svg>
 
         <h1
           className="text-[28px] font-bold text-center"
           style={{ color: "var(--color-brand-green)" }}
         >
-          Add to Home Screen
+          You're All Set!
         </h1>
         <p className="text-sm text-text-secondary text-center">
-          List Master works best as an app on your home screen — it's faster, works offline, and feels just like a native app.
+          Welcome to List Master — your personal checklist companion is ready to go!
         </p>
       </div>
 
       {/* Instruction steps */}
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">
-        {/* Step 1 */}
-        <div
-          className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
-          style={{
-            backgroundColor: "var(--color-surface-card)",
-            boxShadow: "var(--elevation-card)",
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
-            transition: `opacity 220ms cubic-bezier(0,0,0.2,1) 0ms, transform 220ms cubic-bezier(0,0,0.2,1) 0ms`,
-          }}
-        >
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-brand-teal)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-            <polyline points="16,6 12,2 8,6" />
-            <line x1="12" y1="2" x2="12" y2="15" />
-          </svg>
-          <div className="flex-1">
-            <p className="font-semibold text-text-primary">Open your browser menu</p>
-            <p className="text-sm text-text-secondary">Tap the menu button (⋮) or share button in your browser</p>
-          </div>
-        </div>
-
-        {/* Step 2 */}
-        <div
-          className={`flex items-center gap-3 px-4 py-3.5 rounded-xl`}
-          style={{
-            backgroundColor: "var(--color-surface-card)",
-            boxShadow: "var(--elevation-card)",
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
-            transition: `opacity 220ms cubic-bezier(0,0,0.2,1) 100ms, transform 220ms cubic-bezier(0,0,0.2,1) 100ms`,
-          }}
-        >
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-brand-teal)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="12" y1="8" x2="12" y2="16" />
-            <line x1="8" y1="12" x2="16" y2="12" />
-          </svg>
-          <div className="flex-1">
-            <p className="font-semibold text-text-primary">Select "Add to Home Screen" or "Install App"</p>
-            <p className="text-sm text-text-secondary">Choose the option to install or add to your home screen</p>
-          </div>
-        </div>
+        {/* Placeholder for future content if needed */}
       </div>
 
       {/* Browser note */}
       <p className="text-xs text-text-secondary text-center mt-4 max-w-sm">
-        This feature works on most modern mobile browsers. If you don't see the option, try a different browser like Chrome, Safari, or Firefox.
+        {/* Removed install instructions */}
       </p>
 
       <div className="flex-1" />
@@ -176,12 +102,14 @@ export function OnboardingInstallScreen(): JSX.Element | null {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)" }}
       >
         <Button
-          variant="ghost"
-          className="w-full h-12 rounded-2xl text-sm font-medium"
-          style={{ color: "var(--color-text-secondary)" }}
-          onClick={() => navigate("/welcome")}
+          className="w-full h-14 rounded-2xl text-base font-semibold text-white press-scale"
+          style={{
+            background: "linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-teal) 100%)",
+            boxShadow: "0 6px 24px rgba(57,179,133,0.35)",
+          }}
+          onClick={() => settings.completeOnboarding()}
         >
-          Skip for Now — Use in Browser
+          Get Started
         </Button>
       </div>
     </div>
