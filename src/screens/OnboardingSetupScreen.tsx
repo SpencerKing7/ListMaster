@@ -1,7 +1,7 @@
 // src/screens/OnboardingSetupScreen.tsx
 // Onboarding step where the user enters their name, categories, or a sync code.
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,6 @@ export function OnboardingSetupScreen(): JSX.Element {
   const settings = useSettingsStore();
   const sync = useSyncStore();
   const navigate = useNavigate();
-
-  const isStandalone = useMemo(() => window.matchMedia("(display-mode: standalone)").matches, []);
 
   const [nameText, setNameText] = useState(settings.userName || "");
   const [pendingCategories, setPendingCategories] = useState<string[]>(store.categories.map(c => c.name));
@@ -46,11 +44,7 @@ export function OnboardingSetupScreen(): JSX.Element {
 
     setTimeout(() => {
       window.scrollTo(0, 0);
-      if (isStandalone) {
-        settings.completeOnboarding();
-      } else {
-        navigate("/sync");
-      }
+      navigate("/sync");
     }, 350);
   }
 
