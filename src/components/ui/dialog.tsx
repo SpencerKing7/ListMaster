@@ -54,16 +54,27 @@ function DialogContent({
     const vv = window.visualViewport
     if (!vv) return
 
+    let rafId = 0
+
     const update = () => {
       const el = popupRef.current
       if (!el) return
-      // offsetTop = how far the visual viewport is scrolled down from layout viewport top
-      // When keyboard is open, vv.height < window.innerHeight
       const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
       if (keyboardHeight > 50) {
-        // Shift dialog up by half the keyboard height so it's visible
-        el.style.setProperty("--dialog-kb-offset", `${-(keyboardHeight / 2)}px`)
+        // Reset offset and wait one frame so the browser repaints to
+        // the natural centered position before we measure.
+        el.style.setProperty("--dialog-kb-offset", "0px")
+        cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(() => {
+          const rect = el.getBoundingClientRect()
+          const keyboardTop = vv.height + vv.offsetTop
+          const overlap = rect.bottom - keyboardTop + 12 // 12px breathing room
+          if (overlap > 0) {
+            el.style.setProperty("--dialog-kb-offset", `${-overlap}px`)
+          }
+        })
       } else {
+        cancelAnimationFrame(rafId)
         el.style.setProperty("--dialog-kb-offset", "0px")
       }
     }
@@ -75,6 +86,7 @@ function DialogContent({
     return () => {
       vv.removeEventListener("resize", update)
       vv.removeEventListener("scroll", update)
+      cancelAnimationFrame(rafId)
     }
   }, [])
 
