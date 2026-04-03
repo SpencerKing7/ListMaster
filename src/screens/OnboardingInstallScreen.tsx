@@ -181,14 +181,6 @@ export function OnboardingInstallScreen(): JSX.Element | null {
           }}
           onClick={() => navigate("/welcome")}
         >
-          Continue
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full h-12 rounded-2xl text-sm font-medium"
-          style={{ color: "var(--color-text-secondary)" }}
-          onClick={() => navigate("/welcome")}
-        >
           Skip for Now
         </Button>
       </div>
