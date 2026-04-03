@@ -21,6 +21,7 @@ interface SyncPayload {
   lists: Category[];
   selectedCategoryID: string | null;
   groups?: CategoryGroup[]; // optional for backwards compatibility with older clients
+  userName?: string; // optional for backwards compatibility with older documents
   updatedAt: number; // Unix ms — used to detect stale writes
 }
 
@@ -65,11 +66,13 @@ export async function saveState(
   categories: Category[],
   selectedCategoryID: string | null,
   groups: CategoryGroup[],
+  userName: string,
 ): Promise<void> {
   const payload: SyncPayload = {
     lists: categories,
     selectedCategoryID,
     groups,
+    userName,
     updatedAt: Date.now(),
   };
   await setDoc(syncDocRef(syncCode), payload);
@@ -83,6 +86,7 @@ export async function loadState(syncCode: string): Promise<{
   categories: Category[];
   selectedCategoryID: string | null;
   groups: CategoryGroup[];
+  userName?: string;
 } | null> {
   const timeoutPromise = new Promise<null>((resolve) =>
     setTimeout(() => resolve(null), 5000),
@@ -95,6 +99,7 @@ export async function loadState(syncCode: string): Promise<{
       categories: data.lists,
       selectedCategoryID: data.selectedCategoryID,
       groups: data.groups ?? [], // critical fallback here, not in the caller
+      userName: data.userName,
     };
   });
 
@@ -111,6 +116,7 @@ export function subscribeToState(
     categories: Category[],
     selectedCategoryID: string | null,
     groups: CategoryGroup[],
+    userName: string | undefined,
   ) => void,
 ): Unsubscribe {
   return onSnapshot(
@@ -118,7 +124,12 @@ export function subscribeToState(
     (snap) => {
       if (!snap.exists()) return;
       const data = snap.data() as SyncPayload;
-      callback(data.lists, data.selectedCategoryID, data.groups ?? []);
+      callback(
+        data.lists,
+        data.selectedCategoryID,
+        data.groups ?? [],
+        data.userName,
+      );
     },
     (error) => {
       console.error(

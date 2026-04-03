@@ -18,6 +18,7 @@ import type {
 } from "../models/types";
 import { PersistenceService } from "../services/persistenceService";
 import { useSyncStore } from "./useSyncStore";
+import { useSettingsStore } from "./useSettingsStore";
 import React from "react";
 
 // MARK: - State Shape
@@ -32,11 +33,12 @@ interface StoreState {
 function loadInitialState(): StoreState {
   const saved = PersistenceService.load();
   if (saved && saved.categories.length > 0) {
+    const savedGroups = saved.groups ?? [];
     return {
       categories: saved.categories,
       selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
-      groups: saved.groups ?? [],
-      selectedGroupID: null, // Always start on "All"
+      groups: savedGroups,
+      selectedGroupID: savedGroups.length > 0 ? savedGroups[0].id : null,
     };
   }
   return {
@@ -85,7 +87,8 @@ type StoreAction =
       type: "SET_CATEGORY_GROUP";
       categoryID: string;
       groupID: string | undefined;
-    };
+    }
+  | { type: "ADD_CATEGORY_WITH_GROUP"; name: string; groupID: string };
 
 // MARK: - Helpers
 
@@ -323,11 +326,23 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
     case "RELOAD": {
       const saved = PersistenceService.load();
       if (!saved || saved.categories.length === 0) return state;
+      const reloadedGroups = saved.groups ?? [];
+      // Preserve the current group selection if it still exists in the reloaded data.
+      // If it doesn't (e.g. the group was deleted on another device), fall back to
+      // the first group, or null ("All") if there are no groups.
+      const currentGroupStillExists =
+        state.selectedGroupID !== null &&
+        reloadedGroups.some((g) => g.id === state.selectedGroupID);
+      const reloadedGroupID = currentGroupStillExists
+        ? state.selectedGroupID
+        : reloadedGroups.length > 0
+          ? reloadedGroups[0].id
+          : null;
       next = {
         categories: saved.categories,
         selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
-        groups: saved.groups ?? [],
-        selectedGroupID: null, // reset to "All" on reload
+        groups: reloadedGroups,
+        selectedGroupID: reloadedGroupID,
       };
       // Don't re-save on reload
       return next;
@@ -447,6 +462,23 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       break;
     }
 
+    case "ADD_CATEGORY_WITH_GROUP": {
+      const trimmed = normalizedName(action.name);
+      if (!trimmed || !isNameAvailable(state.categories, trimmed)) return state;
+      const newCategory: Category = {
+        id: uuidv4(),
+        name: trimmed,
+        items: [],
+        groupID: action.groupID,
+      };
+      next = {
+        ...state,
+        categories: [...state.categories, newCategory],
+        selectedCategoryID: newCategory.id,
+      };
+      break;
+    }
+
     default:
       return state;
   }
@@ -500,6 +532,8 @@ interface StoreContextValue {
   deleteGroup: (id: string) => void;
   moveGroups: (from: number, to: number) => void;
   setCategoryGroup: (categoryID: string, groupID: string | undefined) => void;
+  /** Atomically creates a new category and assigns it to the given group. */
+  addCategoryWithGroup: (name: string, groupID: string) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
@@ -507,6 +541,17 @@ const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
   const { isSyncEnabled, syncCode } = useSyncStore();
+  const settings = useSettingsStore();
+  // Keep a ref to the current userName so async cloud-save callbacks always
+  // have the latest value without needing it as a useCallback dependency.
+  const userNameRef = useRef(settings.userName);
+  // Keep a ref to syncUserName so the subscription useEffect closure always
+  // calls the latest version without re-running the subscription.
+  const syncUserNameRef = useRef(settings.syncUserName);
+  useEffect(() => {
+    userNameRef.current = settings.userName;
+    syncUserNameRef.current = settings.syncUserName;
+  }, [settings.userName, settings.syncUserName]);
   // Tracks whether the current state was just loaded from the cloud.
   // Cleared synchronously at the start of the cloud-save path so we never
   // echo a remote write back to Firestore.
@@ -533,7 +578,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         cloudSaveTimer.current = null;
         try {
           const { saveState } = await import("../services/syncService");
-          await saveState(syncCode, categories, selectedCategoryID, groups);
+          await saveState(
+            syncCode,
+            categories,
+            selectedCategoryID,
+            groups,
+            userNameRef.current,
+          );
         } catch (error) {
           console.error("Failed to save to cloud:", error);
         }
@@ -559,6 +610,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // with stale local data before the first onSnapshot fires.
         const cloudState = await loadState(syncCode);
         if (cloudState) {
+          if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
           isLoadingFromSync.current = true;
           dispatch({
             type: "SYNC_LOAD",
@@ -570,7 +622,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         unsubscribe = subscribeToState(
           syncCode,
-          (categories, selectedCategoryID, groups) => {
+          (categories, selectedCategoryID, groups, cloudUserName) => {
+            if (cloudUserName) syncUserNameRef.current(cloudUserName);
             // Mark synchronously before dispatch so the subsequent useEffect
             // that calls scheduleCloudSave sees it on the same render cycle.
             isLoadingFromSync.current = true;
@@ -770,6 +823,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_CATEGORY_GROUP", categoryID, groupID }),
     [],
   );
+  const addCategoryWithGroup = useCallback(
+    (name: string, groupID: string) =>
+      dispatch({ type: "ADD_CATEGORY_WITH_GROUP", name, groupID }),
+    [],
+  );
 
   const value: StoreContextValue = {
     categories: state.categories,
@@ -809,6 +867,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     deleteGroup,
     moveGroups,
     setCategoryGroup,
+    addCategoryWithGroup,
   };
 
   return React.createElement(StoreContext.Provider, { value }, children);

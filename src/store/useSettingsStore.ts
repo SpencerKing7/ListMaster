@@ -18,6 +18,8 @@ interface SettingsState {
   appearanceMode: AppearanceMode;
   textSize: TextSize;
   setUserName: (name: string) => void;
+  /** Applies a userName from the cloud only if the local name is empty. */
+  syncUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
@@ -52,6 +54,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   });
 
   function setUserName(name: string) {
+    SettingsService.setUserName(name);
+    setUserNameState(name);
+  }
+
+  /**
+   * Applies a userName received from the cloud.
+   * Device-local name takes precedence — only updates if the local name is empty.
+   */
+  function syncUserName(name: string) {
+    if (!name || SettingsService.getUserName()) return;
     SettingsService.setUserName(name);
     setUserNameState(name);
   }
@@ -93,6 +105,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         appearanceMode,
         textSize,
         setUserName,
+        syncUserName,
         completeOnboarding,
         setAppearanceMode,
         setTextSize,

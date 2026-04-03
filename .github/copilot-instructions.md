@@ -1,6 +1,7 @@
 # Copilot Instructions
 
 > **These rules are STRICT. Do not deviate from them under any circumstances.**
+> You do not need to give me a conversation summary or ask clarifying questions. Just follow the rules below exactly as stated. If you are unsure about anything, refer to the docs or ask for clarification — do not guess.
 > Always read the referenced docs before making changes to the areas they cover.
 > If you are unsure about any aspect of this codebase — architecture, patterns, component behavior, naming, theming, or deployment — **consult the `docs/` folder before guessing**. The `docs/` folder is organized as follows:
 >
