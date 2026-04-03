@@ -1,7 +1,10 @@
 // src/components/HeaderBar.tsx
 import { useState } from "react";
+import type { JSX } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import CategoryPicker from "./CategoryPicker";
+import { useCategoriesStore } from "@/store/useCategoriesStore";
+import { CategoryPicker } from "./CategoryPicker";
+import { GroupTabBar } from "./GroupTabBar";
 
 interface HeaderBarProps {
   onOpenSettings: () => void;
@@ -9,8 +12,9 @@ interface HeaderBarProps {
   onRefresh?: () => void;
 }
 
-const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps) => {
+const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps): JSX.Element => {
   const { userName } = useSettingsStore();
+  const { hasGroups, groups, selectedGroupID, selectGroup } = useCategoriesStore();
   const trimmedName = userName.trim();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -95,9 +99,16 @@ const HeaderBar = ({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarPro
           </svg>
         </button>
       </div>
+      {hasGroups && (
+        <GroupTabBar
+          groups={groups}
+          selectedGroupID={selectedGroupID}
+          onSelectGroup={selectGroup}
+        />
+      )}
       <CategoryPicker />
     </header>
   );
 };
 
-export default HeaderBar;
+export { HeaderBar };

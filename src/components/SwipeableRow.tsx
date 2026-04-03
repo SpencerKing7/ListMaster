@@ -2,7 +2,7 @@
  * SwipeableRow wraps a checklist item with swipe-left-to-reveal delete functionality,
  * mirroring iOS UITableView trailing swipe actions.
  */
-import { useState, useRef, useCallback, type ReactNode } from "react";
+import { useState, useRef, useCallback, type ReactNode, type JSX } from "react";
 import { HapticService } from "@/services/hapticService";
 
 interface SwipeableRowProps {
@@ -10,7 +10,7 @@ interface SwipeableRowProps {
   onDelete: () => void;
 }
 
-const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
+const SwipeableRow = ({ children, onDelete }: SwipeableRowProps): JSX.Element => {
   const [offsetX, setOffsetX] = useState(0);
   // isDragging is kept as state (not just a ref) so that the transition style
   // re-evaluates on the same render cycle as offsetX, preventing stale closures
@@ -155,4 +155,4 @@ const SwipeableRow = ({ children, onDelete }: SwipeableRowProps) => {
   );
 };
 
-export default SwipeableRow;
+export { SwipeableRow };

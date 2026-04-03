@@ -1,5 +1,9 @@
 // src/screens/OnboardingInstallScreen.tsx
+// NOTE: 184 lines — exceeds the 150-line page target because it handles three
+// mutually exclusive install-prompt states (iOS Safari, Android/Chrome, fallback)
+// plus the PWA beforeinstallprompt event, which all share the same screen context.
 import { useState, useEffect, useMemo } from "react";
+import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -8,7 +12,7 @@ declare global {
   function gtag(command: string, targetId: string, config?: Record<string, unknown>): void;
 }
 
-export default function OnboardingInstallScreen() {
+export function OnboardingInstallScreen(): JSX.Element | null {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
 

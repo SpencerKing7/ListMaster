@@ -17,6 +17,7 @@ The `MainScreen` render tree, from outermost to innermost:
   └── <div> layout shell                         relative h-dvh flex flex-col overflow-hidden
         ├── <HeaderBar>                           sticky top-0, z-10
         │     ├── greeting row (title + refresh icon + settings icon)
+        │     ├── <GroupTabBar>                  conditional: only rendered when store.hasGroups
         │     └── <CategoryPicker>               overflow-x:auto pill row
         ├── <div> content area                   flex-1 overflow-hidden relative flex flex-col min-h-0
         │     └── <CategoryPanel>                category={store.selectedCategory}
@@ -115,7 +116,79 @@ A circular `w-9 h-9` tinted button. On tap, `isRefreshing` is set to `true`, app
 
 #### `CategoryPicker` placement
 
-`CategoryPicker` is the last child of the `<header>` element, below the greeting row.
+`CategoryPicker` is the last child of the `<header>` element, below `GroupTabBar` (when groups exist) or directly below the greeting row (when no groups exist).
+
+---
+
+### `GroupTabBar` (`src/components/GroupTabBar.tsx`)
+
+Renders a horizontal tab bar with an "All" tab followed by one tab per user-defined group. Conditionally mounted in `HeaderBar` only when `store.hasGroups` is `true`.
+
+#### Outer shell
+
+```tsx
+<div
+  ref={containerRef}
+  role="tablist"
+  className="relative flex overflow-x-auto cursor-grab px-2"
+  style={{ scrollbarWidth: "none" }}
+>
+```
+
+- `overflow-x: auto` — native horizontal scroll. Scrollbars suppressed inline (`scrollbarWidth: "none"`) since the global `scrollbar-width: none` rule only applies in some browsers.
+- `relative` — establishes stacking context for the absolutely positioned underline indicator.
+- `role="tablist"` — ARIA landmark for accessibility.
+
+#### Tab buttons
+
+```tsx
+<button
+  ref={el => { buttonRefs.current[index] = el; }}
+  role="tab"
+  aria-selected={isActive}
+  className="shrink-0 px-3 py-2 text-sm font-semibold whitespace-nowrap"
+  style={{
+    color: isActive ? "var(--color-brand-green)" : "var(--color-text-secondary)",
+    transition: "color var(--duration-element) ease-out",
+  }}
+  onClick={() => { if (!hasDraggedRef.current) store.selectGroup(id); }}
+>
+```
+
+- **No `rounded` class** — tabs are flat text buttons per design spec.
+- `role="tab"` + `aria-selected` — ARIA pattern for tablist.
+- `hasDraggedRef.current` guard on `onClick` — prevents drag gestures from accidentally firing a group selection.
+- Colors use CSS custom properties, not Tailwind theme classes.
+
+#### Sliding underline indicator
+
+```tsx
+<div
+  ref={underlineRef}
+  className="absolute pointer-events-none bg-brand-green"
+  style={{
+    bottom: "3px",
+    height: "2px",
+    left: underlineLeft,
+    width: underlineWidth,
+    transition: `left var(--duration-element) var(--spring-snap), width var(--duration-element) var(--spring-snap)`,
+  }}
+/>
+```
+
+- Position is computed in a `useLayoutEffect` that fires whenever `selectedGroupID` changes.
+- `useLayoutEffect` reads `getBoundingClientRect()` on the active button and the container, then writes `left` (button left − container left + scrollLeft) and `width` into React state (`underlineLeft`, `underlineWidth`).
+- The `transition` is specified entirely in the inline `style` object using `var(--duration-element)` and `var(--spring-snap)`. **Do not move this to a Tailwind class** — Tailwind cannot resolve CSS custom properties in class-based transition utilities.
+- `bottom: 3px` positions the underline slightly above the very bottom edge of the tab bar.
+
+#### Drag-to-scroll
+
+Uses Pointer Events on the container (`onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerLeave`). Implementation mirrors `CategoryPicker`:
+
+- `startX` and `scrollLeftStart` are tracked in plain `useRef` variables (not state).
+- `setPointerCapture` is called on the container **only after horizontal drag intent is confirmed** (|Δx| > 5px).
+- `hasDraggedRef` (`useRef<boolean>`) is set to `true` when capture begins, and reset to `false` via `setTimeout(..., 0)` in `pointerUp` — the timeout ensures the reset runs after the current event's `onClick` propagation has completed.
+- `releasePointerCapture` is called in `pointerUp` before the timeout.
 
 ---
 
@@ -186,13 +259,16 @@ This fires both when the user taps a pill directly and when category changes fro
 
 Renders the full content area for a single category. `MainScreen` renders exactly one instance, passing `store.selectedCategory` as the `category` prop. When the selected category changes in the store, the prop updates and the component re-renders in place.
 
-#### Three render paths
+#### Four render paths
 
-| Condition                      | Renders                                                              |
-| ------------------------------ | -------------------------------------------------------------------- |
-| `category` prop is `undefined` | An empty `<div className="flex-1" />` spacer                         |
-| `category.items.length === 0`  | Empty-state view with icon, heading, subtext, and the add-item input |
-| `category.items.length > 0`    | Full layout: sticky header (input + sort row) + scrollable list      |
+| Condition                                                         | Renders                                                                                 |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `store.hasGroups && store.categoriesInSelectedGroup.length === 0` | Empty-group state: folder icon + "No lists in this group" + "Assign lists in Settings." |
+| `category` prop is `undefined`                                    | An empty `<div className="flex-1" />` spacer                                            |
+| `category.items.length === 0`                                     | Empty-state view with icon, heading, subtext, and the add-item input                    |
+| `category.items.length > 0`                                       | Full layout: sticky header (input + sort row) + scrollable list                         |
+
+The empty-group check must come **before** the generic `!category` guard, because when a group has no assigned (or ungrouped) categories, `categoriesInSelectedGroup` is empty and `selectedCategoryID` remains `""` — meaning `category` will also be `undefined`. Without the group-specific check first, the generic spacer would silently render instead of informing the user that the group is empty.
 
 #### Full layout structure (non-empty category)
 

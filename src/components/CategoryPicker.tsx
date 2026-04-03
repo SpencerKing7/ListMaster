@@ -1,10 +1,11 @@
 // src/components/CategoryPicker.tsx
 import { useRef, useEffect, useCallback } from "react";
+import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 
-const CategoryPicker = () => {
-  const { categories, selectedCategoryID, selectCategory } =
+const CategoryPicker = (): JSX.Element => {
+  const { categoriesInSelectedGroup, selectedCategoryID, selectCategory } =
     useCategoriesStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -88,54 +89,62 @@ const CategoryPicker = () => {
         background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
       }}
     >
-      <div
-        ref={scrollRef}
-        className="overflow-x-auto cursor-grab w-full"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        {/* Each pill gets flex-1 so they fill the full width evenly.
-            min-w-max prevents text from wrapping when the row is narrow. */}
-        <div className="flex gap-1 w-full">
-          {categories.map((category) => {
-            const isSelected = category.id === selectedCategoryID;
-            return (
-              <button
-                key={category.id}
-                data-category-id={category.id}
-                onClick={() => {
-                  if (!hasDraggedRef.current) {
-                    selectCategory(category.id);
-                    HapticService.selection();
-                  }
-                }}
-                className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
-                style={
-                  isSelected
-                    ? {
-                      backgroundColor: "var(--color-surface-card)",
-                      color: "var(--color-brand-green)",
-                      fontWeight: 700,
-                      boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                      transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                    }
-                    : {
-                      backgroundColor: "transparent",
-                      color: "var(--color-text-secondary)",
-                      transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                    }
-                }
-              >
-                {category.name}
-              </button>
-            );
-          })}
+      {categoriesInSelectedGroup.length === 0 ? (
+        <div className="flex items-center justify-center py-2 px-4">
+          <p className="text-xs font-medium text-center" style={{ color: "var(--color-text-secondary)" }}>
+            No lists in this group yet
+          </p>
         </div>
-      </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto cursor-grab w-full"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          {/* Each pill gets flex-1 so they fill the full width evenly.
+              min-w-max prevents text from wrapping when the row is narrow. */}
+          <div className="flex gap-1 w-full">
+            {categoriesInSelectedGroup.map((category) => {
+              const isSelected = category.id === selectedCategoryID;
+              return (
+                <button
+                  key={category.id}
+                  data-category-id={category.id}
+                  onClick={() => {
+                    if (!hasDraggedRef.current) {
+                      selectCategory(category.id);
+                      HapticService.selection();
+                    }
+                  }}
+                  className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
+                  style={
+                    isSelected
+                      ? {
+                        backgroundColor: "var(--color-surface-card)",
+                        color: "var(--color-brand-green)",
+                        fontWeight: 700,
+                        boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                        transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                      }
+                      : {
+                        backgroundColor: "transparent",
+                        color: "var(--color-text-secondary)",
+                        transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                      }
+                  }
+                >
+                  {category.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default CategoryPicker;
+export { CategoryPicker };

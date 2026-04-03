@@ -1,9 +1,10 @@
 // src/screens/OnboardingWelcomeScreen.tsx
 import { useState, useEffect } from "react";
+import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-export default function OnboardingWelcomeScreen() {
+export function OnboardingWelcomeScreen(): JSX.Element {
   const navigate = useNavigate();
   const [isEntered, setIsEntered] = useState(false);
 

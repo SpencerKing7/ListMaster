@@ -1,11 +1,12 @@
 // src/components/BottomBar.tsx
 import { useState } from "react";
+import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
-import ActionSheet from "@/components/ui/action-sheet";
+import { ActionSheet } from "@/components/ui/action-sheet";
 import { HapticService } from "@/services/hapticService";
 
 /** Bottom bar — shows chevron navigation and clear-checked button when checked items exist. */
-const BottomBar = () => {
+const BottomBar = (): JSX.Element => {
   const store = useCategoriesStore();
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
@@ -147,4 +148,4 @@ const BottomBar = () => {
   );
 };
 
-export default BottomBar;
+export { BottomBar };

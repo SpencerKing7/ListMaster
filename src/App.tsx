@@ -1,27 +1,36 @@
 // src/App.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { JSX } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { useCategoriesStore } from "./store/useCategoriesStore";
-import OnboardingWelcomeScreen from "./screens/OnboardingWelcomeScreen";
-import OnboardingSetupScreen from "./screens/OnboardingSetupScreen";
-import OnboardingInstallScreen from "./screens/OnboardingInstallScreen";
-import MainScreen from "./screens/MainScreen";
-import SplashScreen from "./screens/SplashScreen";
-import PageTransitionWrapper from "./components/PageTransitionWrapper";
+import { OnboardingWelcomeScreen } from "./screens/OnboardingWelcomeScreen";
+import { OnboardingSetupScreen } from "./screens/OnboardingSetupScreen";
+import { OnboardingInstallScreen } from "./screens/OnboardingInstallScreen";
+import { MainScreen } from "./screens/MainScreen";
+import { SplashScreen } from "./screens/SplashScreen";
+import { PageTransitionWrapper } from "./components/PageTransitionWrapper";
 
-export default function App() {
+export function App(): JSX.Element {
   const { hasCompletedOnboarding } = useSettingsStore();
   const { reload } = useCategoriesStore();
   const [isSplashVisible, setIsSplashVisible] = useState(
     () => hasCompletedOnboarding,
   );
+  // Skip the very first visibilitychange event which fires on initial page
+  // load (the tab transitions hidden → visible before React mounts).
+  // We only want to reload on genuine tab-switch returns.
+  const hasHandledFirstVisibility = useRef(false);
 
   // Foreground-reload: re-read localStorage when the tab becomes visible
   // Mirrors scenePhase == .active → store.reload() in ListMasterApp.swift
   useEffect(() => {
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
+        if (!hasHandledFirstVisibility.current) {
+          hasHandledFirstVisibility.current = true;
+          return;
+        }
         reload();
       }
     }

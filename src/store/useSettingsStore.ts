@@ -1,10 +1,15 @@
 // src/store/useSettingsStore.ts
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  createElement,
+  type ReactNode,
+} from "react";
 import { PersistenceService } from "../services/persistenceService";
 import { SettingsService } from "../services/settingsService";
 import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
 import type { TextSize } from "@/models/types";
-import React from "react";
 
 // MARK: - Types
 
@@ -18,6 +23,8 @@ interface SettingsState {
   appearanceMode: AppearanceMode;
   textSize: TextSize;
   setUserName: (name: string) => void;
+  /** Applies a userName from the cloud only if the local name is empty. */
+  syncUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
@@ -28,7 +35,11 @@ interface SettingsState {
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
+export function SettingsProvider({
+  children,
+}: {
+  children: ReactNode;
+}): ReactNode {
   const [userName, setUserNameState] = useState<string>(() =>
     SettingsService.getUserName(),
   );
@@ -52,6 +63,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   });
 
   function setUserName(name: string) {
+    SettingsService.setUserName(name);
+    setUserNameState(name);
+  }
+
+  /**
+   * Applies a userName received from the cloud.
+   * Device-local name takes precedence — only updates if the local name is empty.
+   */
+  function syncUserName(name: string) {
+    if (!name || SettingsService.getUserName()) return;
     SettingsService.setUserName(name);
     setUserNameState(name);
   }
@@ -84,7 +105,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     applyTextSizeToDOM("m");
   }
 
-  return React.createElement(
+  return createElement(
     SettingsContext.Provider,
     {
       value: {
@@ -93,6 +114,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         appearanceMode,
         textSize,
         setUserName,
+        syncUserName,
         completeOnboarding,
         setAppearanceMode,
         setTextSize,

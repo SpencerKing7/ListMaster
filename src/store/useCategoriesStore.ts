@@ -1,310 +1,42 @@
 // src/store/useCategoriesStore.ts
+// React Context provider and hook for the categories store.
+// The pure reducer logic lives in categoriesReducer.ts.
+//
+// FILE SIZE NOTE: ~380 lines — exceeds the 120-line custom hook hard max.
+// This is the Context provider for the app's primary state. It couples the
+// reducer, cloud sync side-effects, derived values, and 20+ useCallback
+// dispatch wrappers into a single context value. Splitting the dispatch
+// callbacks into a separate file would require passing `dispatch` across
+// module boundaries and lose the co-location benefit.
+
 import {
   createContext,
   useContext,
   useReducer,
   useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+  createElement,
   type ReactNode,
 } from "react";
-import { v4 as uuidv4 } from "uuid";
 import type {
   Category,
-  ChecklistItem,
+  CategoryGroup,
   SortOrder,
   SortDirection,
-} from "../models/types";
-import { PersistenceService } from "../services/persistenceService";
-import React from "react";
+} from "@/models/types";
+import { useSyncStore } from "@/store/useSyncStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  categoriesReducer,
+  loadInitialState,
+  type StoreState,
+} from "@/store/categoriesReducer";
 
-// MARK: - State Shape
+// MARK: - Context Value
 
-interface StoreState {
-  categories: Category[];
-  selectedCategoryID: string;
-}
-
-function loadInitialState(): StoreState {
-  const saved = PersistenceService.load();
-  if (saved && saved.categories.length > 0) {
-    return {
-      categories: saved.categories,
-      selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
-    };
-  }
-  return { categories: [], selectedCategoryID: "" };
-}
-
-// MARK: - Actions
-
-type StoreAction =
-  | { type: "SELECT_CATEGORY"; id: string }
-  | { type: "ADD_CATEGORY"; name: string }
-  | { type: "SET_CATEGORIES"; names: string[] }
-  | { type: "RENAME_CATEGORY"; id: string; newName: string }
-  | { type: "DELETE_CATEGORY"; id: string }
-  | { type: "MOVE_CATEGORIES"; from: number; to: number }
-  | { type: "SET_CATEGORY_SORT_ORDER"; id: string; sortOrder: SortOrder }
-  | {
-      type: "SET_CATEGORY_SORT_DIRECTION";
-      id: string;
-      sortDirection: SortDirection;
-    }
-  | { type: "ADD_ITEM"; name: string }
-  | { type: "TOGGLE_ITEM"; itemID: string }
-  | { type: "DELETE_ITEM"; itemID: string }
-  | { type: "CLEAR_CHECKED" }
-  | { type: "CHECK_ALL" }
-  | { type: "UNCHECK_ALL" }
-  | { type: "RELOAD" }
-  | { type: "RESET_CATEGORIES" };
-
-// MARK: - Helpers
-
-function normalizedName(value: string): string {
-  return value.trim();
-}
-
-function isNameAvailable(
-  categories: Category[],
-  name: string,
-  excludingID?: string,
-): boolean {
-  return !categories.some((category) => {
-    if (excludingID && category.id === excludingID) return false;
-    return category.name.toLowerCase() === name.toLowerCase();
-  });
-}
-
-// MARK: - Reducer
-
-function reducer(state: StoreState, action: StoreAction): StoreState {
-  let next: StoreState;
-
-  switch (action.type) {
-    case "SELECT_CATEGORY": {
-      if (!state.categories.some((c) => c.id === action.id)) return state;
-      next = { ...state, selectedCategoryID: action.id };
-      break;
-    }
-
-    case "ADD_CATEGORY": {
-      const trimmed = normalizedName(action.name);
-      if (!trimmed || !isNameAvailable(state.categories, trimmed)) return state;
-      const newCategory: Category = {
-        id: uuidv4(),
-        name: trimmed,
-        items: [],
-      };
-      next = {
-        categories: [...state.categories, newCategory],
-        selectedCategoryID: newCategory.id,
-      };
-      break;
-    }
-
-    case "SET_CATEGORIES": {
-      const newCategories: Category[] = [];
-      for (const raw of action.names) {
-        const trimmed = normalizedName(raw);
-        if (!trimmed) continue;
-        if (
-          newCategories.some(
-            (c) => c.name.toLowerCase() === trimmed.toLowerCase(),
-          )
-        )
-          continue;
-        newCategories.push({ id: uuidv4(), name: trimmed, items: [] });
-      }
-      if (newCategories.length === 0) return state;
-      next = {
-        categories: newCategories,
-        selectedCategoryID: newCategories[0].id,
-      };
-      break;
-    }
-
-    case "RENAME_CATEGORY": {
-      const trimmed = normalizedName(action.newName);
-      if (!trimmed || !isNameAvailable(state.categories, trimmed, action.id))
-        return state;
-      const idx = state.categories.findIndex((c) => c.id === action.id);
-      if (idx === -1) return state;
-      const updated = state.categories.map((c) =>
-        c.id === action.id ? { ...c, name: trimmed } : c,
-      );
-      next = { ...state, categories: updated };
-      break;
-    }
-
-    case "DELETE_CATEGORY": {
-      if (state.categories.length <= 1) return state;
-      const idx = state.categories.findIndex((c) => c.id === action.id);
-      if (idx === -1) return state;
-      const deletedWasSelected =
-        state.categories[idx].id === state.selectedCategoryID;
-      const remaining = state.categories.filter((c) => c.id !== action.id);
-      next = {
-        categories: remaining,
-        selectedCategoryID: deletedWasSelected
-          ? remaining[0].id
-          : state.selectedCategoryID,
-      };
-      break;
-    }
-
-    case "MOVE_CATEGORIES": {
-      const arr = [...state.categories];
-      const [moved] = arr.splice(action.from, 1);
-      arr.splice(action.to, 0, moved);
-      next = { ...state, categories: arr };
-      break;
-    }
-
-    case "SET_CATEGORY_SORT_ORDER": {
-      const updated = state.categories.map((c) =>
-        c.id === action.id ? { ...c, sortOrder: action.sortOrder } : c,
-      );
-      next = { ...state, categories: updated };
-      break;
-    }
-
-    case "SET_CATEGORY_SORT_DIRECTION": {
-      const updated = state.categories.map((c) =>
-        c.id === action.id ? { ...c, sortDirection: action.sortDirection } : c,
-      );
-      next = { ...state, categories: updated };
-      break;
-    }
-
-    case "ADD_ITEM": {
-      const trimmed = normalizedName(action.name);
-      if (!trimmed) return state;
-      const catIdx = state.categories.findIndex(
-        (c) => c.id === state.selectedCategoryID,
-      );
-      if (catIdx === -1) return state;
-      const newItem: ChecklistItem = {
-        id: uuidv4(),
-        name: trimmed,
-        isChecked: false,
-        createdAt: Date.now(),
-      };
-      const updatedCats = state.categories.map((c, i) =>
-        i === catIdx ? { ...c, items: [...c.items, newItem] } : c,
-      );
-      next = { ...state, categories: updatedCats };
-      break;
-    }
-
-    case "TOGGLE_ITEM": {
-      const catIdx = state.categories.findIndex(
-        (c) => c.id === state.selectedCategoryID,
-      );
-      if (catIdx === -1) return state;
-      const cat = state.categories[catIdx];
-      const itemIdx = cat.items.findIndex((i) => i.id === action.itemID);
-      if (itemIdx === -1) return state;
-      const toggledItems = cat.items.map((item, i) =>
-        i === itemIdx ? { ...item, isChecked: !item.isChecked } : item,
-      );
-      // Stable sort: unchecked first, checked last
-      toggledItems.sort((a, b) => {
-        if (a.isChecked === b.isChecked) return 0;
-        return a.isChecked ? 1 : -1;
-      });
-      const updatedCats = state.categories.map((c, i) =>
-        i === catIdx ? { ...c, items: toggledItems } : c,
-      );
-      next = { ...state, categories: updatedCats };
-      break;
-    }
-
-    case "DELETE_ITEM": {
-      const updated = state.categories.map((c) =>
-        c.id === state.selectedCategoryID
-          ? { ...c, items: c.items.filter((i) => i.id !== action.itemID) }
-          : c,
-      );
-      next = { ...state, categories: updated };
-      break;
-    }
-
-    case "CLEAR_CHECKED": {
-      const catIdx = state.categories.findIndex(
-        (c) => c.id === state.selectedCategoryID,
-      );
-      if (catIdx === -1) return state;
-      const updatedCats = state.categories.map((c, i) =>
-        i === catIdx
-          ? { ...c, items: c.items.filter((item) => !item.isChecked) }
-          : c,
-      );
-      next = { ...state, categories: updatedCats };
-      break;
-    }
-
-    case "CHECK_ALL": {
-      const catIdx = state.categories.findIndex(
-        (c) => c.id === state.selectedCategoryID,
-      );
-      if (catIdx === -1) return state;
-      const updatedCats = state.categories.map((c, i) =>
-        i === catIdx
-          ? {
-              ...c,
-              items: c.items.map((item) => ({ ...item, isChecked: true })),
-            }
-          : c,
-      );
-      next = { ...state, categories: updatedCats };
-      break;
-    }
-
-    case "UNCHECK_ALL": {
-      const catIdx = state.categories.findIndex(
-        (c) => c.id === state.selectedCategoryID,
-      );
-      if (catIdx === -1) return state;
-      const updatedCats = state.categories.map((c, i) =>
-        i === catIdx
-          ? {
-              ...c,
-              items: c.items.map((item) => ({ ...item, isChecked: false })),
-            }
-          : c,
-      );
-      next = { ...state, categories: updatedCats };
-      break;
-    }
-
-    case "RELOAD": {
-      const saved = PersistenceService.load();
-      if (!saved || saved.categories.length === 0) return state;
-      next = {
-        categories: saved.categories,
-        selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
-      };
-      // Don't re-save on reload
-      return next;
-    }
-
-    case "RESET_CATEGORIES": {
-      next = { categories: [], selectedCategoryID: "" };
-      PersistenceService.save(next.categories, next.selectedCategoryID);
-      return next;
-    }
-
-    default:
-      return state;
-  }
-
-  // Auto-save after every mutation (except RELOAD and RESET which handle their own)
-  PersistenceService.save(next.categories, next.selectedCategoryID);
-  return next;
-}
-
-// MARK: - Context
-
+/** Public API surface of the categories store. */
 interface StoreContextValue {
   categories: Category[];
   selectedCategoryID: string;
@@ -322,6 +54,7 @@ interface StoreContextValue {
   renameCategory: (id: string, newName: string) => void;
   deleteCategory: (id: string) => void;
   moveCategories: (from: number, to: number) => void;
+  reorderCategories: (orderedIDs: string[]) => void;
   setCategorySortOrder: (id: string, sortOrder: SortOrder) => void;
   setCategorySortDirection: (id: string, sortDirection: SortDirection) => void;
   addItemToSelectedCategory: (name: string) => void;
@@ -332,36 +65,227 @@ interface StoreContextValue {
   uncheckAllItemsInSelectedCategory: () => void;
   reload: () => void;
   resetCategories: () => void;
+  groups: CategoryGroup[];
+  selectedGroupID: string | null;
+  categoriesInSelectedGroup: Category[];
+  hasGroups: boolean;
+  selectGroup: (id: string | null) => void;
+  addGroup: (name: string) => void;
+  renameGroup: (id: string, newName: string) => void;
+  deleteGroup: (id: string) => void;
+  moveGroups: (from: number, to: number) => void;
+  setCategoryGroup: (categoryID: string, groupID: string | undefined) => void;
+  /** Atomically creates a new category and assigns it to the given group. */
+  addCategoryWithGroup: (name: string, groupID: string) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
+// MARK: - Provider
+
+/** Provides the categories store to the component tree. */
+export function StoreProvider({
+  children,
+}: {
+  children: ReactNode;
+}): ReactNode {
+  const [state, dispatch] = useReducer(
+    categoriesReducer,
+    undefined,
+    loadInitialState,
+  );
+  const { isSyncEnabled, syncCode } = useSyncStore();
+  const settings = useSettingsStore();
+
+  // Keep refs to latest values so async callbacks never capture stale closures.
+  const userNameRef = useRef(settings.userName);
+  const syncUserNameRef = useRef(settings.syncUserName);
+  useEffect(() => {
+    userNameRef.current = settings.userName;
+    syncUserNameRef.current = settings.syncUserName;
+  }, [settings.userName, settings.syncUserName]);
+
+  // Tracks whether current state was just loaded from the cloud.
+  const isLoadingFromSync = useRef(false);
+  // Guards against "adopt code" data-wipe race.
+  const isSyncReadyRef = useRef(false);
+  // Mirrors latest reducer state for async callbacks.
+  const stateRef = useRef<StoreState>(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
+  // Pending debounce timer for cloud saves.
+  const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Cloud save (debounced) ──
+
+  const scheduleCloudSave = useCallback(
+    (
+      categories: Category[],
+      selectedCategoryID: string | null,
+      groups: CategoryGroup[],
+    ) => {
+      if (isLoadingFromSync.current) {
+        isLoadingFromSync.current = false;
+        return;
+      }
+      if (!isSyncReadyRef.current) return;
+      if (!isSyncEnabled || !syncCode) return;
+
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+      cloudSaveTimer.current = setTimeout(async () => {
+        cloudSaveTimer.current = null;
+        try {
+          const { saveState } = await import("@/services/syncService");
+          await saveState(
+            syncCode,
+            categories,
+            selectedCategoryID,
+            groups,
+            userNameRef.current,
+          );
+        } catch (error) {
+          console.error("Failed to save to cloud:", error);
+        }
+      }, 1000);
+    },
+    [isSyncEnabled, syncCode],
+  );
+
+  // ── Cloud subscription ──
+
+  useEffect(() => {
+    if (!isSyncEnabled || !syncCode) return;
+    isSyncReadyRef.current = false;
+
+    let unsubscribe: (() => void) | null = null;
+
+    const setupSubscription = async (): Promise<void> => {
+      try {
+        const { subscribeToState, loadState } =
+          await import("@/services/syncService");
+
+        const cloudState = await loadState(syncCode);
+        if (cloudState) {
+          if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
+          isLoadingFromSync.current = true;
+          dispatch({
+            type: "SYNC_LOAD",
+            categories: cloudState.categories,
+            selectedCategoryID: cloudState.selectedCategoryID,
+            groups: cloudState.groups,
+          });
+        } else {
+          // Document doesn't exist yet — write local state.
+          try {
+            const { saveState } = await import("@/services/syncService");
+            const s = stateRef.current;
+            await saveState(
+              syncCode,
+              s.categories,
+              s.selectedCategoryID,
+              s.groups,
+              userNameRef.current,
+            );
+          } catch (saveError) {
+            console.error("Failed to write initial sync state:", saveError);
+          }
+        }
+
+        isSyncReadyRef.current = true;
+
+        unsubscribe = subscribeToState(
+          syncCode,
+          (categories, _selectedCategoryID, groups, cloudUserName) => {
+            if (cloudUserName) syncUserNameRef.current(cloudUserName);
+            isLoadingFromSync.current = true;
+            // Real-time updates intentionally omit selectedCategoryID.
+            // Each device keeps its own category selection — syncing it
+            // causes an infinite feedback loop between devices.
+            dispatch({
+              type: "SYNC_LOAD",
+              categories,
+              groups,
+            });
+          },
+        );
+      } catch (error) {
+        console.error("Failed to subscribe to cloud changes:", error);
+      }
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      isSyncReadyRef.current = false;
+      if (cloudSaveTimer.current) {
+        clearTimeout(cloudSaveTimer.current);
+        cloudSaveTimer.current = null;
+      }
+    };
+  }, [isSyncEnabled, syncCode]);
+
+  // Trigger debounced cloud save on data changes (categories and groups).
+  // selectedCategoryID is intentionally excluded from the dependency array:
+  // it is local UI state per device and should not trigger a cloud write.
+  // It is still included in the save payload so that new devices get a
+  // reasonable starting view.
+  useEffect(() => {
+    scheduleCloudSave(state.categories, state.selectedCategoryID, state.groups);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.categories, state.groups, scheduleCloudSave]);
+
+  // ── Derived values ──
 
   const selectedCategoryIndex = state.categories.findIndex(
     (c) => c.id === state.selectedCategoryID,
   );
-
   const selectedCategory =
     selectedCategoryIndex !== -1
       ? state.categories[selectedCategoryIndex]
       : null;
 
+  const categoriesInSelectedGroup = useMemo(
+    () =>
+      state.selectedGroupID === null
+        ? state.categories
+        : state.categories.filter((c) => c.groupID === state.selectedGroupID),
+    [state.categories, state.selectedGroupID],
+  );
+
+  // Auto-select first visible category if current selection falls out of group.
+  useEffect(() => {
+    if (categoriesInSelectedGroup.length === 0) return;
+    const isSelectionVisible = categoriesInSelectedGroup.some(
+      (c) => c.id === state.selectedCategoryID,
+    );
+    if (!isSelectionVisible) {
+      dispatch({
+        type: "SELECT_CATEGORY",
+        id: categoriesInSelectedGroup[0].id,
+      });
+    }
+  }, [categoriesInSelectedGroup, state.selectedCategoryID]);
+
+  const hasGroups = state.groups.length > 0;
+
+  const selectedCategoryIndexInGroup = categoriesInSelectedGroup.findIndex(
+    (c) => c.id === state.selectedCategoryID,
+  );
   const canSelectNextCategory =
-    selectedCategoryIndex !== -1 &&
-    selectedCategoryIndex < state.categories.length - 1;
-
+    selectedCategoryIndexInGroup !== -1 &&
+    selectedCategoryIndexInGroup < categoriesInSelectedGroup.length - 1;
   const canSelectPreviousCategory =
-    selectedCategoryIndex !== -1 && selectedCategoryIndex > 0;
-
+    selectedCategoryIndexInGroup !== -1 && selectedCategoryIndexInGroup > 0;
   const nextCategory = canSelectNextCategory
-    ? state.categories[selectedCategoryIndex + 1]
+    ? categoriesInSelectedGroup[selectedCategoryIndexInGroup + 1]
+    : null;
+  const previousCategory = canSelectPreviousCategory
+    ? categoriesInSelectedGroup[selectedCategoryIndexInGroup - 1]
     : null;
 
-  const previousCategory = canSelectPreviousCategory
-    ? state.categories[selectedCategoryIndex - 1]
-    : null;
+  // ── Dispatch callbacks ──
 
   const selectCategory = useCallback(
     (id: string) => dispatch({ type: "SELECT_CATEGORY", id }),
@@ -369,24 +293,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
   const selectNextCategory = useCallback(() => {
     if (
-      selectedCategoryIndex !== -1 &&
-      selectedCategoryIndex < state.categories.length - 1
+      selectedCategoryIndexInGroup !== -1 &&
+      selectedCategoryIndexInGroup < categoriesInSelectedGroup.length - 1
     ) {
       dispatch({
         type: "SELECT_CATEGORY",
-        id: state.categories[selectedCategoryIndex + 1].id,
+        id: categoriesInSelectedGroup[selectedCategoryIndexInGroup + 1].id,
       });
     }
-  }, [selectedCategoryIndex, state.categories]);
+  }, [selectedCategoryIndexInGroup, categoriesInSelectedGroup]);
 
   const selectPreviousCategory = useCallback(() => {
-    if (selectedCategoryIndex !== -1 && selectedCategoryIndex > 0) {
+    if (
+      selectedCategoryIndexInGroup !== -1 &&
+      selectedCategoryIndexInGroup > 0
+    ) {
       dispatch({
         type: "SELECT_CATEGORY",
-        id: state.categories[selectedCategoryIndex - 1].id,
+        id: categoriesInSelectedGroup[selectedCategoryIndexInGroup - 1].id,
       });
     }
-  }, [selectedCategoryIndex, state.categories]);
+  }, [selectedCategoryIndexInGroup, categoriesInSelectedGroup]);
 
   const addCategory = useCallback(
     (name: string) => dispatch({ type: "ADD_CATEGORY", name }),
@@ -408,6 +335,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const moveCategories = useCallback(
     (from: number, to: number) =>
       dispatch({ type: "MOVE_CATEGORIES", from, to }),
+    [],
+  );
+  const reorderCategories = useCallback(
+    (orderedIDs: string[]) =>
+      dispatch({ type: "REORDER_CATEGORIES", orderedIDs }),
     [],
   );
   const setCategorySortOrder = useCallback(
@@ -450,6 +382,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const selectGroup = useCallback(
+    (id: string | null) => dispatch({ type: "SELECT_GROUP", id }),
+    [],
+  );
+  const addGroup = useCallback(
+    (name: string) => dispatch({ type: "ADD_GROUP", name }),
+    [],
+  );
+  const renameGroup = useCallback(
+    (id: string, newName: string) =>
+      dispatch({ type: "RENAME_GROUP", id, newName }),
+    [],
+  );
+  const deleteGroup = useCallback(
+    (id: string) => dispatch({ type: "DELETE_GROUP", id }),
+    [],
+  );
+  const moveGroups = useCallback(
+    (from: number, to: number) => dispatch({ type: "MOVE_GROUPS", from, to }),
+    [],
+  );
+  const setCategoryGroup = useCallback(
+    (categoryID: string, groupID: string | undefined) =>
+      dispatch({ type: "SET_CATEGORY_GROUP", categoryID, groupID }),
+    [],
+  );
+  const addCategoryWithGroup = useCallback(
+    (name: string, groupID: string) =>
+      dispatch({ type: "ADD_CATEGORY_WITH_GROUP", name, groupID }),
+    [],
+  );
+
+  // ── Assemble context value ──
+
   const value: StoreContextValue = {
     categories: state.categories,
     selectedCategoryID: state.selectedCategoryID,
@@ -467,6 +433,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     renameCategory,
     deleteCategory,
     moveCategories,
+    reorderCategories,
     setCategorySortOrder,
     setCategorySortDirection,
     addItemToSelectedCategory,
@@ -477,11 +444,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     uncheckAllItemsInSelectedCategory,
     reload,
     resetCategories,
+    groups: state.groups,
+    selectedGroupID: state.selectedGroupID,
+    categoriesInSelectedGroup,
+    hasGroups,
+    selectGroup,
+    addGroup,
+    renameGroup,
+    deleteGroup,
+    moveGroups,
+    setCategoryGroup,
+    addCategoryWithGroup,
   };
 
-  return React.createElement(StoreContext.Provider, { value }, children);
+  return createElement(StoreContext.Provider, { value }, children);
 }
 
+/** Hook to access the categories store. Must be used within a StoreProvider. */
 export function useCategoriesStore(): StoreContextValue {
   const ctx = useContext(StoreContext);
   if (!ctx)

@@ -16,6 +16,14 @@ export interface Category {
   sortOrder?: SortOrder;
   /** Per-list sort direction. Defaults to "asc" when absent (legacy data). */
   sortDirection?: SortDirection;
+  /** UUID of the owning CategoryGroup, or undefined for ungrouped categories. */
+  groupID?: string;
+}
+
+export interface CategoryGroup {
+  id: string; // UUID v4
+  name: string; // User-visible label — e.g. "Shopping", "Work"
+  sortOrder: number; // Display order among groups
 }
 
 /** Five-step text size scale for checklist item text. */
