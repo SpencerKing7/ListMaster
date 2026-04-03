@@ -141,84 +141,7 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
 
   const renameInputRef = useRef<HTMLInputElement>(null);
   const sheetFocusSentinelRef = useRef<HTMLDivElement>(null);
-  // Ref to the inner scrollable div — used to check scrollTop before engaging dismiss
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // ── Swipe-to-dismiss state ──
-  const swipeDismissStartY = useRef(0);
-  const swipeDismissStartTime = useRef(0);
-  const [swipeTranslateY, setSwipeTranslateY] = useState(0);
-  // Tracks whether a real downward drag has been confirmed, preventing mouse
-  // hover or non-primary-button clicks from triggering a dismiss gesture.
-  const isDismissDraggingRef = useRef(false);
-  // Tracks whether the dismiss drag was engaged from a scroll-at-top gesture
-  // (as opposed to a direct drag on the pill/header, which is always eligible).
-  const dismissEngagedAtTopRef = useRef(false);
-  // Set to true while a row/group reorder drag is active so the swipe-to-dismiss
-  // gesture does not compete with the drag and slide the sheet off screen.
-  const isRowDraggingRef = useRef(false);
-  // Tracks whether the scroll container is at the very top. Updated via a
-  // 'scroll' event listener (reliable on iOS Safari, unlike reading scrollTop
-  // inside a pointer event handler which can return 0 even when scrolled).
-  const scrollAtTopRef = useRef(true);
-
-  // Keep scrollAtTopRef in sync with the actual scroll position.
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const onScroll = () => { scrollAtTopRef.current = el.scrollTop === 0; };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => { el.removeEventListener("scroll", onScroll); };
-  }, []);
-
-  const handleDismissPointerDown = useCallback((e: React.PointerEvent) => {
-    // Ignore right-click, middle-click, etc.
-    if (e.button !== 0) return;
-    // Never engage dismiss while a row reorder drag is in progress.
-    if (isRowDraggingRef.current) return;
-    isDismissDraggingRef.current = false;
-    dismissEngagedAtTopRef.current = false;
-    swipeDismissStartY.current = e.clientY;
-    swipeDismissStartTime.current = Date.now();
-    setSwipeTranslateY(0);
-    // setPointerCapture is deferred to PointerMove once drag intent is confirmed
-  }, []);
-
-  const handleDismissPointerMove = useCallback((e: React.PointerEvent) => {
-    // On mouse, only track movement while the primary button is held
-    if (e.pointerType === "mouse" && e.buttons === 0) return;
-    // Never engage dismiss while a row reorder drag is in progress.
-    if (isRowDraggingRef.current) return;
-    const dy = e.clientY - swipeDismissStartY.current;
-
-    if (!isDismissDraggingRef.current) {
-      // Only engage dismiss if: gesture is clearly downward AND scroll container is at top
-      if (dy > 8 && scrollAtTopRef.current) {
-        isDismissDraggingRef.current = true;
-        dismissEngagedAtTopRef.current = true;
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      }
-      return;
-    }
-
-    // Once engaged, prevent native scroll from competing with the translation
-    if (dismissEngagedAtTopRef.current) e.preventDefault();
-    if (dy > 0) setSwipeTranslateY(dy);
-  }, []);
-
-  const handleDismissPointerUp = useCallback((e: React.PointerEvent, onClose: () => void) => {
-    // No-op if no real drag was ever confirmed
-    if (!isDismissDraggingRef.current) return;
-    isDismissDraggingRef.current = false;
-    dismissEngagedAtTopRef.current = false;
-    const dy = e.clientY - swipeDismissStartY.current;
-    const dt = Date.now() - swipeDismissStartTime.current;
-    const velocity = dy / dt; // px/ms
-    if (dy > 80 || velocity > 0.5) {
-      onClose();
-    }
-    setSwipeTranslateY(0);
-  }, []);
 
   // Snapshot all category item rects when drag begins (works for both grouped and flat layouts)
   const snapshotRects = useCallback(() => {
@@ -245,8 +168,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     (e: React.PointerEvent, visualIdx: number, groupID: string | null = null) => {
       if (e.button !== 0) return;
       e.preventDefault();
-
-      isRowDraggingRef.current = true;
 
       const scopedCategories = groupID
         ? store.categories.filter(c => c.groupID === groupID)
@@ -303,7 +224,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     dragIndexRef.current = null;
     overIndexRef.current = null;
     dragContext.current = { groupID: null };
-    isRowDraggingRef.current = false;
     if (di !== null && oi !== null && di !== oi) {
       store.moveCategories(di, oi);
     }
@@ -327,7 +247,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     (e: React.PointerEvent, idx: number) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      isRowDraggingRef.current = true;
       snapshotGroupRects();
       const rect = groupItemRects.current[idx];
       if (rect) {
@@ -370,7 +289,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     const oi = groupOverIndexRef.current;
     groupDragIndexRef.current = null;
     groupOverIndexRef.current = null;
-    isRowDraggingRef.current = false;
     if (di !== null && oi !== null && di !== oi) {
       store.moveGroups(di, oi);
     }
@@ -508,33 +426,18 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           style={{
             backgroundColor: "var(--color-surface-background)",
             boxShadow: "var(--elevation-sheet)",
-            transform: `translateY(${swipeTranslateY}px)`,
-            transition: swipeTranslateY === 0 ? "transform 0.3s ease-out" : "none",
           }}
         >
-          {/* Inner scroll container — dismiss gesture is attached here so we can check scrollTop */}
+          {/* Inner scroll container */}
           <div
             ref={scrollContainerRef}
             className="overflow-y-auto max-h-[90dvh]"
-            onPointerDown={handleDismissPointerDown}
-            onPointerMove={handleDismissPointerMove}
-            onPointerUp={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
-            onPointerCancel={(e) => handleDismissPointerUp(e, () => onOpenChange(false))}
           >
             {/* Focus sentinel — absorbs auto-focus on open so no button appears focused */}
             <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
-            {/* Drag indicator pill */}
-            <div
-              className="flex justify-center pt-3 pb-1 select-none"
-            >
-              <div
-                className="hidden pointer-coarse:block w-10 h-[5px] rounded-full"
-                style={{ backgroundColor: "var(--color-text-secondary)", opacity: 0.25 }}
-              />
-            </div>
             {/* Header */}
             <SheetHeader
-              className="flex flex-row items-center justify-between px-5 pb-3 pt-1"
+              className="flex flex-row items-center justify-between px-5 pb-3 pt-4"
             >
               <SheetTitle
                 className="text-2xl font-bold"
