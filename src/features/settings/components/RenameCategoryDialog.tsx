@@ -23,6 +23,10 @@ interface RenameCategoryDialogProps {
   renameCategoryName: string;
   /** Called when the user types in the rename input. */
   onNameChange: (name: string) => void;
+  /** Whether the new name collides with an existing category in the same group. */
+  isRenameDuplicate: boolean;
+  /** Whether any groups exist (for adaptive error message). */
+  hasGroups: boolean;
   /** Called when the user confirms the rename. */
   onSave: () => void;
   /** Called to dismiss the dialog without saving. */
@@ -34,6 +38,8 @@ interface RenameCategoryDialogProps {
 /** Dialog for renaming a category. */
 export function RenameCategoryDialog({
   categoryToRename,
+  isRenameDuplicate,
+  hasGroups,
   renameCategoryName,
   onNameChange,
   onSave,
@@ -61,6 +67,13 @@ export function RenameCategoryDialog({
           className={INPUT_CLASS}
           autoFocus
         />
+        {isRenameDuplicate && (
+          <p className="text-xs px-0.5 -mt-1" style={{ color: "var(--color-danger)" }}>
+            {hasGroups
+              ? "A category with this name already exists in this group."
+              : "A category with this name already exists."}
+          </p>
+        )}
         <DialogFooter className="flex-row gap-2 mt-1">
           <Button
             variant="ghost"
@@ -74,6 +87,7 @@ export function RenameCategoryDialog({
             variant="ghost"
             className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
             style={{ color: "var(--color-brand-green)" }}
+            disabled={renameCategoryName.trim().length === 0 || isRenameDuplicate}
             onClick={onSave}
           >
             Save

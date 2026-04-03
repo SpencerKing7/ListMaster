@@ -6,14 +6,25 @@ export function normalizedName(value: string): string {
   return value.trim();
 }
 
-/** Check if a category name is unique (case-insensitive), optionally excluding a given ID. */
+/**
+ * Check if a category name is unique (case-insensitive) within a group scope.
+ * Categories are compared only against others sharing the same `groupID` value
+ * (strict equality — `undefined === undefined` covers the ungrouped bucket).
+ *
+ * @param categories - Full categories array (must include `groupID`).
+ * @param name - The candidate name to check.
+ * @param excludingID - A category ID to skip (used when renaming).
+ * @param groupID - The group scope to check within. `undefined` = ungrouped.
+ */
 export function isCategoryNameAvailable(
-  categories: { id: string; name: string }[],
+  categories: { id: string; name: string; groupID?: string }[],
   name: string,
-  excludingID?: string,
+  excludingID: string | undefined,
+  groupID: string | undefined,
 ): boolean {
   return !categories.some((category) => {
     if (excludingID && category.id === excludingID) return false;
+    if (category.groupID !== groupID) return false;
     return category.name.toLowerCase() === name.toLowerCase();
   });
 }

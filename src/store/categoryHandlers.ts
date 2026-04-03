@@ -21,7 +21,10 @@ export function handleAddCategory(
   name: string,
 ): StoreState | null {
   const trimmed = normalizedName(name);
-  if (!trimmed || !isCategoryNameAvailable(state.categories, trimmed))
+  if (
+    !trimmed ||
+    !isCategoryNameAvailable(state.categories, trimmed, undefined, undefined)
+  )
     return null;
   const newCategory: Category = { id: uuidv4(), name: trimmed, items: [] };
   return {
@@ -31,7 +34,9 @@ export function handleAddCategory(
   };
 }
 
-/** SET_CATEGORIES — bulk-set categories from onboarding. */
+/** SET_CATEGORIES — bulk-set categories from onboarding.
+ *  All categories created here are ungrouped (same groupID scope),
+ *  so the inline duplicate check is sufficient without calling isCategoryNameAvailable. */
 export function handleSetCategories(
   state: StoreState,
   names: string[],
@@ -60,11 +65,14 @@ export function handleRenameCategory(
   id: string,
   newName: string,
 ): StoreState | null {
+  const cat = state.categories.find((c) => c.id === id);
+  if (!cat) return null;
   const trimmed = normalizedName(newName);
-  if (!trimmed || !isCategoryNameAvailable(state.categories, trimmed, id))
+  if (
+    !trimmed ||
+    !isCategoryNameAvailable(state.categories, trimmed, id, cat.groupID)
+  )
     return null;
-  const idx = state.categories.findIndex((c) => c.id === id);
-  if (idx === -1) return null;
   const updated = state.categories.map((c) =>
     c.id === id ? { ...c, name: trimmed } : c,
   );
@@ -142,12 +150,19 @@ export function handleSetCategorySortDirection(
   return { ...state, categories: updated };
 }
 
-/** SET_CATEGORY_GROUP */
+/**
+ * SET_CATEGORY_GROUP — reassign a category to a different group.
+ * @returns null if the destination group already has a category with this name.
+ */
 export function handleSetCategoryGroup(
   state: StoreState,
   categoryID: string,
   groupID: string | undefined,
-): StoreState {
+): StoreState | null {
+  const cat = state.categories.find((c) => c.id === categoryID);
+  if (!cat) return null;
+  if (!isCategoryNameAvailable(state.categories, cat.name, categoryID, groupID))
+    return null;
   const updated = state.categories.map((c) =>
     c.id === categoryID ? { ...c, groupID } : c,
   );
@@ -161,7 +176,10 @@ export function handleAddCategoryWithGroup(
   groupID: string,
 ): StoreState | null {
   const trimmed = normalizedName(name);
-  if (!trimmed || !isCategoryNameAvailable(state.categories, trimmed))
+  if (
+    !trimmed ||
+    !isCategoryNameAvailable(state.categories, trimmed, undefined, groupID)
+  )
     return null;
   const newCategory: Category = {
     id: uuidv4(),

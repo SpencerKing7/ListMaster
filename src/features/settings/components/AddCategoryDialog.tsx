@@ -20,6 +20,8 @@ import { INPUT_CLASS } from "@/features/settings/constants";
 interface AddCategoryDialogProps {
   /** Whether the dialog is currently visible. */
   isOpen: boolean;
+  /** Whether the name collides with an existing category in the selected group. */
+  isDuplicate: boolean;
   /** Current category name input value. */
   categoryName: string;
   /** Called when the user types in the name input. */
@@ -41,6 +43,7 @@ interface AddCategoryDialogProps {
 /** Dialog for creating a new category with optional group assignment. */
 export function AddCategoryDialog({
   isOpen,
+  isDuplicate,
   categoryName,
   onNameChange,
   selectedGroupID,
@@ -74,6 +77,13 @@ export function AddCategoryDialog({
           autoFocus
           autoCapitalize="words"
         />
+        {isDuplicate && (
+          <p className="text-xs px-0.5 -mt-1" style={{ color: "var(--color-danger)" }}>
+            {groups.length > 0
+              ? "A category with this name already exists in this group."
+              : "A category with this name already exists."}
+          </p>
+        )}
         {groups.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <p className="text-xs font-medium px-0.5" style={{ color: "var(--color-text-secondary)" }}>
@@ -127,7 +137,7 @@ export function AddCategoryDialog({
             variant="ghost"
             className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
             style={{ color: "var(--color-brand-green)" }}
-            disabled={categoryName.trim().length === 0}
+            disabled={categoryName.trim().length === 0 || isDuplicate}
             onClick={onConfirm}
           >
             Add

@@ -34,6 +34,8 @@ interface AddFlowProps {
   addGroupDialogName: string;
   /** Called when the user types in the group name input. */
   onSetAddGroupDialogName: (name: string) => void;
+  /** Whether the category name collides in the selected group. */
+  isDuplicate: boolean;
   /** Confirms creation of the new category. */
   onAddCategoryConfirm: () => void;
   /** Confirms creation of the new group. */
@@ -57,6 +59,7 @@ export function AddFlow({
   onSetAddCategoryGroupID,
   addGroupDialogName,
   onSetAddGroupDialogName,
+  isDuplicate,
   onAddCategoryConfirm,
   onAddGroupConfirm,
   groups,
@@ -88,6 +91,7 @@ export function AddFlow({
 
       <AddCategoryDialog
         isOpen={addMode === "category"}
+        isDuplicate={isDuplicate}
         categoryName={addCategoryName}
         onNameChange={onSetAddCategoryName}
         selectedGroupID={addCategoryGroupID}

@@ -55,7 +55,7 @@ After every reducer case that modifies data, `PersistenceService.save()` is call
 
 ### Category Uniqueness
 
-`ADD_CATEGORY`, `SET_CATEGORIES`, and `RENAME_CATEGORY` all enforce case-insensitive uniqueness via the `isNameAvailable()` helper. Duplicate or empty names are silently ignored (the reducer returns the current state unchanged). `ADD_GROUP` and `RENAME_GROUP` enforce the same uniqueness via `isGroupNameAvailable()`.
+`ADD_CATEGORY`, `ADD_CATEGORY_WITH_GROUP`, `SET_CATEGORIES`, `RENAME_CATEGORY`, and `SET_CATEGORY_GROUP` all enforce case-insensitive uniqueness via the `isCategoryNameAvailable()` helper. Uniqueness is **scoped per group** — two categories may share the same name if they belong to different groups. Categories with `groupID === undefined` (ungrouped) are treated as their own scope. Duplicate or empty names within the same group are silently ignored (the reducer returns the current state unchanged). `ADD_GROUP` and `RENAME_GROUP` enforce the same uniqueness via `isGroupNameAvailable()`. The Add Category and Rename Category dialogs also surface inline validation errors when a name collision is detected, preventing the user from submitting.
 
 ### `categoriesInSelectedGroup` derivation
 

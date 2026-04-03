@@ -1,7 +1,8 @@
 // src/features/settings/hooks/useRenameDialogs.ts
 // State and handlers for the rename-category and rename-group dialogs.
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { isCategoryNameAvailable } from "@/store/reducerHelpers";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 
 // MARK: - Types
@@ -18,6 +19,10 @@ export interface UseRenameDialogsReturn {
   openRenameCategory: (id: string, name: string) => void;
   /** Closes the rename-category dialog and resets the input. */
   closeRenameCategory: () => void;
+  /** Whether the rename input collides with an existing name in the same group. */
+  isRenameDuplicate: boolean;
+  /** Whether any groups exist (for adaptive error message). */
+  hasGroups: boolean;
   /** Saves the renamed category and closes the dialog. */
   saveRenameCategory: () => void;
   /** The group being renamed, or `null` when idle. */
@@ -65,6 +70,24 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
     closeRenameCategory();
   }, [categoryToRename, renameCategoryName, store, closeRenameCategory]);
 
+  // Derive the groupID of the category being renamed from the store
+  const renameGroupID = useMemo(() => {
+    if (!categoryToRename) return undefined;
+    return store.categories.find((c) => c.id === categoryToRename.id)?.groupID;
+  }, [categoryToRename, store.categories]);
+
+  const isRenameDuplicate = useMemo(() => {
+    if (!categoryToRename) return false;
+    const trimmed = renameCategoryName.trim();
+    if (!trimmed) return false;
+    return !isCategoryNameAvailable(
+      store.categories,
+      trimmed,
+      categoryToRename.id,
+      renameGroupID,
+    );
+  }, [categoryToRename, renameCategoryName, store.categories, renameGroupID]);
+
   // ── Rename group ──
   const [groupToRename, setGroupToRename] = useState<{
     id: string;
@@ -97,6 +120,8 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
     openRenameCategory,
     closeRenameCategory,
     saveRenameCategory,
+    isRenameDuplicate,
+    hasGroups: store.groups.length > 0,
     groupToRename,
     renameGroupName,
     onRenameGroupNameChange: setRenameGroupName,

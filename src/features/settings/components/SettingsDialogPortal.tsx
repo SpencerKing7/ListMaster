@@ -34,6 +34,8 @@ export function SettingsDialogPortal({ d, groups }: SettingsDialogPortalProps): 
     <>
       <RenameCategoryDialog
         categoryToRename={d.categoryToRename}
+        isRenameDuplicate={d.isRenameDuplicate}
+        hasGroups={d.hasGroups}
         renameCategoryName={d.renameCategoryName}
         onNameChange={d.onRenameCategoryNameChange}
         onSave={d.saveRenameCategory}
@@ -75,6 +77,7 @@ export function SettingsDialogPortal({ d, groups }: SettingsDialogPortalProps): 
         onSetAddCategoryGroupID={d.setAddCategoryGroupID}
         addGroupDialogName={d.addGroupDialogName}
         onSetAddGroupDialogName={d.setAddGroupDialogName}
+        isDuplicate={d.isDuplicate}
         onAddCategoryConfirm={d.confirmAddCategory}
         onAddGroupConfirm={d.confirmAddGroup}
         groups={groups}

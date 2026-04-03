@@ -1,7 +1,8 @@
 // src/features/settings/hooks/useAddFlowDialogs.ts
 // State and handlers for the "Add Category or Group" flow (action sheet + dialogs).
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { isCategoryNameAvailable } from "@/store/reducerHelpers";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 
 // MARK: - Types
@@ -35,6 +36,8 @@ export interface UseAddFlowDialogsReturn {
   addGroupDialogName: string;
   /** Updates the group name input. */
   setAddGroupDialogName: (v: string) => void;
+  /** Whether the current add-category name collides with an existing name in the selected group. */
+  isDuplicate: boolean;
   /** Confirms creation of a new category. */
   confirmAddCategory: () => void;
   /** Confirms creation of a new group. */
@@ -63,13 +66,9 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
 
   useEffect(() => {
     categoryNameRef.current = addCategoryName;
-  }, [addCategoryName]);
-  useEffect(() => {
     categoryGroupIDRef.current = addCategoryGroupID;
-  }, [addCategoryGroupID]);
-  useEffect(() => {
     groupDialogNameRef.current = addGroupDialogName;
-  }, [addGroupDialogName]);
+  }, [addCategoryName, addCategoryGroupID, addGroupDialogName]);
 
   const confirmAddCategory = useCallback(() => {
     const trimmed = categoryNameRef.current.trim();
@@ -84,6 +83,18 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     setAddCategoryName("");
     setAddCategoryGroupID(null);
   }, [store]);
+
+  // Convert null (hook convention) → undefined (model convention) for group scoping
+  const isDuplicate = useMemo(() => {
+    const trimmed = addCategoryName.trim();
+    if (!trimmed) return false;
+    return !isCategoryNameAvailable(
+      store.categories,
+      trimmed,
+      undefined,
+      addCategoryGroupID ?? undefined,
+    );
+  }, [addCategoryName, addCategoryGroupID, store.categories]);
 
   /**
    * Opens the Add Category dialog pre-populated with the currently selected
@@ -118,6 +129,7 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     setAddCategoryGroupID,
     addGroupDialogName,
     setAddGroupDialogName,
+    isDuplicate,
     confirmAddCategory,
     confirmAddGroup,
   };
