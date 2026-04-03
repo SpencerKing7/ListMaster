@@ -155,7 +155,7 @@ export function OnboardingSetupScreen(): JSX.Element {
           disabled={!isFormValid}
           onClick={finishSetup}
         >
-          Finish Setup
+          Next
         </Button>
       </div>
     </div>
