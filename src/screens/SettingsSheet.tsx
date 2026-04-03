@@ -126,7 +126,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const groupDragIndexRef = useRef<number | null>(null);
   const groupOverIndexRef = useRef<number | null>(null);
   const hasGroupDraggedRef = useRef(false);
-  const groupDragStartYRef = useRef(0);
   // catContainerRef wraps all category rows (both grouped and ungrouped) for snapshotRects
   const catContainerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -259,7 +258,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
       groupDragIndexRef.current = idx;
       groupOverIndexRef.current = idx;
       hasGroupDraggedRef.current = false;
-      groupDragStartYRef.current = e.clientY;
       setGroupDragIndex(idx);
       setGroupOverIndex(idx);
     },
@@ -270,10 +268,8 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     if (groupDragIndexRef.current === null) return;
     if (e.pointerType === "mouse" && e.buttons === 0) return;
 
-    // Confirm drag intent before collapsing groups or updating ghost position
+    // Collapse all groups on the first move event after drag starts
     if (!hasGroupDraggedRef.current) {
-      const dy = Math.abs(e.clientY - groupDragStartYRef.current);
-      if (dy < 5) return;
       hasGroupDraggedRef.current = true;
       setExpandedGroupIDs(prev => {
         savedExpandedGroupIDsRef.current = new Set(prev);
