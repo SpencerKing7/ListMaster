@@ -1,10 +1,15 @@
 // src/store/useSettingsStore.ts
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  createElement,
+  type ReactNode,
+} from "react";
 import { PersistenceService } from "../services/persistenceService";
 import { SettingsService } from "../services/settingsService";
 import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
 import type { TextSize } from "@/models/types";
-import React from "react";
 
 // MARK: - Types
 
@@ -30,7 +35,11 @@ interface SettingsState {
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
+export function SettingsProvider({
+  children,
+}: {
+  children: ReactNode;
+}): ReactNode {
   const [userName, setUserNameState] = useState<string>(() =>
     SettingsService.getUserName(),
   );
@@ -96,7 +105,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     applyTextSizeToDOM("m");
   }
 
-  return React.createElement(
+  return createElement(
     SettingsContext.Provider,
     {
       value: {

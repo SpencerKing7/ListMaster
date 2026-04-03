@@ -2,12 +2,14 @@
  * PageIndicator renders a row of dots indicating the current page position,
  * similar to iOS UIPageControl. The active dot stretches into a pill shape.
  */
+import type { JSX } from "react";
+
 interface PageIndicatorProps {
   count: number;
   activeIndex: number;
 }
 
-export default function PageIndicator({ count, activeIndex }: PageIndicatorProps) {
+export function PageIndicator({ count, activeIndex }: PageIndicatorProps): JSX.Element {
   return (
     <div className="flex justify-center items-center gap-[6px] py-2" aria-hidden>
       {Array.from({ length: count }, (_, i) => {

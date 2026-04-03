@@ -1,185 +1,250 @@
-# Copilot Instructions
+# ListMaster PWA — Agent Instructions
 
-> **These rules are STRICT. Do not deviate from them under any circumstances.**
-> You do not need to give me a conversation summary or ask clarifying questions. Just follow the rules below exactly as stated. If you are unsure about anything, refer to the docs or ask for clarification — do not guess.
-> Always read the referenced docs before making changes to the areas they cover.
-> If you are unsure about any aspect of this codebase — architecture, patterns, component behavior, naming, theming, or deployment — **consult the `docs/` folder before guessing**. The `docs/` folder is organized as follows:
->
-> - `docs/reference/` — authoritative reference docs covering architecture, state management, data models, services, theming, UI patterns, PWA config, TypeScript conventions, and more
-> - `docs/plans/` — design and implementation plans for features and fixes
-> - `docs/snapshots/` — point-in-time captures of UI structure, component behavior, and known issues
+## Project Identity
 
-This is a **React + TypeScript PWA** (Progressive Web App) built with Vite, Tailwind CSS v4, and shadcn/ui. It is the web port of the ListMaster iOS app. The tech stack is: React 19, TypeScript 5, React Router v7, Zustand-style Context/Reducer stores, Tailwind CSS v4, shadcn/ui components, and `vite-plugin-pwa`.
+This is **ListMaster PWA** — a React + TypeScript Progressive Web App built with Vite. It is a web port of the ListMaster iOS app.
+
+**Stack:** React 19, TypeScript 5, React Router v7, React Context + `useReducer` stores, Tailwind CSS v4, shadcn/ui, `vite-plugin-pwa`
+**Workspace root:** `/Users/spencerking/Documents/Swift/ListMasterPWA`
 
 ---
 
-## Change Discipline (STRICT)
+## How to Use the Docs Folder
 
-- **All file changes must occur inside the workspace** (`/Users/spencerking/Documents/Swift/ListMasterPWA`). Never create, edit, or delete files outside this directory unless the user explicitly and clearly instructs otherwise.
-- **Only modify code directly related to the current task.** Do not refactor, reorganize, or "improve" unrelated code while making a fix.
-- Before editing a file, identify the **minimal set of lines** that must change. Leave everything else untouched.
-- If a fix requires touching multiple files, each file change must be clearly justified by the task at hand.
-- **Never introduce new patterns, helpers, or abstractions** unless the task explicitly requires them.
-- When fixing a bug, do not simultaneously change styling, naming, or structure of surrounding code.
+Before editing anything in an unfamiliar area, read the relevant doc first. Do not guess from context.
+
+| You are about to touch…             | Read this first                             |
+| ----------------------------------- | ------------------------------------------- |
+| Any UI layout or scroll behavior    | `docs/snapshots/main-screen-ui-snapshot.md` |
+| Any UI styling or animation         | `docs/plans/ios-feel-overhaul.md`           |
+| Architecture, state, or data models | `docs/reference/` (pick the relevant file)  |
+| A feature with an existing plan     | `docs/plans/`                               |
+
+`docs/snapshots/` captures point-in-time HTML structure, confirmed-working behavior, and known issues. Treat it as ground truth for the current UI state.
 
 ---
 
-## Project Structure (STRICT)
+## Before Every Edit — Decision Checklist
 
-The `src/` directory follows a **feature-by-layer** folder convention. Every file MUST live in the correct folder. **Do not create files at the `src/` root level** (except `App.tsx`, `main.tsx`, `index.css`, and `vite-env.d.ts`).
+Work through these in order before writing any code:
+
+1. **Scope** — Does this change belong to the current task? If not, leave it alone.
+2. **Location** — Which file(s) need to change? Confirm each is in the correct folder (see [Folder Map]).
+3. **Size** — Check the current line count of each file to be edited. If it is at or over its hard limit, extract before adding (see [File Size Rules]).
+4. **Minimal diff** — Identify the smallest set of lines that achieves the goal. Leave all surrounding code untouched, including formatting, naming, and structure.
+5. **Docs** — Does this change touch UI, theming, or a component with a snapshot? Read the relevant doc before proceeding.
+
+---
+
+## File Size Rules
+
+Every `src/` file has a target and a hard ceiling. The hard ceiling is absolute — do not exceed it.
+
+| File type                   | Target    | Hard ceiling  |
+| --------------------------- | --------- | ------------- |
+| Screen (`screens/`)         | 150 lines | **200 lines** |
+| Component (`components/`)   | 120 lines | **180 lines** |
+| Store (`store/`)            | 100 lines | **150 lines** |
+| Service (`services/`)       | 100 lines | **150 lines** |
+| Hook (standalone `use*.ts`) | 80 lines  | **120 lines** |
+| Utility (`lib/`)            | 80 lines  | **120 lines** |
+
+**If the file you are about to edit is already over its hard ceiling:** state this explicitly in your response before making any changes. Then extract before you add — do not append to an already-bloated file.
+
+**If adding your code would push a file past its ceiling:** extract first, then add. Choose the right extraction type:
+
+- A JSX block with a clear visual identity → new file in `components/`
+- Clustered `useState`/`useEffect` logic → new `use*.ts` in `store/`
+- A pure function with no React dependency → `lib/utils.ts` or a new file in `lib/`
+
+**If a file needs more than three `// MARK: -` sections to stay navigable:** that is a signal to split the file, not add another marker.
+
+---
+
+## Folder Map
 
 ```
 src/
-├── App.tsx               # Root component — routing and top-level providers only
+├── App.tsx               # Routing and top-level providers only
 ├── main.tsx              # ReactDOM.createRoot entry point
 ├── index.css             # Tailwind imports, @theme tokens, global resets
 ├── vite-env.d.ts         # Vite type declarations
-├── assets/               # Static assets imported by components (images, SVGs)
-├── models/               # Plain TypeScript interfaces and types — no logic, no I/O
-│   └── types.ts
-├── store/                # React Context + useReducer stores (global state)
+├── assets/               # Static assets imported by components
+├── models/
+│   └── types.ts          # TypeScript interfaces and types ONLY — no logic, no imports
+├── store/                # React Context + useReducer/useState global state hooks
 │   ├── useCategoriesStore.ts
 │   ├── useSettingsStore.ts
 │   └── useTheme.ts
-├── screens/              # Full-screen route components (one per route)
+├── screens/              # One file per route — thin compositions only
 │   ├── MainScreen.tsx
 │   ├── OnboardingWelcomeScreen.tsx
 │   ├── OnboardingSetupScreen.tsx
 │   └── SettingsSheet.tsx
-├── components/           # Reusable UI building blocks
+├── components/           # Reusable UI components not tied to a specific screen
 │   ├── BottomBar.tsx
 │   ├── CategoryPanel.tsx
 │   ├── CategoryPicker.tsx
 │   ├── HeaderBar.tsx
-│   └── ui/               # shadcn/ui primitives (do not edit directly)
-│       ├── button.tsx
-│       ├── dialog.tsx
-│       ├── input.tsx
-│       ├── sheet.tsx
-│       ├── toggle-group.tsx
-│       └── toggle.tsx
-├── services/             # Side-effectful singletons (localStorage, network, etc.)
-│   └── persistenceService.ts
-├── styles/               # CSS design token files imported by index.css
-│   └── tokens.css
+│   └── ui/               # shadcn/ui primitives — read-only, do not edit
+├── services/
+│   └── persistenceService.ts   # The only file allowed to read/write localStorage
+├── styles/
+│   └── tokens.css        # CSS custom property definitions — all color tokens live here
 └── lib/
-    └── utils.ts          # Shared pure utility functions (cn(), etc.)
+    └── utils.ts          # Pure, framework-agnostic utility functions (cn(), etc.)
 ```
 
-### Folder Rules
+**Each folder accepts exactly one category of code:**
 
-| Folder           | What belongs here                                                             | What does NOT belong here                                 |
-| ---------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `models/`        | TypeScript `interface` and `type` definitions — pure data shapes, no logic    | Classes, stores, components, anything with side-effects   |
-| `store/`         | React Context providers + `useReducer`/`useState` hooks that own global state | Persistence logic, component rendering, direct DOM access |
-| `screens/`       | Top-level components rendered by `<Route>` — one file per screen or sheet     | Reusable building blocks, business logic                  |
-| `components/`    | Reusable UI components not tied to a specific screen's data model             | Screen-level views, store logic                           |
-| `components/ui/` | shadcn/ui generated primitives. **Do not hand-edit these.**                   | Custom app components                                     |
-| `services/`      | Stateless singletons that perform I/O (localStorage, fetch, etc.)             | React state, components, types                            |
-| `styles/`        | CSS custom property token files                                               | TypeScript/TSX source files                               |
-| `lib/`           | Pure, framework-agnostic utility functions                                    | React hooks, store logic, components                      |
-
-### Naming Conventions (STRICT)
-
-- **Component files**: `PascalCase.tsx` (e.g. `CategoryPanel.tsx`).
-- **Non-component TS files**: `camelCase.ts` (e.g. `persistenceService.ts`, `useCategoriesStore.ts`).
-- **React components and types/interfaces**: `PascalCase`.
-- **Variables, functions, parameters, hook names**: `camelCase`.
-- **Constants**: `camelCase` for module-level, `SCREAMING_SNAKE_CASE` only for true compile-time primitives (e.g. `const MAX_ITEMS = 100`).
-- **Boolean variables**: read as assertions — `isEmpty`, `isChecked`, `hasCompletedOnboarding`. Never prefix with `get`.
-- **Custom hooks**: always prefix with `use` (e.g. `useCategoriesStore`, `useSettingsStore`).
-- **Event handler props**: prefix with `on` (e.g. `onOpenSettings`, `onOpenChange`).
-
-### Architecture Rules (STRICT)
-
-1. **Models are inert.** `src/models/types.ts` holds only `interface` and `type` declarations. No functions, no classes, no imports.
-2. **Stores own global mutable state.** Stores use React Context + `useReducer` or `useState`. All mutations go through dispatched actions or explicit setter functions — never mutate state directly.
-3. **Components are declarative.** They read from stores and call store methods. They never call `localStorage` directly or perform other I/O.
-4. **Services encapsulate all I/O.** `PersistenceService` is the only layer allowed to read/write `localStorage`. Stores call service methods; components do not.
-5. **Never call `localStorage` directly inside a component or store reducer.** Route all persistence through `PersistenceService`.
-6. **One screen = one file** in `src/screens/`. Do not combine multiple screens or sheets in a single file.
-7. **Reusable components must not import from `src/screens/`** and must not be tightly coupled to a specific screen's data.
-8. **`useState` for local UI state only** — e.g. input field values, modal open/close booleans. Never hold app-level data in local state.
-9. **`useReducer` for multi-action store state** (see `useCategoriesStore.ts`). All actions must go through the reducer — no direct `setState` bypasses.
-10. **Context providers wrap the whole app** in `main.tsx`. Never instantiate a provider inside a screen or component.
-11. **`HashRouter` is used for routing** (required for GitHub Pages / PWA deployment). Do not switch to `BrowserRouter`.
+| Folder           | Accepts                                  | Rejects                                    |
+| ---------------- | ---------------------------------------- | ------------------------------------------ |
+| `models/`        | `interface` and `type` declarations only | Logic, functions, imports, side effects    |
+| `store/`         | Context providers and state hooks        | Persistence logic, JSX, direct DOM access  |
+| `screens/`       | Route-level composition components       | Reusable components, business logic        |
+| `components/`    | Reusable UI components                   | Screen-specific data coupling, store logic |
+| `components/ui/` | shadcn/ui generated files                | Any hand-edits whatsoever                  |
+| `services/`      | Stateless I/O singletons                 | React state, components, types             |
+| `styles/`        | CSS token files                          | Any `.ts` or `.tsx` files                  |
+| `lib/`           | Pure utility functions                   | React hooks, store logic, components       |
 
 ---
 
-## UI Development (STRICT)
+## Architecture Rules
 
-This app targets a **mobile-first, iOS-feel** experience. Before making **any** UI edits:
+These define how the layers interact. Each rule names the layer and its constraint.
 
-1. Read `docs/snapshots/main-screen-ui-snapshot.md` — it documents the exact current HTML structure, scroll chain, layout mechanics, known issues, and what is confirmed working for every main screen component. Do not make a UI change without first understanding how the component you are touching fits into this structure.
-2. Read `docs/plans/ios-feel-overhaul.md` for design intent and iOS-feel rules.
+**Models** — `src/models/types.ts` holds only `interface` and `type` declarations. No functions, no classes, no imports of any kind.
 
-### Key Rules
+**Stores** — Own all global mutable state via React Context + `useReducer` or `useState`. Mutations go through dispatched actions or explicit setter functions only — never direct state mutation. One concern per store file; if a file manages two unrelated state slices, split it.
 
-- Use `env(safe-area-inset-top)` / `env(safe-area-inset-bottom)` in inline styles for header and footer padding to respect the iOS notch and home indicator.
-- Prefer `active:scale-[0.96]` or similar press-down feedback on interactive elements over hover-only states.
-- Animations should feel native: use spring-like easing (`cubic-bezier(0.34, 1.56, 0.64, 1)`) for snap animations, and `ease-out` for dismissals.
-- The `SettingsSheet` slides up from the bottom using the shadcn `Sheet` component. Do not replace it with a page navigation.
-- Swipe gestures (horizontal page swipe in `MainScreen`, drag-to-scroll in `CategoryPicker`) use Pointer Events API (`onPointerDown`, `onPointerMove`, `onPointerUp`). Always call `setPointerCapture` once a drag is confirmed.
-- **Rubber-band resistance**: when swiping past an edge, apply a `0.15` dampening factor to the drag offset.
-- Apply `touch-action: manipulation` to buttons and interactive elements to eliminate the 300 ms tap delay.
-- Use `user-select: none` on drag targets to prevent text selection during gestures.
+**Components** — Read from stores and call store methods. They never call `localStorage`, `fetch`, or any other I/O directly. They never import from `src/screens/`.
 
----
+**Screens** — Composed entirely of components from `src/components/`. A screen file contains no inline sub-components, no embedded logic hooks, and no JSX blocks exceeding ~40 lines. If a visual section needs 40+ lines of JSX, extract it to `components/` first.
 
-## Theming / Appearance (STRICT)
+**Services** — `PersistenceService` is the only file in the codebase that reads or writes `localStorage`. Stores call its methods. Components do not call it.
 
-- The app-wide color scheme is managed by `useTheme.ts` (`src/store/useTheme.ts`) and `useSettingsStore.ts`.
-- Theme is applied by setting the `data-theme` attribute on `document.documentElement` via `applyThemeToDOM()`. Do **not** use any React state or class toggling for theme switching.
-- `applyThemeToDOM()` is called **synchronously** inside the `useState` initializer in `SettingsProvider` to prevent a flash of wrong theme on load — do not move this call out of the initializer.
-- `"system"` mode removes `data-theme` entirely, allowing `@media (prefers-color-scheme: dark)` to control the theme.
-- `"light"` / `"dark"` set `data-theme="light"` or `data-theme="dark"`, overriding the media query via the `:root[data-theme]` selectors in `tokens.css`.
-- **Do not use Tailwind's `dark:` variant** for themed colors. All theme-sensitive values must use CSS custom properties from `tokens.css` (e.g. `var(--color-brand-green)`).
+**State scope** — `useState` for local UI state only (input values, open/close booleans). `useReducer` for multi-action global state. Never hold app-level data in component-local state.
+
+**Providers** — Context providers are instantiated once, in `main.tsx`. Never inside a screen or component.
+
+**Routing** — `HashRouter` only. Required for GitHub Pages and PWA deployment. Do not switch to `BrowserRouter`.
 
 ---
 
-## Color System (STRICT)
+## Naming Conventions
 
-- All brand colors are defined as CSS custom properties in `src/styles/tokens.css` under `:root`, `@media (prefers-color-scheme: dark)`, `:root[data-theme="light"]`, and `:root[data-theme="dark"]`.
-- Token categories:
-  - `--color-brand-*` — primary brand palette (green, teal, blue, deep-green)
-  - `--color-surface-*` — background, card, input, tint surfaces
-  - `--color-text-*` — primary and secondary text
-  - `--color-danger` — destructive actions
-- **Never hard-code color hex values in component files.** Always use a CSS custom property: `var(--color-brand-green)`, `var(--color-surface-card)`, etc.
-- Tailwind utility classes that reference brand tokens (e.g. `text-brand-green`, `bg-surface-card`) are available via the `@theme inline` block in `index.css`. Prefer these where Tailwind classes are already in use.
-- When adding a new color: (1) add it to all four rule blocks in `tokens.css`, (2) add a corresponding `@theme inline` alias in `index.css`.
-
----
-
-## CategoryPicker (Drag-to-Scroll Pattern)
-
-`src/components/CategoryPicker.tsx` renders a horizontally scrollable row of category pill buttons. When modifying this component:
-
-### Architecture
-
-- The pill row is a `div` with `overflow-x: auto` and `scrollbar-width: none` to hide the native scrollbar.
-- A `useEffect` watches `selectedCategoryID` and calls `scrollIntoView({ behavior: "smooth", inline: "center" })` on the selected pill whenever selection changes.
-- Drag-to-scroll is implemented with Pointer Events on the container (`onPointerDown`, `onPointerMove`, `onPointerUp`/`onPointerLeave`). `setPointerCapture` is called once horizontal drag intent is confirmed (delta > 5px).
-- A `hasDraggedRef` boolean prevents the `onClick` on a pill from firing after a drag gesture — check `hasDraggedRef.current` in the click handler before calling `selectCategory`.
-
-### Anti-Patterns
-
-- **Do not use mouse-specific events** (`onMouseDown`, etc.) — use Pointer Events only so touch and stylus are handled uniformly.
-- **Do not animate `scrollLeft` manually** for the selection-follow behaviour — use `scrollIntoView` instead.
+| Thing                            | Convention             | Example                                          |
+| -------------------------------- | ---------------------- | ------------------------------------------------ |
+| Component files                  | `PascalCase.tsx`       | `CategoryPanel.tsx`                              |
+| Non-component TS files           | `camelCase.ts`         | `persistenceService.ts`                          |
+| React components                 | `PascalCase`           | `CategoryPanel`                                  |
+| TypeScript interfaces and types  | `PascalCase`           | `CategoryItem`                                   |
+| Variables, functions, parameters | `camelCase`            | `selectedCategoryId`                             |
+| Compile-time primitive constants | `SCREAMING_SNAKE_CASE` | `MAX_ITEMS`                                      |
+| Module-level constants           | `camelCase`            | `defaultSettings`                                |
+| Boolean variables                | Assertion form         | `isEmpty`, `isChecked`, `hasCompletedOnboarding` |
+| Custom hooks                     | `use` prefix           | `useCategoriesStore`                             |
+| Event handler props              | `on` prefix            | `onOpenSettings`, `onOpenChange`                 |
 
 ---
 
-## TypeScript Style Rules (STRICT)
+## TypeScript Rules
 
-1. **Always add JSDoc comments** (`/** ... */`) to exported functions, components, and types.
-2. **Use `// MARK: - Section Name`** comments to organize large files into sections (mirrors Swift convention, readable in editors).
-3. **Prefer `const` over `let`** wherever the value is not reassigned.
-4. **Prefer `interface` over `type`** for object shapes. Use `type` for unions, intersections, and aliases.
-5. **No non-null assertions** (`value!`) except where failure is a genuine programmer error — add a comment explaining why.
-6. **No `as` type casts** except when narrowing from a DOM API where TypeScript cannot infer the type (e.g. `e.target as HTMLInputElement`).
-7. **Boolean variables**: use `isEmpty`, `isChecked`, `hasItems` — never `getIsChecked` or `checkIsEmpty`.
-8. **Early returns**: use `if (!condition) return;` guards at the top of functions instead of deeply nested `if` blocks.
-9. **String interpolation**: prefer template literals over concatenation.
-10. **Collections**: prefer `.length === 0` check via `array.length === 0` or abstract it — or use optional chaining (`.some(...)` is preferred for "has any matching" checks).
-11. **Imports**: use the `@/` path alias for all `src/`-relative imports (e.g. `import { useCategoriesStore } from "@/store/useCategoriesStore"`). Never use relative `../` paths from `components/` or `screens/`.
-12. **React imports**: do not import `React` explicitly — the JSX transform handles it. Only import named hooks and types from `"react"`.
+**Types**
+
+- Zero `any`. Use `unknown` and narrow it if the type is genuinely uncertain.
+- `interface` for object shapes. `type` for unions, intersections, and aliases.
+- All exported functions and hooks must have explicit return type annotations. Inferred return types are only acceptable for trivial one-line expressions.
+- Hooks must declare a named return type interface — e.g. `UseCategoriesStoreReturn`.
+- `import type { X }` for all type-only imports.
+
+**Assertions and casts**
+
+- No non-null assertions (`value!`) except where a null value is a genuine programmer error — leave a comment explaining why.
+- No `as` casts except to narrow a DOM API type that TypeScript cannot infer — e.g. `e.target as HTMLInputElement`.
+
+**Code style**
+
+- `const` over `let` wherever the binding is not reassigned.
+- Early-return guards at the top of functions instead of nested `if` blocks.
+- Template literals over string concatenation.
+- `.some(...)` for "has any matching element" checks. `array.length === 0` for empty checks.
+- All `src/`-relative imports use the `@/` alias — e.g. `import { useCategoriesStore } from "@/store/useCategoriesStore"`. No `../` paths from `components/` or `screens/`.
+- Do not import `React` explicitly. Only import named hooks and types from `"react"`.
+
+**Documentation**
+
+- JSDoc (`/** ... */`) on every exported function, component, and type.
+- `// MARK: - Section Name` to divide a file into named sections. More than three marks in one file means the file should be split, not further annotated.
+
+---
+
+## UI Rules
+
+**Read before editing UI:**
+
+- `docs/snapshots/main-screen-ui-snapshot.md` — current HTML structure, scroll chain, confirmed-working behavior, known issues.
+- `docs/plans/ios-feel-overhaul.md` — design intent and iOS-feel specifications.
+
+**Layout**
+
+- Header and footer padding: `env(safe-area-inset-top)` / `env(safe-area-inset-bottom)` in inline styles.
+- `SettingsSheet` uses the shadcn `Sheet` component sliding up from the bottom. Do not replace it with page navigation.
+
+**Interaction**
+
+- Interactive elements use `active:scale-[0.96]` for press feedback, not hover-only states.
+- Apply `touch-action: manipulation` to buttons and interactive elements to remove the 300 ms tap delay.
+- Apply `user-select: none` to drag targets.
+
+**Gestures** — used in `MainScreen` (horizontal swipe) and `CategoryPicker` (drag-to-scroll):
+
+- Use Pointer Events API only: `onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerLeave`.
+- Call `setPointerCapture` once horizontal drag intent is confirmed (delta > 5 px).
+- Rubber-band resistance past an edge: multiply drag offset by `0.15`.
+- Do not use `onMouseDown` or other mouse-specific events.
+
+**Animation**
+
+- Snap animations: `cubic-bezier(0.34, 1.56, 0.64, 1)`
+- Dismissal animations: `ease-out`
+
+---
+
+## CategoryPicker — Specific Constraints
+
+`src/components/CategoryPicker.tsx` is a horizontally scrollable pill row with custom drag-to-scroll behavior. When editing it:
+
+- The scroll container is a `div` with `overflow-x: auto` and `scrollbar-width: none`.
+- Selection-follow uses `scrollIntoView({ behavior: "smooth", inline: "center" })` triggered by a `useEffect` watching `selectedCategoryID`. Do not implement this with manual `scrollLeft` animation.
+- A `hasDraggedRef` boolean gates the pill `onClick` — always check `hasDraggedRef.current` before calling `selectCategory` in a click handler.
+
+---
+
+## Theming
+
+- Theme is applied by setting `data-theme` on `document.documentElement` via `applyThemeToDOM()`. Do not use React state or CSS class toggling for theme switching.
+- `applyThemeToDOM()` is called synchronously inside the `useState` initializer in `SettingsProvider`. Do not move it — this placement prevents a flash of wrong theme on load.
+- `"system"` → remove `data-theme` entirely, letting `@media (prefers-color-scheme: dark)` take over.
+- `"light"` / `"dark"` → set `data-theme="light"` or `data-theme="dark"`, overriding the media query.
+- Do not use Tailwind's `dark:` variant for themed colors. Use CSS custom properties from `tokens.css` instead.
+
+---
+
+## Color System
+
+All colors are CSS custom properties in `src/styles/tokens.css`, defined in four blocks: `:root`, `@media (prefers-color-scheme: dark)`, `:root[data-theme="light"]`, `:root[data-theme="dark"]`.
+
+**Token categories:**
+
+- `--color-brand-*` — primary brand palette (green, teal, blue, deep-green)
+- `--color-surface-*` — background, card, input, tint
+- `--color-text-*` — primary and secondary text
+- `--color-danger` — destructive actions
+
+**Rules:**
+
+- Never hard-code hex values in component files. Always reference a token: `var(--color-brand-green)`.
+- Tailwind aliases for tokens (e.g. `text-brand-green`, `bg-surface-card`) are defined via `@theme inline` in `index.css`. Prefer these where Tailwind classes are already in use.
+- Adding a new color requires two steps: (1) add it to all four blocks in `tokens.css`, (2) add a `@theme inline` alias in `index.css`.

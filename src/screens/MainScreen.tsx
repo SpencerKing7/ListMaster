@@ -1,12 +1,13 @@
 // src/screens/MainScreen.tsx
 import { useState, useCallback, useEffect } from "react";
+import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
-import HeaderBar from "@/components/HeaderBar";
-import BottomBar from "@/components/BottomBar";
-import CategoryPanel from "@/components/CategoryPanel";
-import SettingsSheet from "./SettingsSheet";
+import { HeaderBar } from "@/components/HeaderBar";
+import { BottomBar } from "@/components/BottomBar";
+import { CategoryPanel } from "@/components/CategoryPanel";
+import { SettingsSheet } from "./SettingsSheet";
 
-export default function MainScreen() {
+export function MainScreen(): JSX.Element {
   const store = useCategoriesStore();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);

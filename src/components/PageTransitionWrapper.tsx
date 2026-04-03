@@ -7,7 +7,7 @@
  * long enough to play its exit animation — the two layers are z-stacked so they
  * animate independently.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type JSX } from "react";
 import { useLocation } from "react-router";
 
 interface PageTransitionWrapperProps {
@@ -22,7 +22,7 @@ function getRouteDepth(pathname: string): number {
 
 // MARK: - Component
 
-const PageTransitionWrapper = ({ children }: PageTransitionWrapperProps) => {
+const PageTransitionWrapper = ({ children }: PageTransitionWrapperProps): JSX.Element => {
   const location = useLocation();
 
   // Snapshot of the previous page's rendered children kept alive during exit.
@@ -106,4 +106,4 @@ const PageTransitionWrapper = ({ children }: PageTransitionWrapperProps) => {
   );
 };
 
-export default PageTransitionWrapper;
+export { PageTransitionWrapper };

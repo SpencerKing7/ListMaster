@@ -1,9 +1,10 @@
 // src/components/CategoryPicker.tsx
 import { useRef, useEffect, useCallback } from "react";
+import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 
-const CategoryPicker = () => {
+const CategoryPicker = (): JSX.Element => {
   const { categoriesInSelectedGroup, selectedCategoryID, selectCategory } =
     useCategoriesStore();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -146,4 +147,4 @@ const CategoryPicker = () => {
   );
 };
 
-export default CategoryPicker;
+export { CategoryPicker };

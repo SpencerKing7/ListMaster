@@ -1,4 +1,7 @@
 // src/store/useSyncStore.ts
+// NOTE: 151 lines — exceeds the 120-line hook target because it bundles Context
+// provider, sync-code management, Firestore subscription lifecycle, and status
+// tracking into one cohesive unit that shares a single React context value.
 import {
   createContext,
   useContext,
@@ -43,7 +46,7 @@ const SyncContext = createContext<SyncContextValue | undefined>(undefined);
 
 // MARK: - Provider
 
-export function SyncProvider({ children }: { children: ReactNode }) {
+export function SyncProvider({ children }: { children: ReactNode }): ReactNode {
   const [syncCode, setSyncCodeState] = useState<string>(() =>
     SettingsService.getSyncCode(),
   );

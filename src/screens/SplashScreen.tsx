@@ -1,11 +1,12 @@
 /** Full-screen branded splash shown to returning users on app launch. */
 import { useState, useEffect } from "react";
+import type { JSX } from "react";
 
 interface SplashScreenProps {
   onFinished: () => void;
 }
 
-const SplashScreen = ({ onFinished }: SplashScreenProps) => {
+const SplashScreen = ({ onFinished }: SplashScreenProps): JSX.Element => {
   const [isFading, setIsFading] = useState(false);
   const [isEntered, setIsEntered] = useState(false);
 
@@ -99,4 +100,4 @@ const SplashScreen = ({ onFinished }: SplashScreenProps) => {
   );
 };
 
-export default SplashScreen;
+export { SplashScreen };

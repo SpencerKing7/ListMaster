@@ -1,5 +1,6 @@
 // src/components/GroupTabBar.tsx
 import { useRef, useLayoutEffect, useCallback } from "react";
+import type { JSX } from "react";
 
 // MARK: - GroupTabBar
 
@@ -15,11 +16,11 @@ interface GroupTabBarProps {
  * spring easing. Drag-to-scroll is handled via Pointer Events with the same
  * setPointerCapture pattern as CategoryPicker.
  */
-export default function GroupTabBar({
+export function GroupTabBar({
   groups,
   selectedGroupID,
   onSelectGroup,
-}: GroupTabBarProps) {
+}: GroupTabBarProps): JSX.Element {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const underlineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -3,6 +3,7 @@
  * mirroring UIAlertController action sheets.
  */
 import { useEffect, useState } from "react";
+import type { JSX } from "react";
 import { createPortal } from "react-dom";
 
 // Module-level counter so multiple simultaneous ActionSheets (e.g. rapid open/close)
@@ -29,7 +30,7 @@ const ActionSheet = ({
   message,
   actions,
   cancelLabel = "Cancel"
-}: ActionSheetProps) => {
+}: ActionSheetProps): JSX.Element | null => {
   // isMounted keeps the DOM alive during exit animation; isVisible drives CSS states
   const [isMounted, setIsMounted] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
@@ -161,4 +162,4 @@ const ActionSheet = ({
   );
 };
 
-export default ActionSheet;
+export { ActionSheet };
