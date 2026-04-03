@@ -67,7 +67,7 @@ const ActionSheet = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
+      className="fixed inset-0 z-[60] flex items-center justify-center"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -83,16 +83,16 @@ const ActionSheet = ({
 
       {/* Sheet */}
       <div
-        className="relative w-full max-w-sm mx-4 mb-4 rounded-2xl overflow-hidden"
+        className="relative w-full max-w-sm mx-4 rounded-2xl overflow-hidden"
         style={{
           backgroundColor: "var(--color-surface-card)",
           boxShadow: "var(--elevation-sheet)",
           border: "1px solid var(--color-border-dialog)",
-          transform: isVisible ? "translateY(0)" : "translateY(110%)",
+          transform: isVisible ? "scale(1)" : "scale(0.95)",
+          opacity: isVisible ? 1 : 0,
           transition: isVisible
-            ? "transform 280ms cubic-bezier(0,0,0.2,1)"
-            : "transform 240ms cubic-bezier(0.4,0,1,1)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            ? "transform 280ms cubic-bezier(0,0,0.2,1), opacity 200ms ease-out"
+            : "transform 240ms cubic-bezier(0.4,0,1,1), opacity 180ms ease-in",
         }}
         onClick={(e) => e.stopPropagation()}
       >
