@@ -46,58 +46,13 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
-  const popupRef = React.useRef<HTMLDivElement>(null)
-
-  // Shift dialog upward when the on-screen keyboard shrinks the visual viewport
-  // (iOS Safari keeps layout viewport fixed, so `fixed top-1/2` lands behind keyboard).
-  React.useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-
-    let rafId = 0
-
-    const update = () => {
-      const el = popupRef.current
-      if (!el) return
-      const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
-      if (keyboardHeight > 50) {
-        // Reset offset and wait one frame so the browser repaints to
-        // the natural centered position before we measure.
-        el.style.setProperty("--dialog-kb-offset", "0px")
-        cancelAnimationFrame(rafId)
-        rafId = requestAnimationFrame(() => {
-          const rect = el.getBoundingClientRect()
-          const keyboardTop = vv.height + vv.offsetTop
-          const overlap = rect.bottom - keyboardTop + 12 // 12px breathing room
-          if (overlap > 0) {
-            el.style.setProperty("--dialog-kb-offset", `${-overlap}px`)
-          }
-        })
-      } else {
-        cancelAnimationFrame(rafId)
-        el.style.setProperty("--dialog-kb-offset", "0px")
-      }
-    }
-
-    vv.addEventListener("resize", update)
-    vv.addEventListener("scroll", update)
-    // Run once on mount in case keyboard is already open
-    update()
-    return () => {
-      vv.removeEventListener("resize", update)
-      vv.removeEventListener("scroll", update)
-      cancelAnimationFrame(rafId)
-    }
-  }, [])
-
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
-        ref={popupRef}
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl p-4 text-sm duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-[38%] left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl p-4 text-sm duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         style={{
@@ -105,8 +60,7 @@ function DialogContent({
           color: "var(--color-text-primary)",
           border: "1px solid var(--color-border-dialog)",
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08)",
-          transform: "translate(-50%, -50%) translateY(var(--dialog-kb-offset, 0px))",
-          transition: "transform 120ms ease-out",
+          transform: "translate(-50%, -50%)",
           ...style,
         }}
         {...props}
