@@ -75,8 +75,8 @@ const ActionSheet = ({
         className="absolute inset-0 transition-opacity duration-300"
         style={{
           backgroundColor: "var(--color-surface-overlay)",
-          backdropFilter: "blur(4px)",
-          WebkitBackdropFilter: "blur(4px)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           opacity: isVisible ? 1 : 0,
         }}
       />
