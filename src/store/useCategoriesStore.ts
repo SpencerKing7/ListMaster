@@ -567,6 +567,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Cleared synchronously at the start of the cloud-save path so we never
   // echo a remote write back to Firestore.
   const isLoadingFromSync = useRef(false);
+  // Guards against the "adopt code" data-wipe race: set to false whenever
+  // sync is first enabled or a new code is adopted, and flipped to true only
+  // after setupSubscription has finished its initial loadState call.
+  // scheduleCloudSave bails out while this is false, preventing Device 2 from
+  // overwriting the Firestore document with its local state before it has
+  // had a chance to load the remote state.
+  const isSyncReadyRef = useRef(false);
+  // Mirrors the latest reducer state so async callbacks (e.g. setupSubscription)
+  // can access it without capturing stale closures.
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
   // Holds the pending debounce timer ID for cloud saves.
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -582,6 +595,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         isLoadingFromSync.current = false;
         return;
       }
+      // Block writes until setupSubscription has finished its initial
+      // loadState call — prevents overwriting Firestore with stale local
+      // data when a code is first enabled or adopted on a new device.
+      if (!isSyncReadyRef.current) return;
       if (!isSyncEnabled || !syncCode) return;
 
       if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
@@ -610,6 +627,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isSyncEnabled || !syncCode) return;
 
+    // Reset the ready gate — we must not write to Firestore until we have
+    // resolved the initial remote state for this code.
+    isSyncReadyRef.current = false;
+
     let unsubscribe: (() => void) | null = null;
 
     const setupSubscription = async () => {
@@ -629,7 +650,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             selectedCategoryID: cloudState.selectedCategoryID,
             groups: cloudState.groups,
           });
+        } else {
+          // Document doesn't exist yet (brand-new code on Device 1).
+          // Write local state to Firestore immediately so Device 2 can read it.
+          try {
+            const { saveState } = await import("../services/syncService");
+            const s = stateRef.current;
+            await saveState(
+              syncCode,
+              s.categories,
+              s.selectedCategoryID,
+              s.groups,
+              userNameRef.current,
+            );
+          } catch (saveError) {
+            console.error("Failed to write initial sync state:", saveError);
+          }
         }
+
+        // Remote state has been resolved (doc existed or not). It is now safe
+        // for scheduleCloudSave to write local mutations to Firestore.
+        isSyncReadyRef.current = true;
 
         unsubscribe = subscribeToState(
           syncCode,
@@ -655,6 +696,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     return () => {
       if (unsubscribe) unsubscribe();
+      // Reset the ready gate so the next code adoption starts fresh.
+      isSyncReadyRef.current = false;
       // Cancel any pending debounced write when unsubscribing.
       if (cloudSaveTimer.current) {
         clearTimeout(cloudSaveTimer.current);
