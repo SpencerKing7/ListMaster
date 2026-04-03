@@ -58,9 +58,9 @@ export function OnboardingInstallScreen(): JSX.Element | null {
 
       {/* Header */}
       <div
-        className="flex flex-col items-center gap-3 px-8"
+        className="flex flex-col items-center gap-2 px-8"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 48px)",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 32px)",
           opacity: isEntered ? 1 : 0,
           transform: isEntered ? "translateY(0)" : "translateY(12px)",
           transition:
@@ -69,8 +69,8 @@ export function OnboardingInstallScreen(): JSX.Element | null {
       >
         {/* Download/install icon */}
         <svg
-          width="48"
-          height="48"
+          width="40"
+          height="40"
           viewBox="0 0 24 24"
           fill="none"
           stroke="var(--color-brand-green)"
@@ -97,7 +97,7 @@ export function OnboardingInstallScreen(): JSX.Element | null {
 
       {/* Device mode toggle */}
       <div
-        className="flex mx-8 mt-5 rounded-xl p-1"
+        className="flex mx-8 mt-4 rounded-xl p-1"
         style={{
           backgroundColor: "var(--color-surface-input)",
           opacity: isEntered ? 1 : 0,
@@ -156,21 +156,21 @@ export function OnboardingInstallScreen(): JSX.Element | null {
         <InstallInstructions deviceMode={deviceMode} />
       </div>
 
-      {/* Post-install hint */}
+      {/* Tip */}
       <p
-        className="text-xs text-center px-10 mt-4"
+        className="text-xs text-center px-10 mt-3"
         style={{ color: "var(--color-text-secondary)" }}
       >
-        After installing, you can close this browser tab and open List Master
-        from your home screen or app launcher.
+        Once installed, close this tab and open List Master from your home
+        screen. You can also skip and install anytime from your browser menu.
       </p>
 
-      <div className="flex-1 min-h-6" />
+      <div className="flex-1 min-h-4" />
 
       {/* Buttons */}
       <div
-        className="px-8 flex flex-col gap-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 40px)" }}
+        className="px-8 flex flex-col gap-3 pb-8"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
       >
         <Button
           className="w-full h-14 rounded-2xl text-base font-semibold text-white press-scale"

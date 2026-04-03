@@ -27,14 +27,14 @@ interface InstallInstructionsProps {
 function StepCard({ step, index }: { step: InstallStep; index: number }): JSX.Element {
   return (
     <div
-      className="flex items-center gap-3 rounded-xl px-4 py-3.5"
+      className="flex items-center gap-2.5 rounded-xl px-3.5 py-3"
       style={{
         backgroundColor: "var(--color-surface-card)",
         border: "1px solid var(--color-border-subtle)",
       }}
     >
       <div
-        className="flex items-center justify-center w-8 h-8 rounded-full shrink-0 text-xs font-bold"
+        className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 text-xs font-bold"
         style={{
           backgroundColor: "var(--color-surface-green-tint)",
           color: "var(--color-brand-green)",
@@ -42,15 +42,15 @@ function StepCard({ step, index }: { step: InstallStep; index: number }): JSX.El
       >
         {index + 1}
       </div>
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2.5 min-w-0">
         <div className="shrink-0">
           <InstallStepIcon iconKey={step.iconKey} />
         </div>
         <div className="min-w-0">
-          <p className="font-semibold text-sm" style={{ color: "var(--color-text-primary)" }}>
+          <p className="font-semibold text-sm leading-tight" style={{ color: "var(--color-text-primary)" }}>
             {step.title}
           </p>
-          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+          <p className="text-xs leading-tight mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
             {step.subtitle}
           </p>
         </div>
