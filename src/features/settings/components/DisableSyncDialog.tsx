@@ -42,7 +42,11 @@ export function DisableSyncDialog({
         <div className="flex flex-col gap-2 mt-1">
           <button
             className="w-full py-3 rounded-xl text-sm font-semibold text-left px-4 transition-all hover:opacity-80 active:scale-[0.98]"
-            style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
+            style={{
+              backgroundColor: "var(--color-surface-input)",
+              color: "var(--color-text-primary)",
+              border: "1px solid var(--color-border-subtle)",
+            }}
             onClick={() => onDisable(false)}
           >
             <span className="block font-semibold">Keep cloud backup</span>
@@ -52,7 +56,11 @@ export function DisableSyncDialog({
           </button>
           <button
             className="w-full py-3 rounded-xl text-sm font-semibold text-left px-4 transition-all hover:opacity-80 active:scale-[0.98]"
-            style={{ backgroundColor: "rgba(var(--color-danger-rgb), 0.08)", color: "var(--color-danger)" }}
+            style={{
+              backgroundColor: "rgba(var(--color-danger-rgb), 0.08)",
+              color: "var(--color-danger)",
+              border: "1px solid rgba(var(--color-danger-rgb), 0.15)",
+            }}
             onClick={() => onDisable(true)}
           >
             <span className="block font-semibold">Delete cloud data</span>
@@ -64,7 +72,7 @@ export function DisableSyncDialog({
         <Button
           variant="ghost"
           className="w-full rounded-xl hover:!bg-[color:var(--color-surface-input)] mt-1"
-          style={{ color: "var(--color-text-secondary)" }}
+          style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
           onClick={onClose}
         >
           Cancel

@@ -54,6 +54,8 @@
 
   /* Overlay and elevation tokens */
   --color-surface-overlay: var(--color-surface-overlay);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-dialog: var(--color-border-dialog);
   --elevation-card: var(--elevation-card);
   --elevation-sheet: var(--elevation-sheet);
 

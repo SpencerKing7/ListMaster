@@ -63,7 +63,7 @@ export function DataSection({ onReset }: DataSectionProps): JSX.Element {
             <Button
               variant="ghost"
               className="flex-1 rounded-xl hover:!bg-[color:var(--color-surface-input)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-surface-input)" }}
               onClick={() => setIsResetDialogOpen(false)}
             >
               Cancel

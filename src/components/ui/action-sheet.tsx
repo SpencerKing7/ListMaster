@@ -75,6 +75,8 @@ const ActionSheet = ({
         className="absolute inset-0 transition-opacity duration-300"
         style={{
           backgroundColor: "var(--color-surface-overlay)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           opacity: isVisible ? 1 : 0,
         }}
       />
@@ -85,6 +87,7 @@ const ActionSheet = ({
         style={{
           backgroundColor: "var(--color-surface-card)",
           boxShadow: "var(--elevation-sheet)",
+          border: "1px solid var(--color-border-dialog)",
           transform: isVisible ? "translateY(0)" : "translateY(110%)",
           transition: isVisible
             ? "transform 280ms cubic-bezier(0,0,0.2,1)"

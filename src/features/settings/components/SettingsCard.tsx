@@ -20,6 +20,7 @@ export function SettingsCard({ children }: SettingsCardProps): JSX.Element {
       style={{
         backgroundColor: "var(--color-surface-card)",
         boxShadow: "var(--elevation-card)",
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
       {children}

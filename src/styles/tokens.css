@@ -25,6 +25,11 @@
   /* Overlay / scrim for ActionSheet and modal backdrops */
   --color-surface-overlay: rgba(0, 0, 0, 0.45);
 
+  /* Subtle border for cards and dialogs */
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  /* Slightly stronger border for dialogs / elevated surfaces */
+  --color-border-dialog: rgba(0, 0, 0, 0.08);
+
   /* Elevation shadow for cards — subtle on light */
   --elevation-card:
     0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -89,6 +94,10 @@
     /* Overlay / scrim — slightly darker for dark mode */
     --color-surface-overlay: rgba(0, 0, 0, 0.6);
 
+    /* Subtle border for cards and dialogs — lighter strokes on dark */
+    --color-border-subtle: rgba(255, 255, 255, 0.06);
+    --color-border-dialog: rgba(255, 255, 255, 0.1);
+
     /* Elevation shadows — more opaque on dark */
     --elevation-card:
       0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -126,6 +135,8 @@
   --color-brand-teal-rgb: 44, 144, 150;
 
   --color-surface-overlay: rgba(0, 0, 0, 0.45);
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-dialog: rgba(0, 0, 0, 0.08);
   --elevation-card:
     0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
   --elevation-sheet:
@@ -161,6 +172,8 @@
   --color-brand-teal-rgb: 61, 170, 176;
 
   --color-surface-overlay: rgba(0, 0, 0, 0.6);
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-dialog: rgba(255, 255, 255, 0.1);
   --elevation-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
   --elevation-sheet:
     0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
