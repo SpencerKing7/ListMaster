@@ -6,6 +6,16 @@ import type { Category, CategoryGroup } from "@/models/types";
 import type { CatDragState } from "@/features/settings/hooks/useCategoryDrag";
 import { CategoryRow } from "./CategoryRow";
 
+/** Compute the cumulative Y offset of a slot in the live order. */
+function computeCatLiveOffset(ds: CatDragState, liveIdx: number): number {
+  let offset = 0;
+  for (let i = 0; i < liveIdx; i++) {
+    const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
+    offset += (ds.heights[origI] ?? ds.rowHeight) + ds.gap;
+  }
+  return offset;
+}
+
 /** Props for a collapsible group row in the settings card. */
 export interface GroupRowProps {
   group: CategoryGroup;
@@ -184,7 +194,6 @@ export function GroupRow({
 
               // Always render in original DOM order; visual reorder is
               // driven entirely by translateY for smooth animation.
-              const GAP = 2; // matches gap-0.5 (2px)
               return groupCategories.map((category, visualIdx) => {
                 const flatIdx = categories.indexOf(category);
                 const isDragging = category.id === draggingCatID;
@@ -197,7 +206,9 @@ export function GroupRow({
                     const origIdx = scopedDS.originalOrder.indexOf(category.id);
                     const liveIdx = scopedDS.liveOrder.indexOf(category.id);
                     if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-                      catTranslateY = (liveIdx - origIdx) * (scopedDS.rowHeight + GAP);
+                      const liveOffset = computeCatLiveOffset(scopedDS, liveIdx);
+                      const origOffset = scopedDS.originalOffsets[origIdx] ?? 0;
+                      catTranslateY = liveOffset - origOffset;
                     }
                   }
                 }

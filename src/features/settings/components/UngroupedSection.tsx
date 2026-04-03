@@ -5,6 +5,16 @@ import type { JSX } from "react";
 import type { Category } from "@/models/types";
 import type { CatDragState } from "@/features/settings/hooks/useCategoryDrag";
 
+/** Compute the cumulative Y offset of a slot in the live order. */
+function computeCatLiveOffset(ds: CatDragState, liveIdx: number): number {
+  let offset = 0;
+  for (let i = 0; i < liveIdx; i++) {
+    const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
+    offset += (ds.heights[origI] ?? ds.rowHeight) + ds.gap;
+  }
+  return offset;
+}
+
 /** Props for the ungrouped-categories section. */
 export interface UngroupedSectionProps {
   categories: Category[];
@@ -36,7 +46,6 @@ export function UngroupedSection({
 
   // Always render in original DOM order; visual reorder is driven
   // entirely by translateY for smooth animation.
-  const GAP = 4; // matches gap-1 (4px)
 
   return (
     <div className="mt-2">
@@ -63,7 +72,9 @@ export function UngroupedSection({
               const origIdx = scopedDS.originalOrder.indexOf(category.id);
               const liveIdx = scopedDS.liveOrder.indexOf(category.id);
               if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-                catTranslateY = (liveIdx - origIdx) * (scopedDS.rowHeight + GAP);
+                const liveOffset = computeCatLiveOffset(scopedDS, liveIdx);
+                const origOffset = scopedDS.originalOffsets[origIdx] ?? 0;
+                catTranslateY = liveOffset - origOffset;
               }
             }
           }

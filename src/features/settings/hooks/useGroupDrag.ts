@@ -21,6 +21,12 @@ export interface GroupDragState {
   originalOrder: string[];
   /** Height of the dragged row in px. */
   rowHeight: number;
+  /** Per-original-index cumulative Y offsets (top of each slot in original layout). */
+  originalOffsets: number[];
+  /** Gap in px between group rows. */
+  gap: number;
+  /** Row heights snapshot in original order. */
+  heights: number[];
 }
 
 /** Return shape for the {@link useGroupDrag} hook. */
@@ -130,12 +136,25 @@ export function useGroupDrag(
       hasGroupDraggedRef.current = false;
 
       const liveOrder = groupsRef.current.map((g) => g.id);
+
+      // Compute per-slot cumulative Y offsets in original order.
+      const GAP = 8; // matches gap-2 (8px)
+      const originalOffsets: number[] = [];
+      let acc = 0;
+      for (let i = 0; i < heights.length; i++) {
+        originalOffsets.push(acc);
+        acc += heights[i] + GAP;
+      }
+
       const newState: GroupDragState = {
         idx,
         translateY: 0,
         liveOrder,
         originalOrder: [...liveOrder],
         rowHeight: heights[idx] ?? 48,
+        originalOffsets,
+        gap: GAP,
+        heights,
       };
       groupDragStateRef.current = newState;
       setGroupDragState(newState);
@@ -168,50 +187,66 @@ export function useGroupDrag(
           heights.push(el ? el.getBoundingClientRect().height : 48);
         });
         groupRowHeightsRef.current = heights;
-        const ds = groupDragStateRef.current;
+
+        const GAP = 8;
+        const originalOffsets: number[] = [];
+        let acc = 0;
+        for (let i = 0; i < heights.length; i++) {
+          originalOffsets.push(acc);
+          acc += heights[i] + GAP;
+        }
+
+        const cur = groupDragStateRef.current;
         groupDragStateRef.current = {
-          ...ds,
-          rowHeight: heights[ds.idx] ?? 48,
+          ...cur,
+          rowHeight: heights[cur.idx] ?? 48,
+          heights,
+          originalOffsets,
         };
       }, 240);
     }
 
     const dy = e.clientY - groupDragPointerStartY.current;
     const count = ds.liveOrder.length;
-    const draggedIdx = ds.liveOrder.indexOf(
-      groupsRef.current[ds.idx]?.id ?? "",
-    );
+    const draggedID = groupsRef.current[ds.idx]?.id ?? "";
+    const draggedOrigIdx = ds.originalOrder.indexOf(draggedID);
+    const draggedLiveIdx = ds.liveOrder.indexOf(draggedID);
 
-    const GAP = 8;
-    const offsets: number[] = [];
+    // Build cumulative offsets in the LIVE order so hit-testing is accurate.
+    const heights = ds.heights;
+    const gap = ds.gap;
+    const liveOffsets: number[] = [];
     let acc = 0;
     for (let i = 0; i < count; i++) {
-      offsets.push(acc);
-      acc += (groupRowHeightsRef.current[i] ?? ds.rowHeight) + GAP;
+      const origIdx = ds.originalOrder.indexOf(ds.liveOrder[i]);
+      liveOffsets.push(acc);
+      acc += (heights[origIdx] ?? ds.rowHeight) + gap;
     }
 
-    const draggedOriginalOffset = offsets[draggedIdx] ?? 0;
-    const draggedCurrentTop = draggedOriginalOffset + dy;
+    // Dragged item's current visual midpoint.
+    const draggedOrigOffset = ds.originalOffsets[draggedOrigIdx] ?? 0;
+    const draggedCurrentTop = draggedOrigOffset + dy;
     const draggedMid = draggedCurrentTop + ds.rowHeight / 2;
 
-    let newIdx = draggedIdx;
+    // Find which live-order slot the dragged midpoint falls into.
+    let newIdx = draggedLiveIdx;
     for (let i = 0; i < count; i++) {
-      if (i === draggedIdx) continue;
-      const slotMid =
-        offsets[i] + (groupRowHeightsRef.current[i] ?? ds.rowHeight) / 2;
-      if (i < draggedIdx && draggedMid < slotMid) {
+      if (i === draggedLiveIdx) continue;
+      const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
+      const slotMid = liveOffsets[i] + (heights[origI] ?? ds.rowHeight) / 2;
+      if (i < draggedLiveIdx && draggedMid < slotMid) {
         newIdx = i;
         break;
       }
-      if (i > draggedIdx && draggedMid > slotMid) {
+      if (i > draggedLiveIdx && draggedMid > slotMid) {
         newIdx = i;
       }
     }
 
     let newLiveOrder = ds.liveOrder;
-    if (newIdx !== draggedIdx) {
+    if (newIdx !== draggedLiveIdx) {
       newLiveOrder = [...ds.liveOrder];
-      const [item] = newLiveOrder.splice(draggedIdx, 1);
+      const [item] = newLiveOrder.splice(draggedLiveIdx, 1);
       newLiveOrder.splice(newIdx, 0, item);
     }
 

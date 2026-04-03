@@ -6,6 +6,16 @@ import type { Category } from "@/models/types";
 import type { CatDragState } from "@/features/settings/hooks/useCategoryDrag";
 import { CategoryRow } from "./CategoryRow";
 
+/** Compute the cumulative Y offset of a slot in the live order. */
+function computeCatLiveOffset(ds: CatDragState, liveIdx: number): number {
+  let offset = 0;
+  for (let i = 0; i < liveIdx; i++) {
+    const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
+    offset += (ds.heights[origI] ?? ds.rowHeight) + ds.gap;
+  }
+  return offset;
+}
+
 /** Props for the flat (no-groups) category list layout. */
 export interface FlatLayoutProps {
   listRef: React.RefObject<HTMLUListElement | null>;
@@ -34,7 +44,6 @@ export function FlatLayout({
 
   // Always render in the original DOM order; visual reorder is driven
   // entirely by translateY so siblings animate smoothly.
-  const GAP = 6; // matches gap-1.5 (6px)
   return (
     <ul ref={listRef} className="flex flex-col gap-1.5">
       {categories.map((category, idx) => {
@@ -49,7 +58,10 @@ export function FlatLayout({
             const origIdx = scopedDS.originalOrder.indexOf(category.id);
             const liveIdx = scopedDS.liveOrder.indexOf(category.id);
             if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-              catTranslateY = (liveIdx - origIdx) * (scopedDS.rowHeight + GAP);
+              // Compute target position in live layout, subtract original position.
+              const liveOffset = computeCatLiveOffset(scopedDS, liveIdx);
+              const origOffset = scopedDS.originalOffsets[origIdx] ?? 0;
+              catTranslateY = liveOffset - origOffset;
             }
           }
         }

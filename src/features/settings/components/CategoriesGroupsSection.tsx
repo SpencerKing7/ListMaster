@@ -12,6 +12,16 @@ import { GroupRow } from "./GroupRow";
 import { UngroupedSection } from "./UngroupedSection";
 import { FlatLayout } from "./FlatLayout";
 
+/** Compute the cumulative Y offset of a slot in the live order (groups). */
+function computeGroupLiveOffset(ds: GroupDragState, liveIdx: number): number {
+  let offset = 0;
+  for (let i = 0; i < liveIdx; i++) {
+    const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
+    offset += (ds.heights[origI] ?? ds.rowHeight) + ds.gap;
+  }
+  return offset;
+}
+
 // MARK: - Props
 
 interface CategoriesGroupsSectionProps {
@@ -90,7 +100,6 @@ export function CategoriesGroupsSection({
                 const draggingGroupID = groupDragState
                   ? groups[groupDragState.idx]?.id
                   : null;
-                const GAP = 8; // matches gap-2 (8px)
 
                 return groups.map((group, groupVisualIdx) => {
                   const isExpanded = expandedGroupIDs.has(group.id);
@@ -105,7 +114,9 @@ export function CategoriesGroupsSection({
                       const origIdx = groupDragState.originalOrder.indexOf(group.id);
                       const liveIdx = groupDragState.liveOrder.indexOf(group.id);
                       if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-                        groupTranslateY = (liveIdx - origIdx) * (groupDragState.rowHeight + GAP);
+                        const liveOffset = computeGroupLiveOffset(groupDragState, liveIdx);
+                        const origOffset = groupDragState.originalOffsets[origIdx] ?? 0;
+                        groupTranslateY = liveOffset - origOffset;
                       }
                     }
                   }

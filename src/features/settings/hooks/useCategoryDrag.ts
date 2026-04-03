@@ -23,6 +23,12 @@ export interface CatDragState {
   originalOrder: string[];
   /** Height of the dragged row in px. */
   rowHeight: number;
+  /** Per-original-index cumulative Y offsets (top of each slot in original layout). */
+  originalOffsets: number[];
+  /** Gap in px between rows in this scope. */
+  gap: number;
+  /** Row heights snapshot in original order. */
+  heights: number[];
 }
 
 /** Return shape for the {@link useCategoryDrag} hook. */
@@ -112,6 +118,20 @@ export function useCategoryDrag(
       catRowHeightsRef.current = heights;
       dragContext.current = { groupID };
 
+      // Compute per-slot cumulative Y offsets in original order.
+      const GAP =
+        groupID !== null
+          ? 2
+          : groupID === null && cats.some((c) => c.groupID)
+            ? 4
+            : 6;
+      const originalOffsets: number[] = [];
+      let acc = 0;
+      for (let i = 0; i < scopedCategories.length; i++) {
+        originalOffsets.push(acc);
+        acc += heights[i] + GAP;
+      }
+
       const newState: CatDragState = {
         flatIdx,
         groupID,
@@ -119,6 +139,9 @@ export function useCategoryDrag(
         liveOrder,
         originalOrder: [...liveOrder],
         rowHeight: heights[visualIdx] ?? 44,
+        originalOffsets,
+        gap: GAP,
+        heights,
       };
       catDragStateRef.current = newState;
       setCatDragState(newState);
@@ -134,39 +157,46 @@ export function useCategoryDrag(
     const dy = e.clientY - catDragPointerStartY.current;
     const scopedCount = ds.liveOrder.length;
     const cats = categoriesRef.current;
-    const draggedScopedIdx = ds.liveOrder.indexOf(cats[ds.flatIdx]?.id ?? "");
+    const draggedID = cats[ds.flatIdx]?.id ?? "";
+    const draggedOrigIdx = ds.originalOrder.indexOf(draggedID);
 
-    const GAP = 4;
-    const offsets: number[] = [];
+    // Build cumulative offsets in the LIVE order so hit-testing is accurate.
+    const heights = catRowHeightsRef.current;
+    const gap = ds.gap;
+    const liveOffsets: number[] = [];
     let acc = 0;
     for (let i = 0; i < scopedCount; i++) {
-      offsets.push(acc);
-      acc += (catRowHeightsRef.current[i] ?? ds.rowHeight) + GAP;
+      liveOffsets.push(acc);
+      const origIdx = ds.originalOrder.indexOf(ds.liveOrder[i]);
+      acc += (heights[origIdx] ?? ds.rowHeight) + gap;
     }
 
-    const draggedOriginalOffset = offsets[draggedScopedIdx] ?? 0;
-    const draggedCurrentTop = draggedOriginalOffset + dy;
+    // Dragged item's current visual midpoint.
+    const draggedOrigOffset = ds.originalOffsets[draggedOrigIdx] ?? 0;
+    const draggedCurrentTop = draggedOrigOffset + dy;
     const draggedMid = draggedCurrentTop + ds.rowHeight / 2;
 
-    let newScopedIdx = draggedScopedIdx;
+    // Find which live-order slot the dragged midpoint falls into.
+    const draggedLiveIdx = ds.liveOrder.indexOf(draggedID);
+    let newLiveIdx = draggedLiveIdx;
     for (let i = 0; i < scopedCount; i++) {
-      if (i === draggedScopedIdx) continue;
-      const slotMid =
-        offsets[i] + (catRowHeightsRef.current[i] ?? ds.rowHeight) / 2;
-      if (i < draggedScopedIdx && draggedMid < slotMid) {
-        newScopedIdx = i;
+      if (i === draggedLiveIdx) continue;
+      const origI = ds.originalOrder.indexOf(ds.liveOrder[i]);
+      const slotMid = liveOffsets[i] + (heights[origI] ?? ds.rowHeight) / 2;
+      if (i < draggedLiveIdx && draggedMid < slotMid) {
+        newLiveIdx = i;
         break;
       }
-      if (i > draggedScopedIdx && draggedMid > slotMid) {
-        newScopedIdx = i;
+      if (i > draggedLiveIdx && draggedMid > slotMid) {
+        newLiveIdx = i;
       }
     }
 
     let newLiveOrder = ds.liveOrder;
-    if (newScopedIdx !== draggedScopedIdx) {
+    if (newLiveIdx !== draggedLiveIdx) {
       newLiveOrder = [...ds.liveOrder];
-      const [item] = newLiveOrder.splice(draggedScopedIdx, 1);
-      newLiveOrder.splice(newScopedIdx, 0, item);
+      const [item] = newLiveOrder.splice(draggedLiveIdx, 1);
+      newLiveOrder.splice(newLiveIdx, 0, item);
     }
 
     const next: CatDragState = {
