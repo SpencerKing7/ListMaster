@@ -50,50 +50,22 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
-  const popupRef = React.useRef<HTMLDivElement>(null)
-
-  // On iOS Safari (PWA), the keyboard overlays fixed-position content without
-  // resizing the layout viewport. We listen to visualViewport resize/scroll
-  // events and reposition the dialog into the center of the *visible* area
-  // so it is never hidden behind the on-screen keyboard.
-  React.useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-
-    const update = () => {
-      const el = popupRef.current
-      if (!el) return
-      // Position at 38% of the visible viewport height (biased upward)
-      const visibleTop = vv.offsetTop + vv.height * 0.38
-      el.style.top = `${visibleTop}px`
-    }
-
-    vv.addEventListener("resize", update)
-    vv.addEventListener("scroll", update)
-    update()
-    return () => {
-      vv.removeEventListener("resize", update)
-      vv.removeEventListener("scroll", update)
-    }
-  }, [])
-
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
-        ref={popupRef}
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[38%] left-1/2 z-[70] grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl p-4 text-sm duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed left-1/2 z-[70] grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl p-4 text-sm duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         style={{
+          top: "calc(env(safe-area-inset-top, 0px) + 3.5rem)",
           backgroundColor: "var(--color-surface-card)",
           color: "var(--color-text-primary)",
           border: "1px solid var(--color-border-dialog)",
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08)",
-          transform: "translate(-50%, -50%)",
-          transition: "top 120ms ease-out",
+          transform: "translateX(-50%)",
           ...style,
         }}
         {...props}

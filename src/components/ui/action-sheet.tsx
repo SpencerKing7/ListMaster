@@ -67,7 +67,8 @@ const ActionSheet = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center"
+      className="fixed inset-0 z-[60] flex items-start justify-center"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -88,7 +89,7 @@ const ActionSheet = ({
           backgroundColor: "var(--color-surface-card)",
           boxShadow: "var(--elevation-sheet)",
           border: "1px solid var(--color-border-dialog)",
-          transform: isVisible ? "scale(1)" : "scale(0.95)",
+          transform: isVisible ? "translateY(0) scale(1)" : "translateY(-12px) scale(0.97)",
           opacity: isVisible ? 1 : 0,
           transition: isVisible
             ? "transform 280ms cubic-bezier(0,0,0.2,1), opacity 200ms ease-out"
