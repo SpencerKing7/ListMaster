@@ -158,25 +158,13 @@ export function useGroupDrag(
       };
       groupDragStateRef.current = newState;
       setGroupDragState(newState);
-    },
-    [],
-  );
 
-  const handleGroupDragPointerMove = useCallback((e: PointerEvent) => {
-    const ds = groupDragStateRef.current;
-    if (!ds) return;
-    if (e.pointerType === "mouse" && e.buttons === 0) return;
-
-    // Collapse groups on first move, then re-snapshot row heights
-    // after the collapse animation completes so hit-testing uses
-    // the correct (collapsed) dimensions.
-    if (!hasGroupDraggedRef.current) {
-      hasGroupDraggedRef.current = true;
-
+      // Collapse all groups immediately on press so the layout settles
+      // before the finger starts moving.
       // Snapshot the dragged row's screen position before collapse.
       let preDragTop = 0;
       const draggedEl = groupsContainerRef.current?.querySelector<HTMLElement>(
-        `[data-group-idx="${ds.idx}"]`,
+        `[data-group-idx="${idx}"]`,
       );
       if (draggedEl) {
         preDragTop = draggedEl.getBoundingClientRect().top;
@@ -186,25 +174,26 @@ export function useGroupDrag(
         savedExpandedGroupIDsRef.current = new Set(prev);
         return new Set();
       });
+      hasGroupDraggedRef.current = true;
+
       // Re-snapshot heights after collapse animation (220ms ease-out).
       // Also adjust pointerStartY so the dragged group stays under the finger.
       setTimeout(() => {
         if (!groupsContainerRef.current || !groupDragStateRef.current) return;
-        const heights: number[] = [];
+        const collapsedHeights: number[] = [];
         groupsRef.current.forEach((_, i) => {
           const el = groupsContainerRef.current!.querySelector<HTMLElement>(
             `[data-group-idx="${i}"]`,
           );
-          heights.push(el ? el.getBoundingClientRect().height : 48);
+          collapsedHeights.push(el ? el.getBoundingClientRect().height : 48);
         });
-        groupRowHeightsRef.current = heights;
+        groupRowHeightsRef.current = collapsedHeights;
 
-        const GAP = 8;
-        const originalOffsets: number[] = [];
-        let acc = 0;
-        for (let i = 0; i < heights.length; i++) {
-          originalOffsets.push(acc);
-          acc += heights[i] + GAP;
+        const collapsedOffsets: number[] = [];
+        let collapsedAcc = 0;
+        for (let i = 0; i < collapsedHeights.length; i++) {
+          collapsedOffsets.push(collapsedAcc);
+          collapsedAcc += collapsedHeights[i] + GAP;
         }
 
         // Measure how far the dragged row shifted due to collapse,
@@ -221,12 +210,19 @@ export function useGroupDrag(
         const cur = groupDragStateRef.current;
         groupDragStateRef.current = {
           ...cur,
-          rowHeight: heights[cur.idx] ?? 48,
-          heights,
-          originalOffsets,
+          rowHeight: collapsedHeights[cur.idx] ?? 48,
+          heights: collapsedHeights,
+          originalOffsets: collapsedOffsets,
         };
       }, 240);
-    }
+    },
+    [],
+  );
+
+  const handleGroupDragPointerMove = useCallback((e: PointerEvent) => {
+    const ds = groupDragStateRef.current;
+    if (!ds) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) return;
 
     const dy = e.clientY - groupDragPointerStartY.current;
     const count = ds.liveOrder.length;
