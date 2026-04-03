@@ -1,5 +1,5 @@
 // src/screens/SettingsSheet.tsx
-import { useState, useRef, useCallback, useEffect, Fragment, type ReactNode } from "react";
+import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import {
   Sheet,
   SheetContent,
@@ -107,30 +107,47 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const [addGroupDialogName, setAddGroupDialogName] = useState("");
 
   // ── Drag-to-reorder state ──
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [groupDragIndex, setGroupDragIndex] = useState<number | null>(null);
-  const [overIndex, setOverIndex] = useState<number | null>(null);
-  const [groupOverIndex, setGroupOverIndex] = useState<number | null>(null);
-  // Ghost Y position (top of the fixed ghost element, in viewport px)
-  const [ghostY, setGhostY] = useState(0);
-  const [groupGhostY, setGroupGhostY] = useState(0);
-  // Height of the dragged row (captured at drag start for ghost sizing)
-  const ghostHeightRef = useRef(0);
-  const groupGhostHeightRef = useRef(0);
-  // How far down inside the row the pointer hit (so ghost doesn't jump)
-  const dragOffsetY = useRef(0);
-  const groupDragOffsetY = useRef(0);
-  // Refs that mirror state for use inside stable window event handlers (avoid stale closures)
-  const dragIndexRef = useRef<number | null>(null);
-  const overIndexRef = useRef<number | null>(null);
-  const groupDragIndexRef = useRef<number | null>(null);
-  const groupOverIndexRef = useRef<number | null>(null);
+  // Category drag — live-row model: the dragged row translates with the pointer;
+  // other rows slide to fill the gap as the pointer crosses their midpoint.
+  const [catDragState, setCatDragState] = useState<{
+    /** Flat index into store.categories of the row being dragged */
+    flatIdx: number;
+    /** Scope: which group (or null for ungrouped / flat layout) */
+    groupID: string | null;
+    /** Live translateY offset for the dragged row (pointer delta from start) */
+    translateY: number;
+    /** Live order of scoped category IDs, updated each frame */
+    liveOrder: string[];
+    /** Original scoped order at drag start — used to compute sibling offsets */
+    originalOrder: string[];
+    /** Height of the dragged row in px */
+    rowHeight: number;
+  } | null>(null);
+
+  // Group drag — same live-row model
+  const [groupDragState, setGroupDragState] = useState<{
+    idx: number;
+    translateY: number;
+    liveOrder: string[];
+    originalOrder: string[];
+    rowHeight: number;
+  } | null>(null);
+
+  // Refs that shadow state for use inside stable window event handlers
+  const catDragStateRef = useRef<typeof catDragState>(null);
+  const groupDragStateRef = useRef<typeof groupDragState>(null);
+  const catDragPointerStartY = useRef(0);
+  const groupDragPointerStartY = useRef(0);
+
+  // Heights of each scoped row — snapshotted at drag start
+  const catRowHeightsRef = useRef<number[]>([]);
+  const groupRowHeightsRef = useRef<number[]>([]);
+
   const hasGroupDraggedRef = useRef(false);
+
   // catContainerRef wraps all category rows (both grouped and ungrouped) for snapshotRects
   const catContainerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const itemRects = useRef<DOMRect[]>([]);
-  const groupItemRects = useRef<DOMRect[]>([]);
   // Ref for the groups container div (used by snapshotGroupRects)
   const groupsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -144,95 +161,141 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
   const sheetFocusSentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Snapshot all category item rects when drag begins (works for both grouped and flat layouts)
-  const snapshotRects = useCallback(() => {
-    const container = catContainerRef.current ?? listRef.current;
-    if (!container) return;
-    const items = container.querySelectorAll<HTMLElement>("[data-cat-idx]");
-    // itemRects is indexed by flat category index, not visual order
-    const arr: DOMRect[] = new Array(store.categories.length);
-    items.forEach(el => {
-      const idx = Number(el.getAttribute("data-cat-idx"));
-      arr[idx] = el.getBoundingClientRect();
-    });
-    itemRects.current = arr;
-  }, [store.categories.length]);
+  // Stable ref-wrappers so window listeners are registered exactly once and
+  // never need to be removed/re-added when store changes mid-drag.
+  const storeRef = useRef(store);
+  useEffect(() => { storeRef.current = store; }, [store]);
 
-  // Snapshot all group item rects when drag begins
-  const snapshotGroupRects = useCallback(() => {
-    if (!groupsContainerRef.current) return;
-    const items = groupsContainerRef.current.querySelectorAll<HTMLElement>("[data-group-idx]");
-    groupItemRects.current = Array.from(items).map((el) => el.getBoundingClientRect());
-  }, []);
+  // ── Category drag handlers (live-row model) ──
 
   const handleDragPointerDown = useCallback(
     (e: React.PointerEvent, visualIdx: number, groupID: string | null = null) => {
       if (e.button !== 0) return;
       e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
 
-      const scopedCategories = groupID
+      const scopedCategories = groupID !== null
         ? store.categories.filter(c => c.groupID === groupID)
         : store.categories.filter(c => !c.groupID);
 
+      // Snapshot heights from the live DOM rows in this scope
+      const container = catContainerRef.current ?? listRef.current;
+      const heights: number[] = [];
+      if (container) {
+        scopedCategories.forEach(cat => {
+          const flatIdx = store.categories.indexOf(cat);
+          const el = container.querySelector<HTMLElement>(`[data-cat-idx="${flatIdx}"]`);
+          heights.push(el ? el.getBoundingClientRect().height : 44);
+        });
+      } else {
+        scopedCategories.forEach(() => heights.push(44));
+      }
+
       const scopedItem = scopedCategories[visualIdx];
       const flatIdx = store.categories.indexOf(scopedItem);
+      const liveOrder = scopedCategories.map(c => c.id);
 
-      snapshotRects();
-      const rect = itemRects.current[flatIdx];
-      if (rect) {
-        ghostHeightRef.current = rect.height;
-        dragOffsetY.current = e.clientY - rect.top;
-        setGhostY(rect.top);
-      }
-      dragIndexRef.current = flatIdx;
-      overIndexRef.current = flatIdx;
-      setDragIndex(flatIdx);
-      setOverIndex(flatIdx);
+      catDragPointerStartY.current = e.clientY;
+      catRowHeightsRef.current = heights;
+      dragContext.current = { groupID };
+
+      const newState = {
+        flatIdx,
+        groupID,
+        translateY: 0,
+        liveOrder,
+        originalOrder: [...liveOrder],
+        rowHeight: heights[visualIdx] ?? 44,
+      };
+      catDragStateRef.current = newState;
+      setCatDragState(newState);
     },
-    [snapshotRects, store.categories],
+    [store.categories],
   );
 
-  // Stable window handlers — read from refs, never from closed-over state
   const handleDragPointerMove = useCallback((e: PointerEvent) => {
-    if (dragIndexRef.current === null) return;
+    const ds = catDragStateRef.current;
+    if (!ds) return;
     if (e.pointerType === "mouse" && e.buttons === 0) return;
 
-    const newGhostY = e.clientY - dragOffsetY.current;
-    setGhostY(newGhostY);
+    const dy = e.clientY - catDragPointerStartY.current;
 
-    const cats = store.categories;
-    const scopedCategories = dragContext.current.groupID !== null
-      ? cats.filter(c => c.groupID === dragContext.current.groupID)
-      : cats.filter(c => !c.groupID);
+    const scopedCount = ds.liveOrder.length;
+    const draggedScopedIdx = ds.liveOrder.indexOf(
+      storeRef.current.categories[ds.flatIdx]?.id ?? "",
+    );
 
-    const scopedRects = scopedCategories.map(cat => itemRects.current[cats.indexOf(cat)]);
-
-    let newScopedOverIdx = scopedRects.length - 1;
-    const ghostMid = newGhostY + ghostHeightRef.current / 2;
-    for (let i = 0; i < scopedRects.length; i++) {
-      if (!scopedRects[i]) continue;
-      if (ghostMid < scopedRects[i].top + scopedRects[i].height / 2) { newScopedOverIdx = i; break; }
+    const GAP = 4;
+    const offsets: number[] = [];
+    let acc = 0;
+    for (let i = 0; i < scopedCount; i++) {
+      offsets.push(acc);
+      acc += (catRowHeightsRef.current[i] ?? ds.rowHeight) + GAP;
     }
 
-    const newOverFlatIdx = cats.indexOf(scopedCategories[newScopedOverIdx]);
-    overIndexRef.current = newOverFlatIdx;
-    setOverIndex(newOverFlatIdx);
-  }, [store.categories]);
+    const draggedOriginalOffset = offsets[draggedScopedIdx] ?? 0;
+    const draggedCurrentTop = draggedOriginalOffset + dy;
+    const draggedMid = draggedCurrentTop + ds.rowHeight / 2;
+
+    let newScopedIdx = draggedScopedIdx;
+    for (let i = 0; i < scopedCount; i++) {
+      if (i === draggedScopedIdx) continue;
+      const slotMid = offsets[i] + (catRowHeightsRef.current[i] ?? ds.rowHeight) / 2;
+      if (i < draggedScopedIdx && draggedMid < slotMid) {
+        newScopedIdx = i;
+        break;
+      }
+      if (i > draggedScopedIdx && draggedMid > slotMid) {
+        newScopedIdx = i;
+      }
+    }
+
+    let newLiveOrder = ds.liveOrder;
+    if (newScopedIdx !== draggedScopedIdx) {
+      newLiveOrder = [...ds.liveOrder];
+      const [item] = newLiveOrder.splice(draggedScopedIdx, 1);
+      newLiveOrder.splice(newScopedIdx, 0, item);
+    }
+
+    const next = { ...ds, translateY: dy, liveOrder: newLiveOrder };
+    catDragStateRef.current = next;
+    setCatDragState(next);
+  }, []);
 
   const handleDragPointerUp = useCallback(() => {
-    const di = dragIndexRef.current;
-    const oi = overIndexRef.current;
-    dragIndexRef.current = null;
-    overIndexRef.current = null;
+    const ds = catDragStateRef.current;
+    catDragStateRef.current = null;
     dragContext.current = { groupID: null };
-    if (di !== null && oi !== null && di !== oi) {
-      store.moveCategories(di, oi);
-    }
-    setDragIndex(null);
-    setOverIndex(null);
-  }, [store]);
+    setCatDragState(null);
+    if (!ds) return;
 
-  // Attach category drag handlers to window once on mount — stable refs mean no stale closure
+    // No-op if order didn't change
+    if (ds.liveOrder.join() === ds.originalOrder.join()) return;
+
+    const store = storeRef.current;
+    const draggedID = store.categories[ds.flatIdx]?.id;
+    if (!draggedID) return;
+
+    const originalFlatIdx = ds.flatIdx;
+
+    const scopedCategories = ds.groupID !== null
+      ? store.categories.filter(c => c.groupID === ds.groupID)
+      : store.categories.filter(c => !c.groupID);
+
+    // Build the new full flat ID order by substituting liveOrder into the scoped slots
+    const newFullOrder = store.categories.map(c => c.id);
+    scopedCategories.forEach((cat, scopedPos) => {
+      const flatIdx = store.categories.indexOf(cat);
+      newFullOrder[flatIdx] = ds.liveOrder[scopedPos];
+    });
+
+    const finalFlatIdx = newFullOrder.indexOf(draggedID);
+    if (finalFlatIdx !== -1 && finalFlatIdx !== originalFlatIdx) {
+      store.moveCategories(originalFlatIdx, finalFlatIdx);
+    }
+  }, []);
+
+  // Attach category drag handlers to window once on mount
   useEffect(() => {
     window.addEventListener("pointermove", handleDragPointerMove);
     window.addEventListener("pointerup", handleDragPointerUp);
@@ -244,31 +307,49 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
     };
   }, [handleDragPointerMove, handleDragPointerUp]);
 
+  // ── Group drag handlers (live-row model) ──
+
   const handleGroupDragPointerDown = useCallback(
     (e: React.PointerEvent, idx: number) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      snapshotGroupRects();
-      const rect = groupItemRects.current[idx];
-      if (rect) {
-        groupGhostHeightRef.current = rect.height;
-        groupDragOffsetY.current = e.clientY - rect.top;
-        setGroupGhostY(rect.top);
+      e.currentTarget.setPointerCapture(e.pointerId);
+
+      // Snapshot heights of all group rows
+      const heights: number[] = [];
+      if (groupsContainerRef.current) {
+        store.groups.forEach((_, i) => {
+          const el = groupsContainerRef.current!.querySelector<HTMLElement>(`[data-group-idx="${i}"]`);
+          heights.push(el ? el.getBoundingClientRect().height : 48);
+        });
+      } else {
+        store.groups.forEach(() => heights.push(48));
       }
-      groupDragIndexRef.current = idx;
-      groupOverIndexRef.current = idx;
+
+      groupDragPointerStartY.current = e.clientY;
+      groupRowHeightsRef.current = heights;
       hasGroupDraggedRef.current = false;
-      setGroupDragIndex(idx);
-      setGroupOverIndex(idx);
+
+      const liveOrder = store.groups.map(g => g.id);
+      const newState = {
+        idx,
+        translateY: 0,
+        liveOrder,
+        originalOrder: [...liveOrder],
+        rowHeight: heights[idx] ?? 48,
+      };
+      groupDragStateRef.current = newState;
+      setGroupDragState(newState);
     },
-    [snapshotGroupRects],
+    [store.groups],
   );
 
   const handleGroupDragPointerMove = useCallback((e: PointerEvent) => {
-    if (groupDragIndexRef.current === null) return;
+    const ds = groupDragStateRef.current;
+    if (!ds) return;
     if (e.pointerType === "mouse" && e.buttons === 0) return;
 
-    // Collapse all groups on the first move event after drag starts
+    // Collapse groups on first move
     if (!hasGroupDraggedRef.current) {
       hasGroupDraggedRef.current = true;
       setExpandedGroupIDs(prev => {
@@ -277,37 +358,67 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
       });
     }
 
-    const newGhostY = e.clientY - groupDragOffsetY.current;
-    setGroupGhostY(newGhostY);
+    const dy = e.clientY - groupDragPointerStartY.current;
+    const count = ds.liveOrder.length;
+    const draggedIdx = ds.liveOrder.indexOf(storeRef.current.groups[ds.idx]?.id ?? "");
 
-    const rects = groupItemRects.current;
-    let newOverIdx = rects.length - 1;
-    const ghostMid = newGhostY + groupGhostHeightRef.current / 2;
-    for (let i = 0; i < rects.length; i++) {
-      if (!rects[i]) continue;
-      if (ghostMid < rects[i].top + rects[i].height / 2) { newOverIdx = i; break; }
+    const GAP = 8;
+    const offsets: number[] = [];
+    let acc = 0;
+    for (let i = 0; i < count; i++) {
+      offsets.push(acc);
+      acc += (groupRowHeightsRef.current[i] ?? ds.rowHeight) + GAP;
     }
-    groupOverIndexRef.current = newOverIdx;
-    setGroupOverIndex(newOverIdx);
+
+    const draggedOriginalOffset = offsets[draggedIdx] ?? 0;
+    const draggedCurrentTop = draggedOriginalOffset + dy;
+    const draggedMid = draggedCurrentTop + ds.rowHeight / 2;
+
+    let newIdx = draggedIdx;
+    for (let i = 0; i < count; i++) {
+      if (i === draggedIdx) continue;
+      const slotMid = offsets[i] + (groupRowHeightsRef.current[i] ?? ds.rowHeight) / 2;
+      if (i < draggedIdx && draggedMid < slotMid) {
+        newIdx = i;
+        break;
+      }
+      if (i > draggedIdx && draggedMid > slotMid) {
+        newIdx = i;
+      }
+    }
+
+    let newLiveOrder = ds.liveOrder;
+    if (newIdx !== draggedIdx) {
+      newLiveOrder = [...ds.liveOrder];
+      const [item] = newLiveOrder.splice(draggedIdx, 1);
+      newLiveOrder.splice(newIdx, 0, item);
+    }
+
+    const next = { ...ds, translateY: dy, liveOrder: newLiveOrder };
+    groupDragStateRef.current = next;
+    setGroupDragState(next);
   }, []);
 
   const handleGroupDragPointerUp = useCallback(() => {
-    const di = groupDragIndexRef.current;
-    const oi = groupOverIndexRef.current;
+    const ds = groupDragStateRef.current;
     const didDrag = hasGroupDraggedRef.current;
-    groupDragIndexRef.current = null;
-    groupOverIndexRef.current = null;
+    groupDragStateRef.current = null;
     hasGroupDraggedRef.current = false;
-    if (di !== null && oi !== null && di !== oi) {
-      store.moveGroups(di, oi);
-    }
-    setGroupDragIndex(null);
-    setGroupOverIndex(null);
-    // Only restore saved expanded state if a real drag occurred (groups were collapsed)
+    setGroupDragState(null);
+
     if (didDrag) {
       setExpandedGroupIDs(savedExpandedGroupIDsRef.current);
     }
-  }, [store]);
+
+    if (!ds || ds.liveOrder.join() === ds.originalOrder.join()) return;
+
+    const store = storeRef.current;
+    const originalIdx = ds.originalOrder.indexOf(store.groups[ds.idx]?.id ?? "");
+    const finalIdx = ds.liveOrder.indexOf(store.groups[ds.idx]?.id ?? "");
+    if (originalIdx !== -1 && finalIdx !== -1 && originalIdx !== finalIdx) {
+      store.moveGroups(originalIdx, finalIdx);
+    }
+  }, []);
 
   // Attach group drag handlers to window once on mount
   useEffect(() => {
@@ -496,24 +607,55 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                         ref={groupsContainerRef}
                         className="flex flex-col gap-2"
                       >
-                        {store.groups.map((group, groupVisualIdx) => {
-                          const isExpanded = expandedGroupIDs.has(group.id);
-                          const groupCategories = store.categories.filter(c => c.groupID === group.id);
-                          const isGroupDragging = groupVisualIdx === groupDragIndex;
-                          const isLastGroup = groupVisualIdx === store.groups.length - 1;
+                        {(() => {
+                          // Use liveOrder for rendering when a group drag is active
+                          const orderedGroups = groupDragState
+                            ? groupDragState.liveOrder.map(id => store.groups.find(g => g.id === id)!).filter(Boolean)
+                            : store.groups;
+                          const draggingGroupID = groupDragState
+                            ? store.groups[groupDragState.idx]?.id
+                            : null;
 
-                          return (
-                            <Fragment key={group.id}>
-                              {!isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
-                                <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                              )}
+                          return orderedGroups.map((group, groupVisualIdx) => {
+                            const isExpanded = expandedGroupIDs.has(group.id);
+                            const groupCategories = store.categories.filter(c => c.groupID === group.id);
+                            const isGroupDragging = group.id === draggingGroupID;
+
+                            // Compute translateY for this group row
+                            let groupTranslateY = 0;
+                            if (groupDragState) {
+                              if (isGroupDragging) {
+                                groupTranslateY = groupDragState.translateY;
+                              } else {
+                                // Shift non-dragged rows to fill the gap
+                                const origIdx = groupDragState.originalOrder.indexOf(group.id);
+                                const liveIdx = groupDragState.liveOrder.indexOf(group.id);
+                                const draggedOrigIdx = groupDragState.originalOrder.indexOf(draggingGroupID ?? "");
+                                if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
+                                  // Row shifted — apply offset equal to the dragged row's height + gap
+                                  const dir = liveIdx > origIdx ? -1 : 1;
+                                  const h = groupRowHeightsRef.current[draggedOrigIdx] ?? groupDragState.rowHeight;
+                                  groupTranslateY = dir * (h + 8);
+                                }
+                              }
+                            }
+
+                            return (
                               <div
+                                key={group.id}
                                 data-group-idx={groupVisualIdx}
                                 className="rounded-xl overflow-hidden"
                                 style={{
-                                  opacity: isGroupDragging ? 0 : 1,
-                                  transition: "opacity 120ms ease",
-                                  boxShadow: `inset 0 0 0 1.5px rgba(var(--color-brand-deep-green-rgb), 0.15)`,
+                                  boxShadow: isGroupDragging
+                                    ? `0 8px 24px rgba(0,0,0,0.22), inset 0 0 0 1.5px rgba(var(--color-brand-deep-green-rgb), 0.15)`
+                                    : `inset 0 0 0 1.5px rgba(var(--color-brand-deep-green-rgb), 0.15)`,
+                                  transform: `translateY(${groupTranslateY}px)`,
+                                  transition: isGroupDragging
+                                    ? "box-shadow 120ms ease"
+                                    : "transform 180ms cubic-bezier(0.2, 0, 0, 1), box-shadow 120ms ease",
+                                  zIndex: isGroupDragging ? 10 : undefined,
+                                  position: "relative",
+                                  scale: isGroupDragging ? "1.01" : "1",
                                 }}
                               >
                                 {/* Group header */}
@@ -632,21 +774,53 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                                       style={{ backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.35)` }} />
 
                                     <div className="flex flex-col pl-8 pr-2 py-1.5 gap-0.5">
-                                      {groupCategories.map((category, visualIdx) => {
-                                        const flatIdx = store.categories.indexOf(category);
-                                        const isDragging = dragIndex === flatIdx;
-                                        const isLast = visualIdx === groupCategories.length - 1;
-                                        return (
-                                          <Fragment key={category.id}>
-                                            {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                              <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                            )}
+                                      {(() => {
+                                        // Render in liveOrder if this group is being dragged within
+                                        const scopedDS = catDragState?.groupID === group.id ? catDragState : null;
+                                        const draggingCatID = scopedDS
+                                          ? store.categories[scopedDS.flatIdx]?.id
+                                          : null;
+                                        const orderedCats = scopedDS
+                                          ? scopedDS.liveOrder.map(id => store.categories.find(c => c.id === id)!).filter(Boolean)
+                                          : groupCategories;
+
+                                        return orderedCats.map((category, visualIdx) => {
+                                          const flatIdx = store.categories.indexOf(category);
+                                          const isDragging = category.id === draggingCatID;
+
+                                          let catTranslateY = 0;
+                                          if (scopedDS) {
+                                            if (isDragging) {
+                                              catTranslateY = scopedDS.translateY;
+                                            } else {
+                                              const origIdx = scopedDS.originalOrder.indexOf(category.id);
+                                              const liveIdx = scopedDS.liveOrder.indexOf(category.id);
+                                              if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
+                                                const dir = liveIdx > origIdx ? -1 : 1;
+                                                catTranslateY = dir * (scopedDS.rowHeight + 4);
+                                              }
+                                            }
+                                          }
+
+                                          return (
                                             <div
+                                              key={category.id}
                                               data-cat-idx={flatIdx}
                                               className="flex items-center gap-2.5 px-2 py-2 rounded-lg"
                                               style={{
-                                                opacity: isDragging ? 0 : 1,
-                                                transition: "opacity 120ms ease",
+                                                transform: `translateY(${catTranslateY}px)`,
+                                                transition: isDragging
+                                                  ? "box-shadow 120ms ease"
+                                                  : "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+                                                boxShadow: isDragging
+                                                  ? "0 4px 16px rgba(0,0,0,0.18)"
+                                                  : undefined,
+                                                zIndex: isDragging ? 10 : undefined,
+                                                position: "relative",
+                                                backgroundColor: isDragging
+                                                  ? "var(--color-surface-card)"
+                                                  : undefined,
+                                                scale: isDragging ? "1.02" : "1",
                                               }}
                                             >
                                               {/* Drag handle */}
@@ -700,13 +874,9 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                                                 </svg>
                                               </button>
                                             </div>
-                                            {/* Trailing indicator — shown when dragging to the bottom of this group */}
-                                            {isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                              <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                            )}
-                                          </Fragment>
-                                        );
-                                      })}
+                                          );
+                                        });
+                                      })()}
                                       {groupCategories.length === 0 && (
                                         <p className="text-xs py-2 pl-1" style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>
                                           No categories yet
@@ -716,19 +886,20 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                                   </div>
                                 </div>
                               </div>
-                              {/* Trailing indicator — shown when dragging to the bottom of the group list */}
-                              {isLastGroup && groupDragIndex !== null && groupOverIndex === groupVisualIdx && groupOverIndex !== groupDragIndex && (
-                                <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                              )}
-                            </Fragment>
-                          );
-                        })}
+                            );
+                          });
+                        })()}
                       </div>
 
                       {/* No Group section */}
                       {(() => {
                         const ungrouped = store.categories.filter(c => !c.groupID);
                         if (ungrouped.length === 0) return null;
+                        const scopedDS = catDragState?.groupID === null ? catDragState : null;
+                        const draggingCatID = scopedDS ? store.categories[scopedDS.flatIdx]?.id : null;
+                        const orderedUngrouped = scopedDS
+                          ? scopedDS.liveOrder.map(id => store.categories.find(c => c.id === id)!).filter(Boolean)
+                          : ungrouped;
                         return (
                           <div className="mt-2">
                             {/* Divider */}
@@ -742,95 +913,109 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                             </div>
 
                             <div className="flex flex-col gap-1">
-                              {ungrouped.map((category, visualIdx) => {
+                              {orderedUngrouped.map((category, visualIdx) => {
                                 const flatIdx = store.categories.indexOf(category);
-                                const isDragging = dragIndex === flatIdx;
-                                const isLast = visualIdx === ungrouped.length - 1;
+                                const isDragging = category.id === draggingCatID;
+
+                                let catTranslateY = 0;
+                                if (scopedDS) {
+                                  if (isDragging) {
+                                    catTranslateY = scopedDS.translateY;
+                                  } else {
+                                    const origIdx = scopedDS.originalOrder.indexOf(category.id);
+                                    const liveIdx = scopedDS.liveOrder.indexOf(category.id);
+                                    if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
+                                      const dir = liveIdx > origIdx ? -1 : 1;
+                                      catTranslateY = dir * (scopedDS.rowHeight + 4);
+                                    }
+                                  }
+                                }
+
                                 return (
-                                  <Fragment key={category.id}>
-                                    {!isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                      <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                    )}
+                                  <div
+                                    key={category.id}
+                                    data-cat-idx={flatIdx}
+                                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                                    style={{
+                                      backgroundColor: isDragging
+                                        ? "var(--color-surface-card)"
+                                        : `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
+                                      transform: `translateY(${catTranslateY}px)`,
+                                      transition: isDragging
+                                        ? "box-shadow 120ms ease"
+                                        : "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+                                      boxShadow: isDragging ? "0 4px 16px rgba(0,0,0,0.18)" : undefined,
+                                      zIndex: isDragging ? 10 : undefined,
+                                      position: "relative",
+                                      scale: isDragging ? "1.02" : "1",
+                                    }}
+                                  >
+                                    {/* Drag handle */}
                                     <div
-                                      data-cat-idx={flatIdx}
-                                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                                      className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
+                                      onPointerDown={(e) => handleDragPointerDown(e, visualIdx, null)}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                        style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
+                                        <line x1="4" y1="7" x2="20" y2="7" />
+                                        <line x1="4" y1="12" x2="20" y2="12" />
+                                        <line x1="4" y1="17" x2="20" y2="17" />
+                                      </svg>
+                                    </div>
+
+                                    <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                                      {category.name}
+                                    </span>
+
+                                    {/* Assign chip */}
+                                    <button
+                                      className="flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all active:scale-[0.94]"
                                       style={{
-                                        backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
-                                        opacity: isDragging ? 0 : 1,
-                                        transition: "opacity 120ms ease",
+                                        backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.12)`,
+                                        color: "var(--color-brand-teal)",
+                                      }}
+                                      onClick={() => {
+                                        setSelectedCategoryForGroup({ id: category.id, name: category.name });
+                                        setIsGroupActionSheetOpen(true);
                                       }}
                                     >
-                                      {/* Drag handle */}
-                                      <div
-                                        className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
-                                        onPointerDown={(e) => handleDragPointerDown(e, visualIdx, null)}
-                                      >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                                          style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
-                                          <line x1="4" y1="7" x2="20" y2="7" />
-                                          <line x1="4" y1="12" x2="20" y2="12" />
-                                          <line x1="4" y1="17" x2="20" y2="17" />
-                                        </svg>
-                                      </div>
+                                      + Assign
+                                    </button>
 
-                                      <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                                        {category.name}
-                                      </span>
+                                    <button
+                                      className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
+                                      style={{ opacity: 0.55 }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRenameCategoryName(category.name);
+                                        setCategoryToRename({ id: category.id, name: category.name });
+                                      }}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                        stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                        <path d="m15 5 4 4" />
+                                      </svg>
+                                    </button>
 
-                                      {/* Assign chip */}
-                                      <button
-                                        className="flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all active:scale-[0.94]"
-                                        style={{
-                                          backgroundColor: `rgba(var(--color-brand-teal-rgb), 0.12)`,
-                                          color: "var(--color-brand-teal)",
-                                        }}
-                                        onClick={() => {
-                                          setSelectedCategoryForGroup({ id: category.id, name: category.name });
-                                          setIsGroupActionSheetOpen(true);
-                                        }}
-                                      >
-                                        + Assign
-                                      </button>
-
-                                      <button
-                                        className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
-                                        style={{ opacity: 0.55 }}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setRenameCategoryName(category.name);
-                                          setCategoryToRename({ id: category.id, name: category.name });
-                                        }}
-                                      >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                          stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                          <path d="m15 5 4 4" />
-                                        </svg>
-                                      </button>
-
-                                      <button
-                                        className="p-1.5 rounded-lg transition-all active:scale-[0.9] disabled:opacity-20"
-                                        style={{ opacity: 0.55 }}
-                                        disabled={!store.canDeleteCategories}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setCategoryToDelete({ id: category.id, name: category.name });
-                                        }}
-                                      >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                          stroke="var(--color-danger)"
-                                          strokeWidth="2"
-                                          strokeLinecap="round" strokeLinejoin="round">
-                                          <polyline points="3 6 5 6 21 6" />
-                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                    {/* Trailing indicator — shown when dragging to the bottom of the ungrouped section */}
-                                    {isLast && dragIndex !== null && overIndex === flatIdx && overIndex !== dragIndex && (
-                                      <div style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0" }} />
-                                    )}
-                                  </Fragment>
+                                    <button
+                                      className="p-1.5 rounded-lg transition-all active:scale-[0.9] disabled:opacity-20"
+                                      style={{ opacity: 0.55 }}
+                                      disabled={!store.canDeleteCategories}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCategoryToDelete({ id: category.id, name: category.name });
+                                      }}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                        stroke="var(--color-danger)"
+                                        strokeWidth="2"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -847,26 +1032,53 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                     ref={listRef}
                     className="flex flex-col gap-1.5"
                   >
-                    {store.categories.map((category, idx) => {
-                      const isDragging = idx === dragIndex;
-                      const isLast = idx === store.categories.length - 1;
-                      return (
-                        <Fragment key={category.id}>
-                          {!isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
-                            <li style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
-                          )}
+                    {(() => {
+                      const scopedDS = catDragState?.groupID === null ? catDragState : null;
+                      const draggingCatID = scopedDS ? store.categories[scopedDS.flatIdx]?.id : null;
+                      const orderedCats = scopedDS
+                        ? scopedDS.liveOrder.map(id => store.categories.find(c => c.id === id)!).filter(Boolean)
+                        : store.categories;
+
+                      return orderedCats.map((category, idx) => {
+                        const flatIdx = store.categories.indexOf(category);
+                        const isDragging = category.id === draggingCatID;
+
+                        let catTranslateY = 0;
+                        if (scopedDS) {
+                          if (isDragging) {
+                            catTranslateY = scopedDS.translateY;
+                          } else {
+                            const origIdx = scopedDS.originalOrder.indexOf(category.id);
+                            const liveIdx = scopedDS.liveOrder.indexOf(category.id);
+                            if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
+                              const dir = liveIdx > origIdx ? -1 : 1;
+                              catTranslateY = dir * (scopedDS.rowHeight + 4);
+                            }
+                          }
+                        }
+
+                        return (
                           <li
-                            data-cat-idx={idx}
+                            key={category.id}
+                            data-cat-idx={flatIdx}
                             className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
                             style={{
-                              backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
-                              opacity: isDragging ? 0 : 1,
-                              transition: "opacity 120ms ease",
+                              backgroundColor: isDragging
+                                ? "var(--color-surface-card)"
+                                : `rgba(var(--color-brand-deep-green-rgb), 0.07)`,
+                              transform: `translateY(${catTranslateY}px)`,
+                              transition: isDragging
+                                ? "box-shadow 120ms ease"
+                                : "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+                              boxShadow: isDragging ? "0 4px 16px rgba(0,0,0,0.18)" : undefined,
+                              zIndex: isDragging ? 10 : undefined,
+                              position: "relative",
+                              scale: isDragging ? "1.02" : "1",
                             }}
                           >
                             <div
                               className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
-                              onPointerDown={(e) => handleDragPointerDown(e, idx)}
+                              onPointerDown={(e) => handleDragPointerDown(e, idx, null)}
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                                 style={{ color: "var(--color-brand-teal)", opacity: 0.45 }}>
@@ -914,13 +1126,9 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
                               </svg>
                             </button>
                           </li>
-                          {/* Trailing indicator — shown when dragging to the bottom of the flat list */}
-                          {isLast && dragIndex !== null && overIndex === idx && overIndex !== dragIndex && (
-                            <li aria-hidden style={{ height: 2, borderRadius: 2, backgroundColor: "var(--color-brand-green)", opacity: 0.85, margin: "1px 0", listStyle: "none" }} />
-                          )}
-                        </Fragment>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </ul>
                 )}
 
@@ -1656,86 +1864,6 @@ const SettingsSheet = ({ isOpen, onOpenChange }: SettingsSheetProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* ── Category drag ghost ── */}
-      {dragIndex !== null && (() => {
-        const dragged = store.categories[dragIndex];
-        if (!dragged) return null;
-        return (
-          <div
-            aria-hidden
-            style={{
-              position: "fixed",
-              top: ghostY,
-              left: 16,
-              right: 16,
-              height: ghostHeightRef.current,
-              pointerEvents: "none",
-              zIndex: 9999,
-              borderRadius: 12,
-              backgroundColor: "var(--color-surface-card)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.14)",
-              transform: "scale(1.02)",
-              transformOrigin: "center center",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              paddingLeft: 12,
-              paddingRight: 12,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-              style={{ color: "var(--color-brand-teal)", opacity: 0.6, flexShrink: 0 }}>
-              <line x1="4" y1="7" x2="20" y2="7" />
-              <line x1="4" y1="12" x2="20" y2="12" />
-              <line x1="4" y1="17" x2="20" y2="17" />
-            </svg>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: "var(--color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {dragged.name}
-            </span>
-          </div>
-        );
-      })()}
-
-      {/* ── Group drag ghost ── */}
-      {groupDragIndex !== null && (() => {
-        const dragged = store.groups[groupDragIndex];
-        if (!dragged) return null;
-        return (
-          <div
-            aria-hidden
-            style={{
-              position: "fixed",
-              top: groupGhostY,
-              left: 16,
-              right: 16,
-              height: groupGhostHeightRef.current,
-              pointerEvents: "none",
-              zIndex: 9999,
-              borderRadius: 12,
-              backgroundColor: "var(--color-surface-card)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.14)",
-              transform: "scale(1.02)",
-              transformOrigin: "center center",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              paddingLeft: 12,
-              paddingRight: 12,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-              style={{ color: "var(--color-brand-teal)", opacity: 0.6, flexShrink: 0 }}>
-              <line x1="4" y1="7" x2="20" y2="7" />
-              <line x1="4" y1="12" x2="20" y2="12" />
-              <line x1="4" y1="17" x2="20" y2="17" />
-            </svg>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {dragged.name}
-            </span>
-          </div>
-        );
-      })()}
 
     </>
   );
