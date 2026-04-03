@@ -21,8 +21,8 @@ export interface UseExpandedGroupsReturn {
 /**
  * Owns the expanded/collapsed state for category groups.
  *
- * Automatically adds newly-created groups as expanded and removes
- * stale group IDs when groups are deleted.
+ * Automatically removes stale group IDs when groups are deleted.
+ * New groups start collapsed by default.
  *
  * @param groups - The current groups array from the store.
  */
@@ -33,14 +33,11 @@ export function useExpandedGroups(
     () => new Set(),
   );
 
-  // Sync expandedGroupIDs when groups change (add new, remove stale).
+  // Sync expandedGroupIDs when groups change (remove stale).
   useEffect(() => {
     setExpandedGroupIDs((prev) => {
       const currentGroupIDs = new Set(groups.map((g) => g.id));
       const next = new Set(prev);
-      for (const id of currentGroupIDs) {
-        if (!next.has(id)) next.add(id);
-      }
       for (const id of next) {
         if (!currentGroupIDs.has(id)) next.delete(id);
       }

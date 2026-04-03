@@ -68,7 +68,7 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
             boxShadow: "var(--elevation-sheet)",
           }}
         >
-          <div className="overflow-y-auto max-h-[90dvh]">
+          <div className="flex flex-col overflow-hidden max-h-[90dvh] relative">
             <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
 
             <SheetHeader className="flex flex-row items-center justify-between px-5 pb-3 pt-4">
@@ -92,48 +92,62 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
               </Button>
             </SheetHeader>
 
-            <div className="flex flex-col gap-4 px-4 pb-10 pt-2">
-              <CategoriesGroupsSection
-                categories={store.categories}
-                groups={store.groups}
-                canDeleteCategories={store.canDeleteCategories}
-                catDragState={catDrag.catDragState}
-                catContainerRef={catDrag.catContainerRef}
-                listRef={catDrag.listRef}
-                handleDragPointerDown={catDrag.handleDragPointerDown}
-                groupDragState={groupDrag.groupDragState}
-                groupsContainerRef={groupDrag.groupsContainerRef}
-                handleGroupDragPointerDown={groupDrag.handleGroupDragPointerDown}
-                expandedGroupIDs={groupDrag.expandedGroupIDs}
-                toggleGroup={groupDrag.toggleGroup}
-                onRenameCategory={d.openRenameCategory}
-                onDeleteCategory={d.openDeleteCategory}
-                onRenameGroup={d.openRenameGroup}
-                onDeleteGroup={d.openDeleteGroup}
-                onAssignGroup={d.openGroupAssignment}
-                onOpenAddSheet={d.openAddActionSheet}
-              />
-              <AppearanceSection
-                appearanceMode={settings.appearanceMode}
-                onChangeMode={settings.setAppearanceMode}
-              />
-              <TextSizeSection
-                textSize={settings.textSize}
-                onChangeSize={settings.setTextSize}
-              />
-              <NameSection
-                userName={settings.userName}
-                onChangeName={settings.setUserName}
-              />
-              <SyncSection
-                isSyncEnabled={sync.isSyncEnabled}
-                syncCode={sync.syncCode}
-                syncStatus={sync.syncStatus}
-                onEnableSync={sync.enableSync}
-                onDisableSync={sync.disableSync}
-                onAdoptSyncCode={sync.adoptSyncCode}
-              />
-              <DataSection onReset={d.handleReset} />
+            {/* Gradient fade — blends content scrolling under the sticky header */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-0 right-0 z-10"
+              style={{
+                top: "60px",
+                height: "28px",
+                background:
+                  "linear-gradient(to bottom, var(--color-surface-background) 0%, transparent 100%)",
+              }}
+            />
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-4 px-4 pb-10 pt-2">
+                <CategoriesGroupsSection
+                  categories={store.categories}
+                  groups={store.groups}
+                  canDeleteCategories={store.canDeleteCategories}
+                  catDragState={catDrag.catDragState}
+                  catContainerRef={catDrag.catContainerRef}
+                  listRef={catDrag.listRef}
+                  handleDragPointerDown={catDrag.handleDragPointerDown}
+                  groupDragState={groupDrag.groupDragState}
+                  groupsContainerRef={groupDrag.groupsContainerRef}
+                  handleGroupDragPointerDown={groupDrag.handleGroupDragPointerDown}
+                  expandedGroupIDs={groupDrag.expandedGroupIDs}
+                  toggleGroup={groupDrag.toggleGroup}
+                  onRenameCategory={d.openRenameCategory}
+                  onDeleteCategory={d.openDeleteCategory}
+                  onRenameGroup={d.openRenameGroup}
+                  onDeleteGroup={d.openDeleteGroup}
+                  onAssignGroup={d.openGroupAssignment}
+                  onOpenAddSheet={d.openAddActionSheet}
+                />
+                <AppearanceSection
+                  appearanceMode={settings.appearanceMode}
+                  onChangeMode={settings.setAppearanceMode}
+                />
+                <TextSizeSection
+                  textSize={settings.textSize}
+                  onChangeSize={settings.setTextSize}
+                />
+                <NameSection
+                  userName={settings.userName}
+                  onChangeName={settings.setUserName}
+                />
+                <SyncSection
+                  isSyncEnabled={sync.isSyncEnabled}
+                  syncCode={sync.syncCode}
+                  syncStatus={sync.syncStatus}
+                  onEnableSync={sync.enableSync}
+                  onDisableSync={sync.disableSync}
+                  onAdoptSyncCode={sync.adoptSyncCode}
+                />
+                <DataSection onReset={d.handleReset} />
+              </div>
             </div>
           </div>
 
