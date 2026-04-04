@@ -50,10 +50,10 @@ export function getMobileChromeSteps(isIos: boolean): InstallStep[] {
   return [
     isIos
       ? {
-          iconKey: "menuDotsH" as const,
-          title: "Tap the \u22EF menu button",
-          subtitle: "Bottom-right corner of Chrome",
-          iconLabel: "Menu",
+          iconKey: "share" as const,
+          title: "Tap the Share button",
+          subtitle: "Top-right corner of Chrome's toolbar",
+          iconLabel: "Share",
         }
       : {
           iconKey: "menuDots" as const,
@@ -62,10 +62,12 @@ export function getMobileChromeSteps(isIos: boolean): InstallStep[] {
           iconLabel: "Menu",
         },
     {
-      iconKey: "download",
-      title: 'Choose "Add to Home screen"',
-      subtitle: 'May also appear as "Install app"',
-      iconLabel: "Install",
+      iconKey: isIos ? ("plusSquare" as const) : ("download" as const),
+      title: 'Choose "Add to Home Screen"',
+      subtitle: isIos
+        ? "Scroll down in the share sheet to find it"
+        : 'May also appear as "Install app"',
+      iconLabel: isIos ? "Add to Home Screen" : "Install",
     },
     {
       iconKey: "plusSquare",
