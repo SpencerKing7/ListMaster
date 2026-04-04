@@ -52,7 +52,7 @@ export function OnboardingInstallScreen(): JSX.Element | null {
 
       {/* Header */}
       <div
-        className="flex flex-col items-center gap-2 px-8"
+        className="flex flex-col items-center gap-2 px-8 relative"
         style={{
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 32px)",
           opacity: isEntered ? 1 : 0,
@@ -61,6 +61,21 @@ export function OnboardingInstallScreen(): JSX.Element | null {
             "opacity 480ms cubic-bezier(0,0,0.2,1), transform 480ms cubic-bezier(0,0,0.2,1)",
         }}
       >
+        {/* Skip — top-right */}
+        <button
+          type="button"
+          className="fixed text-sm font-semibold px-3 py-1.5 rounded-full active:scale-[0.94] transition-transform duration-100"
+          style={{
+            top: "calc(env(safe-area-inset-top, 0px) + 16px)",
+            right: "24px",
+            color: "var(--color-brand-green)",
+            backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)",
+            touchAction: "manipulation",
+          }}
+          onClick={() => navigate("/welcome")}
+        >
+          Skip
+        </button>
         {/* Download/install icon */}
         <svg
           width="40"
@@ -165,25 +180,6 @@ export function OnboardingInstallScreen(): JSX.Element | null {
       </p>
 
       <div className="flex-1 min-h-4" />
-
-      {/* Buttons */}
-      <div
-        className="px-8 flex flex-col gap-3 pb-8"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
-      >
-        <button
-          type="button"
-          className="w-full h-12 rounded-2xl text-sm font-medium press-scale"
-          style={{
-            color: "var(--color-text-secondary)",
-            backgroundColor: "transparent",
-            touchAction: "manipulation",
-          }}
-          onClick={() => navigate("/welcome")}
-        >
-          Skip for Now
-        </button>
-      </div>
     </div>
   );
 }

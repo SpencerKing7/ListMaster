@@ -6,11 +6,14 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { BottomBar } from "@/components/BottomBar";
 import { CategoryPanel } from "@/components/CategoryPanel";
 import { SettingsSheet } from "./SettingsSheet";
+import { InstallToast } from "@/components/InstallToast";
+import { InstallSheet } from "@/components/InstallSheet";
 
 export function MainScreen(): JSX.Element {
   const store = useCategoriesStore();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isInstallSheetOpen, setIsInstallSheetOpen] = useState(false);
 
   // Reset scroll position on mount — clears any residual scroll offset left
   // from a previous screen (e.g. onboarding with keyboard open).
@@ -79,6 +82,15 @@ export function MainScreen(): JSX.Element {
         <SettingsSheet
           isOpen={isSettingsOpen}
           onOpenChange={setIsSettingsOpen}
+        />
+
+        <InstallToast
+          onOpenInstallSheet={() => setIsInstallSheetOpen(true)}
+          isSuppressed={isSettingsOpen || isInstallSheetOpen}
+        />
+        <InstallSheet
+          isOpen={isInstallSheetOpen}
+          onOpenChange={setIsInstallSheetOpen}
         />
       </div>
     </>

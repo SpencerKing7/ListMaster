@@ -8,6 +8,7 @@ import {
 } from "react";
 import { PersistenceService } from "@/services/persistenceService";
 import { SettingsService } from "@/services/settingsService";
+import { InstallPromptService } from "@/services/installPromptService";
 import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
 import type { TextSize } from "@/models/types";
 
@@ -97,6 +98,7 @@ export function SettingsProvider({
   function resetToNewUser() {
     PersistenceService.clear();
     SettingsService.clearAll();
+    InstallPromptService.clearAll();
     setUserNameState("");
     setHasCompletedOnboarding(false);
     setAppearanceModeState("system");
