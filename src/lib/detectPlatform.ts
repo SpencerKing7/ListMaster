@@ -18,6 +18,8 @@ export interface PlatformDetection {
   deviceMode: DeviceMode;
   mobileBrowser: MobileBrowser;
   desktopBrowser: DesktopBrowser;
+  /** Whether the device is running iOS / iPadOS. */
+  isIos: boolean;
 }
 
 // MARK: - Detection
@@ -28,11 +30,12 @@ export function detectPlatform(): PlatformDetection {
 
   const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(ua);
   const deviceMode: DeviceMode = isMobile ? "mobile" : "desktop";
+  const isIos = /iPhone|iPad|iPod/i.test(ua);
 
   const mobileBrowser = detectMobileBrowser(ua);
   const desktopBrowser = detectDesktopBrowser(ua);
 
-  return { deviceMode, mobileBrowser, desktopBrowser };
+  return { deviceMode, mobileBrowser, desktopBrowser, isIos };
 }
 
 /** Determines the mobile browser from the UA string. */

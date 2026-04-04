@@ -152,6 +152,7 @@ export function OnboardingInstallScreen(): JSX.Element | null {
           deviceMode={deviceMode}
           initialMobileBrowser={platform.mobileBrowser}
           initialDesktopBrowser={platform.desktopBrowser}
+          isIos={platform.isIos}
         />
       </div>
 

@@ -6,7 +6,13 @@
 /** A single install instruction step. */
 export interface InstallStep {
   /** Key referencing an icon in InstallIcons. */
-  iconKey: "share" | "plusSquare" | "menuDots" | "download" | "globe";
+  iconKey:
+    | "share"
+    | "plusSquare"
+    | "menuDots"
+    | "menuDotsH"
+    | "download"
+    | "globe";
   title: string;
   subtitle: string;
   /** Short label displayed below the reference icon. */
@@ -39,15 +45,22 @@ export function getMobileSafariSteps(): InstallStep[] {
   ];
 }
 
-/** Chrome on Android install steps. */
-export function getMobileChromeSteps(): InstallStep[] {
+/** Chrome mobile install steps — adapts icon/copy for iOS vs Android. */
+export function getMobileChromeSteps(isIos: boolean): InstallStep[] {
   return [
-    {
-      iconKey: "menuDots",
-      title: "Tap the \u22EE menu button",
-      subtitle: "Top-right corner of Chrome",
-      iconLabel: "Menu",
-    },
+    isIos
+      ? {
+          iconKey: "menuDotsH" as const,
+          title: "Tap the \u22EF menu button",
+          subtitle: "Bottom-right corner of Chrome",
+          iconLabel: "Menu",
+        }
+      : {
+          iconKey: "menuDots" as const,
+          title: "Tap the \u22EE menu button",
+          subtitle: "Top-right corner of Chrome",
+          iconLabel: "Menu",
+        },
     {
       iconKey: "download",
       title: 'Choose "Add to Home screen"',

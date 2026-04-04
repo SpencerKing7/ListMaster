@@ -26,6 +26,8 @@ interface InstallInstructionsProps {
   initialMobileBrowser?: MobileBrowser;
   /** Detected desktop browser to pre-select. Defaults to "chrome". */
   initialDesktopBrowser?: DesktopBrowser;
+  /** Whether the device is iOS — adapts Chrome icon/copy. */
+  isIos?: boolean;
 }
 
 // MARK: - Platform toggle
@@ -91,6 +93,7 @@ export function InstallInstructions({
   deviceMode,
   initialMobileBrowser = "safari",
   initialDesktopBrowser = "chrome",
+  isIos = false,
 }: InstallInstructionsProps): JSX.Element {
   const [mobilePlatform, setMobilePlatform] = useState<MobileBrowser>(initialMobileBrowser);
   const [desktopPlatform, setDesktopPlatform] = useState<DesktopBrowser>(initialDesktopBrowser);
@@ -100,7 +103,7 @@ export function InstallInstructions({
       mobilePlatform === "safari"
         ? getMobileSafariSteps()
         : mobilePlatform === "chrome"
-          ? getMobileChromeSteps()
+          ? getMobileChromeSteps(isIos)
           : getMobileFirefoxSteps();
     return (
       <div className="flex flex-col gap-3 px-8 mt-4">

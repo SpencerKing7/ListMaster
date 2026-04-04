@@ -38,6 +38,17 @@ function MenuDotsIcon(): JSX.Element {
   );
 }
 
+/** Three-dot horizontal menu icon (Chrome iOS / Edge). */
+function MenuDotsHIcon(): JSX.Element {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </svg>
+  );
+}
+
 /** Download icon for desktop install. */
 function DownloadIcon(): JSX.Element {
   return (
@@ -66,6 +77,7 @@ const iconMap: Record<InstallStep["iconKey"], () => JSX.Element> = {
   share: ShareIcon,
   plusSquare: PlusSquareIcon,
   menuDots: MenuDotsIcon,
+  menuDotsH: MenuDotsHIcon,
   download: DownloadIcon,
   globe: GlobeIcon,
 };
