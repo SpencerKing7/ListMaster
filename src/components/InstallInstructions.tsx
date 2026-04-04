@@ -16,13 +16,16 @@ import {
 } from "@/lib/installStepsDesktop";
 import { InstallStepper } from "@/components/InstallStepper";
 
-// MARK: - Types
+import type { MobileBrowser, DesktopBrowser } from "@/lib/detectPlatform";
 
-type MobilePlatform = "safari" | "chrome" | "firefox";
-type DesktopPlatform = "chrome" | "edge" | "safari";
+// MARK: - Types
 
 interface InstallInstructionsProps {
   deviceMode: "mobile" | "desktop";
+  /** Detected mobile browser to pre-select. Defaults to "safari". */
+  initialMobileBrowser?: MobileBrowser;
+  /** Detected desktop browser to pre-select. Defaults to "chrome". */
+  initialDesktopBrowser?: DesktopBrowser;
 }
 
 // MARK: - Platform toggle
@@ -86,9 +89,11 @@ function StepperLabel(): JSX.Element {
 /** Renders platform-toggled install instructions for mobile or desktop. */
 export function InstallInstructions({
   deviceMode,
+  initialMobileBrowser = "safari",
+  initialDesktopBrowser = "chrome",
 }: InstallInstructionsProps): JSX.Element {
-  const [mobilePlatform, setMobilePlatform] = useState<MobilePlatform>("safari");
-  const [desktopPlatform, setDesktopPlatform] = useState<DesktopPlatform>("chrome");
+  const [mobilePlatform, setMobilePlatform] = useState<MobileBrowser>(initialMobileBrowser);
+  const [desktopPlatform, setDesktopPlatform] = useState<DesktopBrowser>(initialDesktopBrowser);
 
   if (deviceMode === "mobile") {
     const steps =

@@ -1,17 +1,12 @@
 // src/screens/OnboardingInstallScreen.tsx
 // First step in onboarding — shows add-to-home-screen instructions.
-// Auto-navigates to /welcome when running in standalone (installed) mode.
 import { useState, useEffect, useMemo } from "react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { InstallInstructions } from "@/components/InstallInstructions";
-
-// MARK: - Platform types
-
-type DeviceMode = "mobile" | "desktop";
-
-// MARK: - Screen
+import { detectPlatform } from "@/lib/detectPlatform";
+import type { PlatformDetection } from "@/lib/detectPlatform";
 
 /** Onboarding screen with platform-specific add-to-home-screen instructions. */
 export function OnboardingInstallScreen(): JSX.Element | null {
@@ -25,10 +20,10 @@ export function OnboardingInstallScreen(): JSX.Element | null {
     [],
   );
 
-  // Detect initial device mode from viewport width
-  const [deviceMode, setDeviceMode] = useState<DeviceMode>(() =>
-    window.innerWidth < 768 ? "mobile" : "desktop",
-  );
+  // Detect device + browser once on mount
+  const [platform] = useState<PlatformDetection>(detectPlatform);
+
+  const [deviceMode, setDeviceMode] = useState(platform.deviceMode);
 
   useEffect(() => {
     if (isStandalone) {
@@ -153,7 +148,11 @@ export function OnboardingInstallScreen(): JSX.Element | null {
             "opacity 480ms 80ms cubic-bezier(0,0,0.2,1), transform 480ms 80ms cubic-bezier(0,0,0.2,1)",
         }}
       >
-        <InstallInstructions deviceMode={deviceMode} />
+        <InstallInstructions
+          deviceMode={deviceMode}
+          initialMobileBrowser={platform.mobileBrowser}
+          initialDesktopBrowser={platform.desktopBrowser}
+        />
       </div>
 
       {/* Tip */}
