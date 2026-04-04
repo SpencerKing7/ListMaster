@@ -1,8 +1,9 @@
 // src/components/InstallInstructions.tsx
 // Platform-specific add-to-home-screen / install instructions for onboarding.
+// Renders a vertical stepper with reference icons users should look for in
+// their browser — styled to be clearly non-interactive.
 import { useState } from "react";
 import type { JSX } from "react";
-import type { InstallStep } from "@/lib/installSteps";
 import {
   getIphoneSteps,
   getAndroidSteps,
@@ -10,7 +11,7 @@ import {
   getEdgeSteps,
   getSafariMacSteps,
 } from "@/lib/installSteps";
-import { InstallStepIcon } from "@/components/InstallIcons";
+import { InstallStepper } from "@/components/InstallStepper";
 
 // MARK: - Types
 
@@ -19,44 +20,6 @@ type DesktopPlatform = "chrome" | "edge" | "safari";
 
 interface InstallInstructionsProps {
   deviceMode: "mobile" | "desktop";
-}
-
-// MARK: - Step card
-
-/** Single numbered instruction step rendered as a card. */
-function StepCard({ step, index }: { step: InstallStep; index: number }): JSX.Element {
-  return (
-    <div
-      className="flex items-center gap-2.5 rounded-xl px-3.5 py-3"
-      style={{
-        backgroundColor: "var(--color-surface-card)",
-        border: "1px solid var(--color-border-subtle)",
-      }}
-    >
-      <div
-        className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 text-xs font-bold"
-        style={{
-          backgroundColor: "var(--color-surface-green-tint)",
-          color: "var(--color-brand-green)",
-        }}
-      >
-        {index + 1}
-      </div>
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className="shrink-0">
-          <InstallStepIcon iconKey={step.iconKey} />
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-sm leading-tight" style={{ color: "var(--color-text-primary)" }}>
-            {step.title}
-          </p>
-          <p className="text-xs leading-tight mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-            {step.subtitle}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // MARK: - Platform toggle
@@ -72,16 +35,24 @@ function PlatformToggle<T extends string>({
   onSelect: (value: T) => void;
 }): JSX.Element {
   return (
-    <div className="flex rounded-lg p-0.5" style={{ backgroundColor: "var(--color-surface-input)" }}>
+    <div
+      className="flex rounded-lg p-0.5"
+      style={{ backgroundColor: "var(--color-surface-input)" }}
+    >
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
           className="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200"
           style={{
-            backgroundColor: selected === opt.value ? "var(--color-surface-card)" : "transparent",
-            color: selected === opt.value ? "var(--color-brand-teal)" : "var(--color-text-secondary)",
-            boxShadow: selected === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+            backgroundColor:
+              selected === opt.value ? "var(--color-surface-card)" : "transparent",
+            color:
+              selected === opt.value
+                ? "var(--color-brand-teal)"
+                : "var(--color-text-secondary)",
+            boxShadow:
+              selected === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
             touchAction: "manipulation",
           }}
           onClick={() => onSelect(opt.value)}
@@ -93,28 +64,32 @@ function PlatformToggle<T extends string>({
   );
 }
 
-// MARK: - Steps list
+// MARK: - Section label
 
-/** Renders a vertical list of step cards. */
-function StepsList({ steps, platformKey }: { steps: InstallStep[]; platformKey: string }): JSX.Element {
+/** "FOLLOW THESE STEPS" uppercase label above the stepper. */
+function StepperLabel(): JSX.Element {
   return (
-    <div className="flex flex-col gap-2.5">
-      {steps.map((step, i) => (
-        <StepCard key={`${platformKey}-${i}`} step={step} index={i} />
-      ))}
-    </div>
+    <p
+      className="text-[11px] font-semibold tracking-widest uppercase"
+      style={{ color: "var(--color-text-secondary)" }}
+    >
+      Follow these steps in your browser
+    </p>
   );
 }
 
 // MARK: - Main component
 
 /** Renders platform-toggled install instructions for mobile or desktop. */
-export function InstallInstructions({ deviceMode }: InstallInstructionsProps): JSX.Element {
+export function InstallInstructions({
+  deviceMode,
+}: InstallInstructionsProps): JSX.Element {
   const [mobilePlatform, setMobilePlatform] = useState<MobilePlatform>("iphone");
   const [desktopPlatform, setDesktopPlatform] = useState<DesktopPlatform>("chrome");
 
   if (deviceMode === "mobile") {
-    const steps = mobilePlatform === "iphone" ? getIphoneSteps() : getAndroidSteps();
+    const steps =
+      mobilePlatform === "iphone" ? getIphoneSteps() : getAndroidSteps();
     return (
       <div className="flex flex-col gap-3 px-8 mt-4">
         <PlatformToggle
@@ -125,7 +100,8 @@ export function InstallInstructions({ deviceMode }: InstallInstructionsProps): J
           selected={mobilePlatform}
           onSelect={setMobilePlatform}
         />
-        <StepsList steps={steps} platformKey={mobilePlatform} />
+        <StepperLabel />
+        <InstallStepper steps={steps} platformKey={mobilePlatform} />
       </div>
     );
   }
@@ -148,7 +124,8 @@ export function InstallInstructions({ deviceMode }: InstallInstructionsProps): J
         selected={desktopPlatform}
         onSelect={setDesktopPlatform}
       />
-      <StepsList steps={steps} platformKey={desktopPlatform} />
+      <StepperLabel />
+      <InstallStepper steps={steps} platformKey={desktopPlatform} />
     </div>
   );
 }

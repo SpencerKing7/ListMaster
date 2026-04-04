@@ -90,8 +90,8 @@ export function OnboardingInstallScreen(): JSX.Element | null {
           Install List Master
         </h1>
         <p className="text-sm text-center max-w-xs" style={{ color: "var(--color-text-secondary)" }}>
-          For the best experience, add List Master to your home screen — it
-          works offline and feels like a native app.
+          Add List Master to your home screen so it works offline and feels like
+          a native app. Follow the steps below in your browser.
         </p>
       </div>
 
@@ -161,8 +161,8 @@ export function OnboardingInstallScreen(): JSX.Element | null {
         className="text-xs text-center px-10 mt-3"
         style={{ color: "var(--color-text-secondary)" }}
       >
-        Once installed, close this tab and open List Master from your home
-        screen. You can also skip and install anytime from your browser menu.
+        After installing, close this tab and open List Master from your home
+        screen. You can also install later from your browser&apos;s menu.
       </p>
 
       <div className="flex-1 min-h-4" />
@@ -181,8 +181,20 @@ export function OnboardingInstallScreen(): JSX.Element | null {
           }}
           onClick={() => navigate("/welcome")}
         >
-          Skip for Now
+          I&apos;ve Installed It — Continue
         </Button>
+        <button
+          type="button"
+          className="w-full h-12 rounded-2xl text-sm font-medium press-scale"
+          style={{
+            color: "var(--color-text-secondary)",
+            backgroundColor: "transparent",
+            touchAction: "manipulation",
+          }}
+          onClick={() => navigate("/welcome")}
+        >
+          Skip for Now
+        </button>
       </div>
     </div>
   );
