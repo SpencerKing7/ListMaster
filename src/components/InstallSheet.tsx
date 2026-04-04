@@ -163,7 +163,7 @@ export function InstallSheet({ isOpen, onOpenChange }: InstallSheetProps): JSX.E
                     className="text-xs"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
-                    Paste this code in your setup after install to restore your lists.
+                    Paste this code in your setup after install to restore your lists. You can always find it in Settings.
                   </div>
                 </div>
               ) : (

@@ -79,7 +79,7 @@ export function SyncSection({
               {syncCode}
             </div>
             <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-              Share this code with others to sync your list, or use it on another device.
+              Share this code with others to sync your list, or use it on another device. You can always come back here to copy it.
             </p>
             <div className="flex gap-2 mt-3">
               <button
