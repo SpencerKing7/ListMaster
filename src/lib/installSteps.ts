@@ -15,8 +15,8 @@ export interface InstallStep {
 
 // MARK: - Mobile steps
 
-/** iPhone / iOS Safari install steps. */
-export function getIphoneSteps(): InstallStep[] {
+/** Safari (iOS / iPadOS) install steps. */
+export function getMobileSafariSteps(): InstallStep[] {
   return [
     {
       iconKey: "share",
@@ -39,13 +39,13 @@ export function getIphoneSteps(): InstallStep[] {
   ];
 }
 
-/** Android / Chrome install steps. */
-export function getAndroidSteps(): InstallStep[] {
+/** Chrome on Android install steps. */
+export function getMobileChromeSteps(): InstallStep[] {
   return [
     {
       iconKey: "menuDots",
-      title: "Open the browser menu",
-      subtitle: "Tap the \u22EE icon at the top-right of Chrome",
+      title: "Tap the \u22EE menu button",
+      subtitle: "Top-right corner of Chrome",
       iconLabel: "Menu",
     },
     {
@@ -63,58 +63,26 @@ export function getAndroidSteps(): InstallStep[] {
   ];
 }
 
-// MARK: - Desktop steps
-
-/** Chrome desktop install steps. */
-export function getChromeSteps(): InstallStep[] {
-  return [
-    {
-      iconKey: "download",
-      title: "Click the install icon in the address bar",
-      subtitle: "Right side of the URL bar, or use the \u22EE menu",
-      iconLabel: "Install",
-    },
-    {
-      iconKey: "plusSquare",
-      title: 'Click "Install" in the popup',
-      subtitle: "Chrome will add it as a standalone app",
-      iconLabel: "Install",
-    },
-  ];
-}
-
-/** Edge desktop install steps. */
-export function getEdgeSteps(): InstallStep[] {
+/** Firefox mobile install steps. */
+export function getMobileFirefoxSteps(): InstallStep[] {
   return [
     {
       iconKey: "menuDots",
-      title: "Open the \u2026 menu",
-      subtitle: "Top-right corner of the Edge toolbar",
+      title: "Tap the \u22EE menu button",
+      subtitle: "Top-right corner of Firefox",
       iconLabel: "Menu",
     },
     {
-      iconKey: "globe",
-      title: 'Choose "Apps" \u2192 "Install this site as an app"',
-      subtitle: "Then click Install to confirm",
-      iconLabel: "Apps",
-    },
-  ];
-}
-
-/** Safari macOS install steps. */
-export function getSafariMacSteps(): InstallStep[] {
-  return [
-    {
-      iconKey: "share",
-      title: "Click the Share button in the toolbar",
-      subtitle: "Located in Safari's top toolbar area",
-      iconLabel: "Share",
+      iconKey: "download",
+      title: 'Choose "Install"',
+      subtitle: 'Or "Add to Home screen" on older versions',
+      iconLabel: "Install",
     },
     {
       iconKey: "plusSquare",
-      title: 'Choose "Add to Dock"',
-      subtitle: "The app opens as its own window from the Dock",
-      iconLabel: "Add to Dock",
+      title: 'Tap "Add" to confirm',
+      subtitle: "The app will appear on your home screen",
+      iconLabel: "Add",
     },
   ];
 }

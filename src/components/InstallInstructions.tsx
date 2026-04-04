@@ -5,17 +5,20 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import {
-  getIphoneSteps,
-  getAndroidSteps,
+  getMobileSafariSteps,
+  getMobileChromeSteps,
+  getMobileFirefoxSteps,
+} from "@/lib/installSteps";
+import {
   getChromeSteps,
   getEdgeSteps,
   getSafariMacSteps,
-} from "@/lib/installSteps";
+} from "@/lib/installStepsDesktop";
 import { InstallStepper } from "@/components/InstallStepper";
 
 // MARK: - Types
 
-type MobilePlatform = "iphone" | "android";
+type MobilePlatform = "safari" | "chrome" | "firefox";
 type DesktopPlatform = "chrome" | "edge" | "safari";
 
 interface InstallInstructionsProps {
@@ -84,18 +87,23 @@ function StepperLabel(): JSX.Element {
 export function InstallInstructions({
   deviceMode,
 }: InstallInstructionsProps): JSX.Element {
-  const [mobilePlatform, setMobilePlatform] = useState<MobilePlatform>("iphone");
+  const [mobilePlatform, setMobilePlatform] = useState<MobilePlatform>("safari");
   const [desktopPlatform, setDesktopPlatform] = useState<DesktopPlatform>("chrome");
 
   if (deviceMode === "mobile") {
     const steps =
-      mobilePlatform === "iphone" ? getIphoneSteps() : getAndroidSteps();
+      mobilePlatform === "safari"
+        ? getMobileSafariSteps()
+        : mobilePlatform === "chrome"
+          ? getMobileChromeSteps()
+          : getMobileFirefoxSteps();
     return (
       <div className="flex flex-col gap-3 px-8 mt-4">
         <PlatformToggle
           options={[
-            { value: "iphone" as const, label: "iPhone" },
-            { value: "android" as const, label: "Android" },
+            { value: "safari" as const, label: "Safari" },
+            { value: "chrome" as const, label: "Chrome" },
+            { value: "firefox" as const, label: "Firefox" },
           ]}
           selected={mobilePlatform}
           onSelect={setMobilePlatform}
