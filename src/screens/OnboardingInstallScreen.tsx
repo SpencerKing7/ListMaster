@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { InstallInstructions } from "@/components/InstallInstructions";
 import { detectPlatform } from "@/lib/detectPlatform";
 import type { PlatformDetection } from "@/lib/detectPlatform";
@@ -172,17 +171,6 @@ export function OnboardingInstallScreen(): JSX.Element | null {
         className="px-8 flex flex-col gap-3 pb-8"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
       >
-        <Button
-          className="w-full h-14 rounded-2xl text-base font-semibold text-white press-scale"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-teal) 100%)",
-            boxShadow: "0 6px 24px rgba(57,179,133,0.35)",
-          }}
-          onClick={() => navigate("/welcome")}
-        >
-          I&apos;ve Installed It — Continue
-        </Button>
         <button
           type="button"
           className="w-full h-12 rounded-2xl text-sm font-medium press-scale"
