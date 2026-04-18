@@ -207,14 +207,12 @@ export function categoriesReducer(
       const saved = PersistenceService.load();
       if (!saved || saved.categories.length === 0) return state;
       const reloadedGroups = saved.groups ?? [];
-      const currentGroupStillExists =
-        state.selectedGroupID !== null &&
-        reloadedGroups.some((g) => g.id === state.selectedGroupID);
-      const reloadedGroupID = currentGroupStillExists
-        ? state.selectedGroupID
-        : reloadedGroups.length > 0
-          ? reloadedGroups[0].id
-          : null;
+      // Validate persisted selectedGroupID — preserve null (All view) as valid
+      const savedGroupID = saved.selectedGroupID;
+      const isValidGroupID =
+        savedGroupID === null ||
+        reloadedGroups.some((g) => g.id === savedGroupID);
+      const reloadedGroupID = isValidGroupID ? savedGroupID : null;
       // Don't re-save on reload
       return {
         categories: sanitizeOrphanedGroupIDs(saved.categories, reloadedGroups),
