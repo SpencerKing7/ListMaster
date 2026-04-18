@@ -72,7 +72,6 @@ export function SyncProvider({ children }: { children: ReactNode }): ReactNode {
 
 // MARK: - Hook
 
-// eslint-disable-next-line react-refresh/only-export-components
 /** Returns the sync store context value. Must be used within SyncProvider. */
 export function useSyncStore(): SyncContextValue {
   const ctx = useContext(SyncContext);

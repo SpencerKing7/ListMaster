@@ -51,7 +51,7 @@ export async function saveState(
     userName,
     updatedAt: Date.now(),
   };
-  await setDoc(syncDocRef(syncCode), payload);
+  await setDoc(syncDocRef(syncCode), payload, { merge: true });
 }
 
 /**

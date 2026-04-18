@@ -83,6 +83,17 @@ export function useCloudSyncSubscription({
 
         isSyncReadyRef.current = true;
 
+        // Self-register this device on every app load so existing devices
+        // (that synced before deviceIDs was introduced) appear in the count.
+        try {
+          const { ensureAnonymousAuth, registerDevice } =
+            await import("@/services/syncService");
+          const user = await ensureAnonymousAuth();
+          await registerDevice(syncCode, user.uid);
+        } catch (regError) {
+          console.error("Failed to register device:", regError);
+        }
+
         unsubscribe = subscribeToState(
           syncCode,
           (
