@@ -142,6 +142,7 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
                   isSyncEnabled={sync.isSyncEnabled}
                   syncCode={sync.syncCode}
                   syncStatus={sync.syncStatus}
+                  syncedDeviceCount={sync.syncedDeviceCount}
                   onEnableSync={sync.enableSync}
                   onDisableSync={sync.disableSync}
                   onAdoptSyncCode={sync.adoptSyncCode}

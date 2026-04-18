@@ -87,7 +87,7 @@ export function StoreProvider({
     undefined,
     loadInitialState,
   );
-  const { isSyncEnabled, syncCode } = useSyncStore();
+  const { isSyncEnabled, syncCode, setSyncedDeviceCount } = useSyncStore();
   const settings = useSettingsStore();
 
   // Keep stable refs for cloud sync callbacks.
@@ -113,6 +113,7 @@ export function StoreProvider({
     syncCode,
     getUserName,
     syncUserName: applySyncUserName,
+    onDeviceCountChange: setSyncedDeviceCount,
   });
 
   const actions = useCategoryActions(dispatch);

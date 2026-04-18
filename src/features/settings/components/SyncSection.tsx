@@ -18,6 +18,8 @@ interface SyncSectionProps {
   syncCode: string;
   /** Current sync status for UI indicators. */
   syncStatus: SyncStatus;
+  /** Number of devices registered to the current sync code. */
+  syncedDeviceCount: number;
   /** Enables sync by generating a new code. */
   onEnableSync: () => Promise<void>;
   /** Disables sync. Pass `true` to also permanently delete cloud data. */
@@ -36,6 +38,7 @@ export function SyncSection({
   isSyncEnabled,
   syncCode,
   syncStatus,
+  syncedDeviceCount,
   onEnableSync,
   onDisableSync,
   onAdoptSyncCode,
@@ -78,8 +81,11 @@ export function SyncSection({
             <div className="font-mono text-sm p-2 rounded-lg break-all" style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}>
               {syncCode}
             </div>
-            <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
+            <p className="text-xs mt-2" style={{ color: "var(--color-text-secondary)" }}>
               Share this code with others to sync your list, or use it on another device. You can always come back here to copy it.
+            </p>
+            <p className="text-xs mt-2" style={{ color: "var(--color-text-secondary)" }}>
+              Synced devices: {syncedDeviceCount}
             </p>
             <div className="flex gap-2 mt-3">
               <button

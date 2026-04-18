@@ -6,6 +6,7 @@ import { useEffect, useRef, useCallback } from "react";
 import type { Dispatch } from "react";
 import type { Category, CategoryGroup } from "@/models/types";
 import type { StoreState, StoreAction } from "@/store/categoriesReducer";
+import { useCloudSyncSubscription } from "@/store/useCloudSyncSubscription";
 
 // MARK: - Types
 
@@ -23,6 +24,8 @@ interface UseCloudSyncParams {
   getUserName: () => string;
   /** Applies a cloud-provided user name to local settings. */
   syncUserName: (name: string) => void;
+  /** Called on every snapshot with the current registered device count. */
+  onDeviceCountChange: (count: number) => void;
 }
 
 // MARK: - Hook
@@ -42,6 +45,7 @@ export function useCloudSync({
   syncCode,
   getUserName,
   syncUserName,
+  onDeviceCountChange,
 }: UseCloudSyncParams): void {
   // Tracks whether current state was just loaded from the cloud.
   const isLoadingFromSync = useRef(false);
@@ -100,77 +104,18 @@ export function useCloudSync({
 
   // ── Cloud subscription ──
 
-  useEffect(() => {
-    if (!isSyncEnabled || !syncCode) return;
-    isSyncReadyRef.current = false;
-
-    let unsubscribe: (() => void) | null = null;
-
-    const setupSubscription = async (): Promise<void> => {
-      try {
-        const { subscribeToState, loadState } =
-          await import("@/services/syncService");
-
-        const cloudState = await loadState(syncCode);
-        if (cloudState) {
-          if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
-          isLoadingFromSync.current = true;
-          dispatch({
-            type: "SYNC_LOAD",
-            categories: cloudState.categories,
-            selectedCategoryID: cloudState.selectedCategoryID,
-            groups: cloudState.groups,
-          });
-        } else {
-          // Document doesn't exist yet — write local state.
-          try {
-            const { saveState } = await import("@/services/syncService");
-            const s = stateRef.current;
-            await saveState(
-              syncCode,
-              s.categories,
-              s.selectedCategoryID,
-              s.groups,
-              getUserNameRef.current(),
-            );
-          } catch (saveError) {
-            console.error("Failed to write initial sync state:", saveError);
-          }
-        }
-
-        isSyncReadyRef.current = true;
-
-        unsubscribe = subscribeToState(
-          syncCode,
-          (categories, _selectedCategoryID, groups, cloudUserName) => {
-            if (cloudUserName) syncUserNameRef.current(cloudUserName);
-            isLoadingFromSync.current = true;
-            // Real-time updates intentionally omit selectedCategoryID.
-            // Each device keeps its own category selection — syncing it
-            // causes an infinite feedback loop between devices.
-            dispatch({
-              type: "SYNC_LOAD",
-              categories,
-              groups,
-            });
-          },
-        );
-      } catch (error) {
-        console.error("Failed to subscribe to cloud changes:", error);
-      }
-    };
-
-    setupSubscription();
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-      isSyncReadyRef.current = false;
-      if (cloudSaveTimer.current) {
-        clearTimeout(cloudSaveTimer.current);
-        cloudSaveTimer.current = null;
-      }
-    };
-  }, [isSyncEnabled, syncCode, dispatch]);
+  useCloudSyncSubscription({
+    isSyncEnabled,
+    syncCode,
+    dispatch,
+    stateRef,
+    isSyncReadyRef,
+    isLoadingFromSyncRef: isLoadingFromSync,
+    getUserNameRef,
+    syncUserNameRef,
+    cloudSaveTimerRef: cloudSaveTimer,
+    onDeviceCountChange,
+  });
 
   // Trigger debounced cloud save on data changes (categories and groups).
   // selectedCategoryID is intentionally excluded from the dependency array:

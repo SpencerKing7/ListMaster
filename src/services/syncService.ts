@@ -1,19 +1,17 @@
 // src/services/syncService.ts
 import {
-  signInAnonymously,
-  onAuthStateChanged,
-  type User,
-} from "firebase/auth";
-import {
   doc,
   setDoc,
   getDoc,
   onSnapshot,
   deleteDoc,
+  arrayUnion,
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
 import type { Category, CategoryGroup } from "@/models/types";
+
+export { ensureAnonymousAuth } from "@/services/authService";
 
 // MARK: - Types
 
@@ -23,29 +21,7 @@ interface SyncPayload {
   groups?: CategoryGroup[]; // optional for backwards compatibility with older clients
   userName?: string; // optional for backwards compatibility with older documents
   updatedAt: number; // Unix ms — used to detect stale writes
-}
-
-// MARK: - Auth
-
-/**
- * Signs in anonymously if no user is currently authenticated.
- * Returns a promise that resolves to the authenticated user.
- */
-export function ensureAnonymousAuth(): Promise<User> {
-  const { auth } = getFirebaseInstances();
-
-  return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      if (user) {
-        resolve(user);
-      } else {
-        signInAnonymously(auth)
-          .then((credential) => resolve(credential.user))
-          .catch(reject);
-      }
-    });
-  });
+  deviceIDs?: string[]; // anonymous Firebase UIDs of all registered devices
 }
 
 // MARK: - Firestore Helpers
@@ -79,6 +55,21 @@ export async function saveState(
 }
 
 /**
+ * Registers the current device's anonymous UID into the `deviceIDs` array
+ * on the sync document using arrayUnion (merge write — never overwrites other entries).
+ */
+export async function registerDevice(
+  syncCode: string,
+  uid: string,
+): Promise<void> {
+  await setDoc(
+    syncDocRef(syncCode),
+    { deviceIDs: arrayUnion(uid) },
+    { merge: true },
+  );
+}
+
+/**
  * Reads the list state once from Firestore.
  * Returns null if the document doesn't exist or times out.
  */
@@ -87,6 +78,7 @@ export async function loadState(syncCode: string): Promise<{
   selectedCategoryID: string | null;
   groups: CategoryGroup[];
   userName?: string;
+  deviceIDs: string[];
 } | null> {
   const timeoutPromise = new Promise<null>((resolve) =>
     setTimeout(() => resolve(null), 5000),
@@ -100,6 +92,7 @@ export async function loadState(syncCode: string): Promise<{
       selectedCategoryID: data.selectedCategoryID,
       groups: data.groups ?? [], // critical fallback here, not in the caller
       userName: data.userName,
+      deviceIDs: data.deviceIDs ?? [],
     };
   });
 
@@ -117,6 +110,7 @@ export function subscribeToState(
     selectedCategoryID: string | null,
     groups: CategoryGroup[],
     userName: string | undefined,
+    deviceCount: number,
   ) => void,
 ): Unsubscribe {
   return onSnapshot(
@@ -129,6 +123,7 @@ export function subscribeToState(
         data.selectedCategoryID,
         data.groups ?? [],
         data.userName,
+        (data.deviceIDs ?? []).length,
       );
     },
     (error) => {
