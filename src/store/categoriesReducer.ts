@@ -250,16 +250,20 @@ export function categoriesReducer(
           : null;
 
       let resolvedSelectedID: string;
-      if (action.selectedCategoryID !== undefined) {
+      // Always prefer the local selection if it still exists in the incoming
+      // categories — syncing the selection causes cross-device interference and
+      // overwrites the user's last-seen state on reload.
+      const localStillExists = action.categories.some(
+        (c) => c.id === state.selectedCategoryID,
+      );
+      if (localStillExists) {
+        resolvedSelectedID = state.selectedCategoryID;
+      } else if (action.selectedCategoryID !== undefined) {
+        // Local category was deleted — fall back to cloud-provided selection.
         resolvedSelectedID =
           action.selectedCategoryID ?? action.categories[0]?.id ?? "";
       } else {
-        const localStillExists = action.categories.some(
-          (c) => c.id === state.selectedCategoryID,
-        );
-        resolvedSelectedID = localStillExists
-          ? state.selectedCategoryID
-          : (action.categories[0]?.id ?? "");
+        resolvedSelectedID = action.categories[0]?.id ?? "";
       }
 
       const syncNext: StoreState = {
