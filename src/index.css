@@ -177,6 +177,23 @@
   color: var(--color-text-secondary);
 }
 
+/* Subtle scrollbar for the CategoryPicker — overrides the global hide rule */
+.picker-scroll {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(var(--color-brand-deep-green-rgb), 0.25) transparent;
+}
+.picker-scroll::-webkit-scrollbar {
+  display: block;
+  height: 3px;
+}
+.picker-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.picker-scroll::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-brand-deep-green-rgb), 0.25);
+  border-radius: 9999px;
+}
+
 @layer utilities {
   .ios-scroll {
     overflow-y: auto;

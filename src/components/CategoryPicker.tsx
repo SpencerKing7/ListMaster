@@ -70,8 +70,8 @@ export function CategoryPicker(): JSX.Element {
       ) : (
         <div
           ref={scrollRef}
-          className="overflow-x-auto w-full"
-          style={{ scrollbarWidth: "none", touchAction: "pan-x" }}
+          className="overflow-x-auto w-full picker-scroll"
+          style={{ touchAction: "pan-x" }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
