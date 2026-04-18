@@ -153,3 +153,49 @@ The **only** file that imports from `firebase/firestore` and `firebase/auth`. Ex
 `SyncService` functions are **never called directly from components**. The call chain is: component → `useSyncStore` method → dynamic `import("@/services/syncService")` → `SyncService` function. `useCategoriesStore` follows the same pattern for `saveState` and `subscribeToState`.
 
 For full architecture details, see `docs/reference/sync.md`.
+
+---
+
+## `InstallPromptService` (`src/services/installPromptService.ts`)
+
+Persists the install-toast show/dismiss state to `localStorage`. The install toast (`InstallToast`) is a non-intrusive banner that nudges browser-mode users to add the app to their home screen. `InstallPromptService` controls how often it appears and whether it has been permanently dismissed.
+
+### Storage Keys
+
+| `localStorage` key                   | Purpose                                       |
+| ------------------------------------ | --------------------------------------------- |
+| `"installToastDismissedAt"`          | ISO timestamp of the last dismissal           |
+| `"installToastShowCount"`            | Number of times the toast has been shown      |
+| `"installToastPermanentlyDismissed"` | `"true"` if the user chose "Don't show again" |
+
+### API
+
+| Method                       | Description                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `getDismissedAt()`           | Returns the stored ISO timestamp string, or `""` if never dismissed                                             |
+| `setDismissedAt(timestamp)`  | Persists the ISO timestamp string                                                                               |
+| `getShowCount()`             | Returns the stored show count as a number, defaulting to `0`                                                    |
+| `setShowCount(count)`        | Persists the count                                                                                              |
+| `getPermanentlyDismissed()`  | Returns `true` if the value is `"true"`, otherwise `false`                                                      |
+| `setPermanentlyDismissed(v)` | Persists `"true"` or `"false"`                                                                                  |
+| `shouldShow()`               | Returns `true` if the toast should be shown: not permanently dismissed, shown < 3 times, 7-day cooldown elapsed |
+| `recordDismissal()`          | Saves the current timestamp as `dismissedAt` and increments the show count                                      |
+| `clearAll()`                 | Removes all three keys from `localStorage`. Called by `resetToNewUser()`.                                       |
+
+### Usage Rule
+
+Only `InstallToast` and `useSettingsStore.resetToNewUser()` call `InstallPromptService`. Components do not call `localStorage` directly.
+
+---
+
+## `authService` (`src/services/authService.ts`)
+
+A thin wrapper around Firebase Anonymous Auth, extracted from `syncService.ts` to keep auth and Firestore concerns separate.
+
+### API
+
+| Function              | Signature             | Description                                                                                                                                                                                                          |
+| --------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ensureAnonymousAuth` | `() => Promise<User>` | Signs in anonymously if no user is authenticated. Uses `onAuthStateChanged` to check existing state before calling `signInAnonymously`. Safe to call multiple times — will resolve immediately if already signed in. |
+
+`syncService.ts` re-exports this function via `export { ensureAnonymousAuth } from "@/services/authService"` so callers in the sync pipeline only need to import from `syncService`.

@@ -35,38 +35,45 @@ ListMaster PWA is a **React 19 + TypeScript 5** Progressive Web App built with V
 main.tsx
   └── StrictMode
         └── SettingsProvider
-              └── StoreProvider
-                    └── App.tsx
-                          ├── SplashScreen          (returning users only — hasCompletedOnboarding = true)
-                          └── HashRouter
-                                └── PageTransitionWrapper
-                                      ├── Onboarding route tree   (hasCompletedOnboarding = false)
-                                      │     ├── /         → OnboardingInstallScreen
-                                      │     ├── /welcome  → OnboardingWelcomeScreen
-                                      │     └── /setup    → OnboardingSetupScreen
-                                      └── Main route tree         (hasCompletedOnboarding = true)
-                                            └── /         → MainScreen
+              └── SyncProvider
+                    └── StoreProvider
+                          └── App.tsx
+                                ├── SplashScreen          (always shown on launch — unmounts after animation)
+                                └── HashRouter
+                                      └── PageTransitionWrapper
+                                            ├── Onboarding route tree   (hasCompletedOnboarding = false)
+                                            │     ├── /         → OnboardingInstallScreen
+                                            │     ├── /welcome  → OnboardingWelcomeScreen
+                                            │     ├── /setup    → OnboardingSetupScreen
+                                            │     ├── /sync     → OnboardingSyncScreen
+                                            │     └── *         → Navigate to /
+                                            └── Main route tree         (hasCompletedOnboarding = true)
+                                                  ├── /         → MainScreen
+                                                  └── *         → Navigate to /
 ```
 
 ### Provider Naming
 
-The context provider exported from `src/store/useCategoriesStore.ts` is named `StoreProvider` (not `CategoriesProvider`). The provider exported from `src/store/useSettingsStore.ts` is named `SettingsProvider`. Both are instantiated in `src/main.tsx`.
+The context provider exported from `src/store/useCategoriesStore.ts` is named `StoreProvider` (not `CategoriesProvider`). The provider exported from `src/store/useSettingsStore.ts` is named `SettingsProvider`. The provider exported from `src/store/useSyncStore.tsx` is named `SyncProvider`. All three are instantiated in `src/main.tsx`.
+
+**Provider nesting order** (outermost → innermost): `SettingsProvider` → `SyncProvider` → `StoreProvider`. This order matters because `StoreProvider` consumes both `useSyncStore()` and `useSettingsStore()`, so it must be innermost. `SyncProvider` reads from `SettingsService` directly (not from `useSettingsStore`), so it can sit between the two.
 
 ### Onboarding Flow
 
-First-time users are routed into the onboarding sequence:
+First-time users are routed into a four-screen onboarding sequence:
 
-1. `OnboardingInstallScreen` (`/`) — prompts the user to add the app to their home screen. If the app is already running in standalone mode, it immediately redirects to `/welcome` without rendering anything.
+1. `OnboardingInstallScreen` (`/`) — prompts the user to add the app to their home screen with platform-specific instructions. If the app is already running in standalone mode (already installed), it immediately redirects to `/welcome` without rendering any UI. Non-standalone users can tap "Skip" to proceed directly to `/welcome`.
 2. `OnboardingWelcomeScreen` (`/welcome`) — introductory welcome with hero icon and "Get Started" CTA.
 3. `OnboardingSetupScreen` (`/setup`) — collects the user's name and creates the initial category list.
+4. `OnboardingSyncScreen` (`/sync`) — offers optional cloud sync opt-in. Users can enter an existing sync code, generate a new one, or skip. Navigates to `OnboardingInstallScreen` (`/`) on completion.
 
-After `OnboardingSetupScreen` calls `settings.completeOnboarding()`, `hasCompletedOnboarding` becomes `true`, and the app reroutes to `MainScreen`. The onboarding routes become inaccessible — any attempt to navigate to them is caught by the `<Navigate to="/" replace />` catch-all and redirected to `MainScreen`.
+After `OnboardingSetupScreen` calls `settings.completeOnboarding()`, `hasCompletedOnboarding` becomes `true` and the app reroutes to `MainScreen`. The onboarding routes become inaccessible — any attempt to navigate to them is caught by the `<Navigate to="/" replace />` catch-all and redirected to `MainScreen`.
 
 The `hasCompletedOnboarding` flag is persisted via `SettingsService` and read back on every launch — see `src/store/useSettingsStore.ts`.
 
 ### Splash Screen
 
-`SplashScreen` is rendered by `App.tsx` **before** `HashRouter` mounts, for returning users only (`hasCompletedOnboarding = true`). `isSplashVisible` is initialized from `hasCompletedOnboarding` via a `useState` lazy initializer, so the splash shows synchronously on the first render with no flicker. It plays a branded enter animation (app icon + wordmark), then fades out over 420 ms and calls `onFinished()`, which sets `isSplashVisible = false` and unmounts the splash, revealing the `HashRouter` tree. This mirrors the iOS `LaunchScreen.storyboard` pattern.
+`SplashScreen` is rendered by `App.tsx` **before** `HashRouter` mounts, on **every launch**. `isSplashVisible` is initialized to `true` unconditionally via a `useState` lazy initializer, so the splash always shows synchronously on the first render with no flicker. It plays a branded enter animation (app icon + wordmark) and passes `isReturningUser={hasCompletedOnboarding}` to allow the splash to tailor its animation to new vs. returning users. After the animation completes, `onFinished()` is called, which sets `isSplashVisible = false` and unmounts the splash, revealing the `HashRouter` tree. This mirrors the iOS `LaunchScreen.storyboard` pattern.
 
 ### Page Transitions
 
@@ -78,7 +85,7 @@ The `hasCompletedOnboarding` flag is persisted via `SettingsService` and read ba
 
 ### Google Analytics
 
-`OnboardingInstallScreen` fires a `pwa_session` GA event via `gtag()` when it detects the app is running in standalone mode. The `gtag` function is declared as a global in the component file and is loaded by a GA script tag in `index.html`. All calls are guarded by `typeof gtag === "function"` so the app works normally when GA is blocked or slow to load.
+`App.tsx` fires a `pwa_session` GA event via `gtag()` when it detects the app is running in standalone mode and `hasCompletedOnboarding` is `true`. This event fires on the first `visibilitychange` of each session (page load). The `gtag` function is declared as a global in `App.tsx` and is loaded by a GA script tag in `index.html`. All calls are guarded by `typeof gtag === "function"` so the app works normally when GA is blocked or slow to load.
 
 ---
 
@@ -88,9 +95,10 @@ The `hasCompletedOnboarding` flag is persisted via `SettingsService` and read ba
 src/
 ├── models/       Pure TypeScript types — no logic, no I/O
 ├── store/        React Context + reducer/state — owns all mutable app state
-├── services/     Stateless singletons — the only layer that touches localStorage
+├── services/     Stateless singletons — the only layer that touches localStorage or Firebase
 ├── screens/      Full-screen route components — one file per route
 ├── components/   Reusable UI — reads from stores, calls store methods
+├── features/     Feature-scoped modules (settings/ is the only current feature)
 ├── styles/       CSS custom property token files
 └── lib/          Pure utility functions (framework-agnostic)
 ```
@@ -102,5 +110,6 @@ Each layer has a strict contract:
 - **Stores** call services; they never touch the DOM or `localStorage` directly.
 - **Components** call stores; they never call services or `localStorage` directly.
 - **Screens** are components rendered by `<Route>` — they follow the same rules as components.
+- **Features** are self-contained modules scoped to a single domain (e.g. `features/settings/`). Their internal hooks and components may only be consumed by the owning screen (`SettingsSheet`).
 
 See `docs/reference/project-structure.md` for the full file-by-file breakdown.

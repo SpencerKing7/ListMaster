@@ -69,19 +69,25 @@ The shape of every Firestore document under `syncStates/{syncCode}`:
 interface SyncPayload {
   lists: Category[];
   selectedCategoryID: string | null;
+  groups?: CategoryGroup[]; // optional for backwards compatibility with older clients
+  userName?: string; // optional for backwards compatibility with older documents
   updatedAt: number; // Unix ms timestamp — last-write-wins
+  deviceIDs?: string[]; // anonymous Firebase UIDs of all registered devices
 }
 ```
 
+`groups` and `userName` are written by current clients but treated as optional for backwards compatibility with sync documents created before those fields were added. `deviceIDs` is maintained as an `arrayUnion` — never overwritten — to track the count of registered devices.
+
 ### API
 
-| Function              | Signature                                                           | Description                                                                                                                                                                                                                                                                        |
-| --------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ensureAnonymousAuth` | `() => Promise<User>`                                               | Signs in anonymously if not already authenticated. Checks current auth state first via `onAuthStateChanged` to avoid redundant calls. Safe to call multiple times.                                                                                                                 |
-| `saveState`           | `(syncCode, categories, selectedCategoryID) => Promise<void>`       | Writes the full list state to Firestore. Uses `setDoc` (full overwrite). Includes a `Date.now()` timestamp as `updatedAt`. Last write wins.                                                                                                                                        |
-| `loadState`           | `(syncCode) => Promise<{ categories, selectedCategoryID } \| null>` | One-time read of the Firestore document. Returns `null` if the document does not exist. Races the Firestore fetch against a **5-second timeout** that resolves `null` — this prevents the app from hanging indefinitely when the device is offline and the document is not cached. |
-| `subscribeToState`    | `(syncCode, callback) => Unsubscribe`                               | Opens a real-time `onSnapshot` listener. Calls `callback` with the latest `categories` and `selectedCategoryID` on every document change. Returns an unsubscribe function. Errors are logged and the listener stops — they are not thrown.                                         |
-| `deleteSyncData`      | `(syncCode) => Promise<void>`                                       | Permanently deletes the Firestore document for the given sync code. Called when the user disables sync and chooses to remove their cloud data.                                                                                                                                     |
+| Function              | Signature                                                                              | Description                                                                                                                                                                                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ensureAnonymousAuth` | `() => Promise<User>`                                                                  | Re-exported from `authService.ts`. Signs in anonymously if not already authenticated. Checks current auth state first via `onAuthStateChanged`. Safe to call multiple times.                                                                                                       |
+| `saveState`           | `(syncCode, categories, selectedCategoryID, groups, userName) => Promise<void>`        | Writes the full list state to Firestore. Uses `setDoc` with `merge: true`. Includes a `Date.now()` timestamp as `updatedAt`. Last write wins.                                                                                                                                      |
+| `registerDevice`      | `(syncCode, uid) => Promise<void>`                                                     | Adds the current device's anonymous UID to the `deviceIDs` array on the sync document via `arrayUnion`. This is a merge write — it never overwrites other device entries.                                                                                                          |
+| `loadState`           | `(syncCode) => Promise<{ categories, selectedCategoryID, groups, userName? } \| null>` | One-time read of the Firestore document. Returns `null` if the document does not exist. Races the Firestore fetch against a **5-second timeout** that resolves `null` — this prevents the app from hanging indefinitely when the device is offline and the document is not cached. |
+| `subscribeToState`    | `(syncCode, callback) => Unsubscribe`                                                  | Opens a real-time `onSnapshot` listener. Calls `callback` with the latest `categories`, `selectedCategoryID`, `groups`, and `userName` on every document change. Returns an unsubscribe function. Errors are logged and the listener stops — they are not thrown.                  |
+| `deleteSyncData`      | `(syncCode) => Promise<void>`                                                          | Permanently deletes the Firestore document for the given sync code. Called when the user disables sync and chooses to remove their cloud data.                                                                                                                                     |
 
 ---
 
@@ -91,11 +97,12 @@ A React Context store built with `useState`. Exported via `SyncProvider` and `us
 
 ### State
 
-| Property        | Type         | Initial value                        | Source                                |
-| --------------- | ------------ | ------------------------------------ | ------------------------------------- |
-| `syncCode`      | `string`     | `SettingsService.getSyncCode()`      | Hydrated from `localStorage` on mount |
-| `isSyncEnabled` | `boolean`    | `SettingsService.getIsSyncEnabled()` | Hydrated from `localStorage` on mount |
-| `syncStatus`    | `SyncStatus` | `"idle"`                             | In-memory only                        |
+| Property            | Type         | Initial value                        | Source                                                          |
+| ------------------- | ------------ | ------------------------------------ | --------------------------------------------------------------- |
+| `syncCode`          | `string`     | `SettingsService.getSyncCode()`      | Hydrated from `localStorage` on mount                           |
+| `isSyncEnabled`     | `boolean`    | `SettingsService.getIsSyncEnabled()` | Hydrated from `localStorage` on mount                           |
+| `syncStatus`        | `SyncStatus` | `"idle"`                             | In-memory only                                                  |
+| `syncedDeviceCount` | `number`     | `0`                                  | Updated by `useCloudSync` from Firestore subscription snapshots |
 
 ### `SyncStatus` Type
 

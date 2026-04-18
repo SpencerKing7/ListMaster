@@ -18,12 +18,15 @@ src/
 │   ├── categoriesReducer.ts    # Pure reducer + StoreAction union
 │   ├── useCategoryActions.ts   # Stable dispatch wrappers
 │   ├── useCategoryDerived.ts   # Computed/derived values
-│   ├── useCloudSync.ts         # Firestore sync lifecycle
+│   ├── useCloudSync.ts         # Firestore subscription + debounced save
+│   ├── useCloudSyncSubscription.ts  # Real-time Firestore snapshot listener
 │   ├── categoryHandlers.ts     # Category domain reducer handlers
 │   ├── itemHandlers.ts         # Item domain reducer handlers
 │   ├── groupHandlers.ts        # Group domain reducer handlers
 │   ├── reducerHelpers.ts       # Shared pure helpers for handlers
+│   ├── usePickerScroll.ts      # CategoryPicker scroll-into-view logic
 │   ├── useSettingsStore.ts     # Settings provider + hook
+│   ├── useSyncActions.ts       # Sync enable/disable/adopt action logic
 │   ├── useSyncStore.tsx        # Sync provider + hook
 │   └── useTheme.ts             # DOM theme/text-size application utilities
 ├── screens/              # Full-screen route components (one per route)
@@ -43,6 +46,11 @@ src/
 │   ├── EmptyState.tsx
 │   ├── GroupTabBar.tsx
 │   ├── HeaderBar.tsx
+│   ├── InstallIcons.tsx
+│   ├── InstallInstructions.tsx
+│   ├── InstallSheet.tsx
+│   ├── InstallStepper.tsx
+│   ├── InstallToast.tsx
 │   ├── ListMetaBar.tsx
 │   ├── OnboardingCategoryInput.tsx
 │   ├── OnboardingSyncCodeInput.tsx
@@ -65,15 +73,20 @@ src/
 │       ├── hooks/                # useCategoryDrag, useGroupDrag, useSettingsDialogs
 │       └── utils/                # Settings-specific utilities
 ├── services/             # Side-effectful singletons (localStorage, vibration, etc.)
-│   ├── firebaseConfig.ts
-│   ├── hapticService.ts
-│   ├── persistenceService.ts
-│   ├── settingsService.ts
-│   └── syncService.ts
+│   ├── authService.ts          # Firebase Anonymous Auth helper
+│   ├── firebaseConfig.ts       # Lazy Firebase app/Firestore/Auth singleton
+│   ├── hapticService.ts        # Vibration API presets
+│   ├── installPromptService.ts # Install-toast show/dismiss persistence
+│   ├── persistenceService.ts   # Checklist data persistence (localStorage)
+│   ├── settingsService.ts      # User preference persistence (localStorage)
+│   └── syncService.ts          # Firestore read/write/subscribe functions
 ├── styles/               # CSS design token files imported by index.css
 │   └── tokens.css
 └── lib/
-    └── utils.ts          # Shared pure utility functions (cn(), generateSyncCode(), etc.)
+    ├── utils.ts          # Shared pure utility functions (cn(), generateSyncCode(), etc.)
+    ├── detectPlatform.ts # Browser/OS/standalone detection utilities
+    ├── installSteps.ts   # iOS/Android install step definitions
+    └── installStepsDesktop.ts  # Desktop browser install step definitions
 ```
 
 ---

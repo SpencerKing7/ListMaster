@@ -29,7 +29,7 @@ The store layer uses **React Context + `useReducer`** for global state. There ar
 | Provider           | File                    | Concern                              | State pattern |
 | ------------------ | ----------------------- | ------------------------------------ | ------------- |
 | `SettingsProvider` | `useSettingsStore.ts`   | User preferences and onboarding flag | `useState` ×4 |
-| `SyncProvider`     | `useSyncStore.tsx`      | Cloud sync code, status, lifecycle   | `useState` ×3 |
+| `SyncProvider`     | `useSyncStore.tsx`      | Cloud sync code, status, lifecycle   | `useState` ×4 |
 | `StoreProvider`    | `useCategoriesStore.ts` | Categories, items, groups            | `useReducer`  |
 
 **Provider nesting order** (in `main.tsx`, outermost → innermost): `SettingsProvider` → `SyncProvider` → `StoreProvider`. This order matters because `StoreProvider` reads from both `useSyncStore` and `useSettingsStore`.
@@ -39,14 +39,20 @@ The store layer uses **React Context + `useReducer`** for global state. There ar
 `useCategoriesStore.ts` is the public API surface. Internally, it composes four extracted hooks:
 
 ```
-useCategoriesStore.ts  (provider + context, ~174 lines)
-├── categoriesReducer.ts  (pure reducer + StoreAction union, ~290 lines)
-│   ├── categoryHandlers.ts  (category domain handlers)
-│   ├── itemHandlers.ts      (item domain handlers)
-│   └── groupHandlers.ts     (group domain handlers)
-├── useCategoryActions.ts  (stable dispatch wrappers, ~182 lines)
-├── useCategoryDerived.ts  (computed values + auto-select, ~137 lines)
-└── useCloudSync.ts        (Firestore subscription + debounced save, ~185 lines)
+useCategoriesStore.ts  (provider + context)
+├── categoriesReducer.ts  (pure reducer + StoreAction union)
+│   ├── categoryHandlers.ts       (category domain handlers)
+│   ├── itemHandlers.ts           (item domain handlers)
+│   └── groupHandlers.ts          (group domain handlers)
+├── useCategoryActions.ts         (stable dispatch wrappers)
+├── useCategoryDerived.ts         (computed values + auto-select)
+├── useCloudSync.ts               (Firestore debounced save + orchestration)
+└── useCloudSyncSubscription.ts   (real-time Firestore onSnapshot listener)
+
+useSyncStore.tsx  (sync code + status context)
+└── useSyncActions.ts             (enable/disable/adopt/reset logic)
+
+usePickerScroll.ts  (CategoryPicker scroll-into-view side effect)
 ```
 
 ---
@@ -407,3 +413,34 @@ Calls `PersistenceService.clear()` and `SettingsService.clearAll()`, then resets
 ### Theme-color meta tags
 
 `setThemeColor(color, scheme)` updates `<meta name="theme-color" media="(prefers-color-scheme: ...)">` tags so the iOS status bar area matches the current surface background. Light: `#f0f6f3`. Dark: `#0e1714`.
+
+---
+
+## `useCloudSyncSubscription.ts`
+
+**Role:** Extracted real-time Firestore subscription listener. Called by `useCloudSync.ts` to manage the `onSnapshot` lifecycle independently from the debounced save logic.
+
+**Exported hook:** `useCloudSyncSubscription(syncCode, isSyncEnabled, onSyncData)`
+
+The hook opens an `onSnapshot` listener when `isSyncEnabled` is `true` and `syncCode` is non-empty. On each snapshot, it calls `onSyncData` with the latest `categories`, `selectedCategoryID`, `groups`, and `userName` from the cloud. It also calls `setSyncedDeviceCount` to update the live device count in `useSyncStore`. The listener is cleaned up when `isSyncEnabled` becomes `false`, `syncCode` changes, or the component unmounts.
+
+---
+
+## `useSyncActions.ts`
+
+**Role:** Extracted action logic for `useSyncStore`. Provides `enableSync`, `disableSync`, `adoptSyncCode`, and `resetSync` as stable callbacks. Accepts `isSyncEnabled` and a setter bundle (`setSyncCode`, `setIsSyncEnabled`, `setSyncStatus`, `setSyncedDeviceCount`) as arguments — it does not consume context directly.
+
+### Key behaviours
+
+- **`enableSync`** — generates a new sync code, authenticates anonymously, persists code + flag, registers the device's UID via `registerDevice`, sets status to `"synced"`.
+- **`disableSync(deleteCloud)`** — clears local sync state immediately, then optionally deletes the Firestore document. The local clear is non-atomic with the cloud delete — local state is already cleared before the async Firestore call.
+- **`adoptSyncCode(code)`** — normalises the input code, authenticates anonymously, calls `loadState` to verify the code resolves to an existing document, persists the code + flag, then dispatches `SYNC_LOAD` to replace local state with cloud data.
+- **`resetSync`** — generates a fresh sync code and saves it, without touching the Firestore document. The old document remains in place with a new code that no longer points to it.
+
+---
+
+## `usePickerScroll.ts`
+
+**Role:** Encapsulates the `CategoryPicker` scroll-into-view side effect. Accepts `selectedCategoryID` and the picker scroll container ref. Uses `useEffect` watching `selectedCategoryID` to call `scrollIntoView({ behavior: "smooth", inline: "center" })` on the selected pill element whenever the selection changes.
+
+This hook exists to keep `CategoryPicker.tsx` under its line-count ceiling.
