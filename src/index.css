@@ -157,11 +157,11 @@
   }
   /* Prevent iOS Safari from auto-zooming when an input is focused.
      Safari zooms whenever the focused input's font-size is below 16px.
-     Pinning inputs to 16px keeps the viewport locked regardless of the
-     user's --text-size-base preference. */
+     Using max() ensures the font never drops below 16px (no zoom) while
+     still scaling up when the user's --text-size-base is larger (L / XL). */
   input,
   textarea {
-    font-size: 16px !important;
+    font-size: max(16px, var(--text-size-base)) !important;
   }
   /* Hide scrollbars app-wide — iOS-style: scrollable but no visible bar */
   * {
