@@ -163,7 +163,7 @@ export function CategoryPicker(): JSX.Element {
                           HapticService.selection();
                         }
                       }}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97]${!isAllView ? " w-full" : ""}${isSelected ? " shadow-sm" : ""}`}
+                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] w-full${isSelected ? " shadow-sm" : ""}`}
                       style={
                         isSelected
                           ? {
