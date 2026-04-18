@@ -54,12 +54,9 @@ export function usePickerScroll(): UsePickerScrollReturn {
       hasDraggedRef.current = false;
       startXRef.current = e.clientX;
       scrollLeftStartRef.current = el.scrollLeft;
-      // Mouse only: capture immediately for manual drag-scroll.
-      // Touch scroll is driven natively by touch-action: pan-x; we still
-      // track the gesture so hasDraggedRef suppresses ghost clicks.
-      if (e.pointerType === "mouse") {
-        el.setPointerCapture(e.pointerId);
-      }
+      // Do NOT call setPointerCapture here — capturing immediately redirects
+      // the synthetic click event away from pill buttons. Capture is deferred
+      // to handlePointerMove once drag intent (>5px) is confirmed.
     },
     [],
   );
@@ -72,6 +69,10 @@ export function usePickerScroll(): UsePickerScrollReturn {
       const dx = e.clientX - startXRef.current;
       if (!hasDraggedRef.current && Math.abs(dx) > 5) {
         hasDraggedRef.current = true;
+        // Capture only once drag intent is confirmed so clicks are unaffected.
+        if (e.pointerType === "mouse") {
+          el.setPointerCapture(e.pointerId);
+        }
       }
       // Mouse only: drive scroll manually. Touch is driven natively by pan-x.
       if (e.pointerType === "mouse" && hasDraggedRef.current) {
