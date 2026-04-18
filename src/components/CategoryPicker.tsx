@@ -85,10 +85,10 @@ export function CategoryPicker(): JSX.Element {
             margin-top on the wrapper reserves space for labels in isAllView.
           */}
           <div
-            className="rounded-full px-1 py-1 flex items-center gap-1 min-w-max"
+            className={`rounded-full px-1 py-1 flex items-center gap-1 min-w-max${!isAllView ? " w-full" : ""}`}
             style={{
               background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
-              marginTop: isAllView ? 20 : 0,
+              marginTop: groups.length > 0 ? 24 : 0,
               position: "relative",
             }}
           >
@@ -118,7 +118,11 @@ export function CategoryPicker(): JSX.Element {
                 }
 
                 items.push(
-                  <div key={category.id} style={{ position: "relative" }}>
+                  <div
+                    key={category.id}
+                    style={{ position: "relative" }}
+                    className={!isAllView ? "flex-1 min-w-0" : undefined}
+                  >
                     {/* Section label — floats above pill bar, left-aligned to group start */}
                     {(() => {
                       if (!isAllView || !isFirstOfSection) return null;
@@ -130,14 +134,14 @@ export function CategoryPicker(): JSX.Element {
                       if (!labelText) return null;
                       return (
                         <span
-                          className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none"
+                          className="text-[8px] font-semibold uppercase tracking-wider whitespace-nowrap leading-none"
                           style={{
                             color: "var(--color-text-secondary)",
-                            opacity: 0.45,
+                            opacity: 0.55,
                             position: "absolute",
                             bottom: "100%",
                             left: 0,
-                            paddingBottom: 3,
+                            paddingBottom: 6,
                           }}
                           aria-hidden="true"
                         >
@@ -159,7 +163,7 @@ export function CategoryPicker(): JSX.Element {
                           HapticService.selection();
                         }
                       }}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
+                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97]${!isAllView ? " w-full" : ""}${isSelected ? " shadow-sm" : ""}`}
                       style={
                         isSelected
                           ? {
