@@ -1,5 +1,5 @@
 // src/components/CategoryPicker.tsx
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { usePickerScroll } from "@/store/usePickerScroll";
@@ -7,7 +7,7 @@ import { HapticService } from "@/services/hapticService";
 
 /** Horizontally scrollable pill row for selecting a category. Supports drag-to-scroll on touch and arrow buttons on desktop. */
 export function CategoryPicker(): JSX.Element {
-  const { pickerCategories, selectedCategoryID, selectCategory } =
+  const { pickerCategories, selectedCategoryID, selectCategory, groups, selectedGroupID } =
     useCategoriesStore();
   const {
     scrollRef,
@@ -16,6 +16,12 @@ export function CategoryPicker(): JSX.Element {
     handlePointerMove,
     handlePointerUp,
   } = usePickerScroll();
+
+  /** Map of groupID → group name for fast label lookup. */
+  const groupNameMap = useMemo(
+    () => new Map(groups.map((g) => [g.id, g.name])),
+    [groups],
+  );
 
   // Scroll selected pill into view when selection changes
   useEffect(() => {
@@ -29,19 +35,11 @@ export function CategoryPicker(): JSX.Element {
     }
   }, [selectedCategoryID, scrollRef]);
 
+  /** True when we are in the "All" view and groups exist — enables section labels. */
+  const isAllView = selectedGroupID === null && groups.length > 0;
+
   return (
     <>
-      <p
-        className="px-2 pb-1 text-[10px] font-medium tracking-wide uppercase"
-        style={{
-          color: "var(--color-text-secondary)",
-          opacity: pickerCategories.some((p) => p.isUngrouped) ? 0.55 : 0,
-          visibility: pickerCategories.some((p) => p.isUngrouped) ? "visible" : "hidden",
-        }}
-        aria-hidden="true"
-      >
-        Ungrouped
-      </p>
       <div
         className="rounded-full px-1 py-1 w-full"
         style={{
@@ -65,56 +63,83 @@ export function CategoryPicker(): JSX.Element {
             onPointerLeave={handlePointerUp}
             onPointerCancel={handlePointerUp}
           >
-            <div className="flex gap-1 w-full">
+            <div className="flex items-stretch gap-1 w-full">
               {pickerCategories.map(({ category, isUngrouped }, index) => {
                 const isSelected = category.id === selectedCategoryID;
-                const showSeparator =
-                  !isUngrouped &&
-                  index > 0 &&
-                  pickerCategories[index - 1].isUngrouped;
+                const prevItem = index > 0 ? pickerCategories[index - 1] : null;
+
+                // Determine if this pill opens a new section in the "All" view.
+                // A new section starts when the groupID changes from the previous pill.
+                const prevGroupID = prevItem?.category.groupID;
+                const currGroupID = category.groupID;
+                const isFirstOfSection =
+                  isAllView && (index === 0 || prevGroupID !== currGroupID);
+
+                // Derive the section label text.
+                let sectionLabel: string | null = null;
+                if (isFirstOfSection) {
+                  sectionLabel = isUngrouped
+                    ? "No Group"
+                    : (groupNameMap.get(currGroupID ?? "") ?? null);
+                }
+
                 return (
-                  <div key={category.id} className="flex-1 flex items-center gap-1">
-                    {showSeparator && (
-                      <div
-                        className="self-stretch w-px mx-0.5 rounded-full"
-                        style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.20)` }}
-                      />
+                  <div key={category.id} className="flex items-stretch gap-1">
+                    {/* Section divider + microlabel — rendered before the first pill of each group */}
+                    {isFirstOfSection && index > 0 && (
+                      <div className="flex flex-col items-center justify-center gap-0.5 mx-0.5 shrink-0">
+                        <div
+                          className="w-px flex-1 rounded-full"
+                          style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.20)` }}
+                        />
+                      </div>
                     )}
-                    <button
-                      data-category-id={category.id}
-                      onPointerDown={(e) => {
-                        // Release implicit pointer capture so the scroll container
-                        // can take over capture when a drag threshold is crossed.
-                        e.currentTarget.releasePointerCapture(e.pointerId);
-                      }}
-                      onClick={() => {
-                        if (!hasDraggedRef.current) {
-                          selectCategory(category.id);
-                          HapticService.selection();
+                    <div className="flex flex-col items-center gap-0.5 flex-1">
+                      {sectionLabel !== null && (
+                        <span
+                          className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap px-1 leading-none"
+                          style={{ color: "var(--color-text-secondary)", opacity: 0.45 }}
+                          aria-hidden="true"
+                        >
+                          {sectionLabel}
+                        </span>
+                      )}
+                      <button
+                        data-category-id={category.id}
+                        onPointerDown={(e) => {
+                          // Release implicit pointer capture so the scroll container
+                          // can take over capture when a drag threshold is crossed.
+                          e.currentTarget.releasePointerCapture(e.pointerId);
+                        }}
+                        onClick={() => {
+                          if (!hasDraggedRef.current) {
+                            selectCategory(category.id);
+                            HapticService.selection();
+                          }
+                        }}
+                        className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
+                        style={
+                          isSelected
+                            ? {
+                              backgroundColor: "var(--color-surface-card)",
+                              color: "var(--color-brand-green)",
+                              fontWeight: 700,
+                              opacity: isUngrouped ? 0.65 : 1,
+                              boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                              transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                            }
+                            : {
+                              backgroundColor: "transparent",
+                              color: "var(--color-text-secondary)",
+                              opacity: isUngrouped ? 0.55 : 1,
+                              fontStyle: isUngrouped ? "italic" : "normal",
+                              transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                            }
                         }
-                      }}
-                      className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
-                      style={
-                        isSelected
-                          ? {
-                            backgroundColor: "var(--color-surface-card)",
-                            color: "var(--color-brand-green)",
-                            fontWeight: 700,
-                            opacity: isUngrouped ? 0.65 : 1,
-                            boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                            transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                          }
-                          : {
-                            backgroundColor: "transparent",
-                            color: "var(--color-text-secondary)",
-                            opacity: isUngrouped ? 0.55 : 1,
-                            fontStyle: isUngrouped ? "italic" : "normal",
-                            transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                          }
-                      }
-                    >
-                      {category.name}
-                    </button>
+                      >
+                        {category.name}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -124,6 +149,4 @@ export function CategoryPicker(): JSX.Element {
       </div>
     </>
   );
-};
-
-
+}
