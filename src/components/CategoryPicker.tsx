@@ -60,58 +60,63 @@ export function CategoryPicker(): JSX.Element {
           onPointerLeave={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          <div className="flex flex-col w-full">
+          {/* min-w-max lets content grow beyond scroll container width */}
+          <div className="flex flex-col min-w-max">
             {/* ── Labels row — only visible in "All" view with groups ── */}
             {isAllView && (
               <div className="flex items-end gap-1 pb-0.5 px-1">
                 {pickerCategories.map(({ category, isUngrouped }, index) => {
-                  const prevItem = index > 0 ? pickerCategories[index - 1] : null;
-                  const prevGroupID = prevItem?.category.groupID;
+                  const prevGroupID = index > 0 ? pickerCategories[index - 1].category.groupID : "__none__";
                   const currGroupID = category.groupID;
                   const isFirstOfSection = index === 0 || prevGroupID !== currGroupID;
                   const label = isFirstOfSection
                     ? isUngrouped ? "No Group" : (groupNameMap.get(currGroupID ?? "") ?? "")
-                    : null;
-                  return (
-                    <div key={category.id} className="flex items-end gap-1 flex-1 min-w-max">
-                      {isFirstOfSection && index > 0 && (
-                        <div
-                          className="self-stretch w-px mb-0.5 rounded-full shrink-0"
-                          style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.22)` }}
-                        />
-                      )}
-                      {label !== null ? (
-                        <span
-                          className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none"
-                          style={{ color: "var(--color-text-secondary)", opacity: 0.45 }}
-                          aria-hidden="true"
-                        >
-                          {label}
-                        </span>
-                      ) : (
-                        <span className="flex-1" aria-hidden="true" />
-                      )}
-                    </div>
-                  );
+                    : "";
+                  return [
+                    // Divider between sections — sibling element, not nested
+                    isFirstOfSection && index > 0 ? (
+                      <div
+                        key={`div-${category.id}`}
+                        className="self-stretch w-px mb-0.5 rounded-full shrink-0"
+                        style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.22)` }}
+                      />
+                    ) : null,
+                    <span
+                      key={category.id}
+                      className="flex-1 min-w-max text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none"
+                      style={{ color: "var(--color-text-secondary)", opacity: label ? 0.45 : 0 }}
+                      aria-hidden="true"
+                    >
+                      {label || "\u00A0"}
+                    </span>,
+                  ];
                 })}
               </div>
             )}
 
             {/* ── Pill bar ── */}
             <div
-              className="rounded-full px-1 py-1 w-full"
+              className="rounded-full px-1 py-1"
               style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}
             >
-              <div className="flex items-center gap-1 w-full">
-                {pickerCategories.map(({ category, isUngrouped }) => {
+              <div className="flex items-center gap-1">
+                {pickerCategories.map(({ category, isUngrouped }, index) => {
                   const isSelected = category.id === selectedCategoryID;
-                  return (
+                  const prevGroupID = index > 0 ? pickerCategories[index - 1].category.groupID : "__none__";
+                  const isFirstOfSection = isAllView && (index === 0 || prevGroupID !== category.groupID);
+                  return [
+                    // Matching divider so pill columns align with label columns above
+                    isFirstOfSection && index > 0 ? (
+                      <div
+                        key={`div-${category.id}`}
+                        className="self-stretch w-px rounded-full shrink-0"
+                        style={{ background: "transparent" }}
+                      />
+                    ) : null,
                     <button
                       key={category.id}
                       data-category-id={category.id}
                       onPointerDown={(e) => {
-                        // Release implicit pointer capture so the scroll container
-                        // can take over capture when a drag threshold is crossed.
                         e.currentTarget.releasePointerCapture(e.pointerId);
                       }}
                       onClick={() => {
@@ -141,8 +146,8 @@ export function CategoryPicker(): JSX.Element {
                       }
                     >
                       {category.name}
-                    </button>
-                  );
+                    </button>,
+                  ];
                 })}
               </div>
             </div>
