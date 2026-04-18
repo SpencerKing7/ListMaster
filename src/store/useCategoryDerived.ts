@@ -121,32 +121,35 @@ export function useCategoryDerived(
 
   const hasGroups = state.groups.length > 0;
 
-  const selectedCategoryIndexInGroup = categoriesInSelectedGroup.findIndex(
+  // Navigation uses pickerCategories order so the bottom bar chevrons move
+  // through pills in the same left-to-right sequence the user sees.
+  const pickerCategoryList = pickerCategories.map((p) => p.category);
+  const selectedCategoryIndexInGroup = pickerCategoryList.findIndex(
     (c) => c.id === state.selectedCategoryID,
   );
   const canSelectNextCategory =
     selectedCategoryIndexInGroup !== -1 &&
-    selectedCategoryIndexInGroup < categoriesInSelectedGroup.length - 1;
+    selectedCategoryIndexInGroup < pickerCategoryList.length - 1;
   const canSelectPreviousCategory =
     selectedCategoryIndexInGroup !== -1 && selectedCategoryIndexInGroup > 0;
   const nextCategory = canSelectNextCategory
-    ? categoriesInSelectedGroup[selectedCategoryIndexInGroup + 1]
+    ? pickerCategoryList[selectedCategoryIndexInGroup + 1]
     : null;
   const previousCategory = canSelectPreviousCategory
-    ? categoriesInSelectedGroup[selectedCategoryIndexInGroup - 1]
+    ? pickerCategoryList[selectedCategoryIndexInGroup - 1]
     : null;
 
   const selectNextCategory = useCallback(() => {
     if (
       selectedCategoryIndexInGroup !== -1 &&
-      selectedCategoryIndexInGroup < categoriesInSelectedGroup.length - 1
+      selectedCategoryIndexInGroup < pickerCategoryList.length - 1
     ) {
       dispatch({
         type: "SELECT_CATEGORY",
-        id: categoriesInSelectedGroup[selectedCategoryIndexInGroup + 1].id,
+        id: pickerCategoryList[selectedCategoryIndexInGroup + 1].id,
       });
     }
-  }, [selectedCategoryIndexInGroup, categoriesInSelectedGroup, dispatch]);
+  }, [selectedCategoryIndexInGroup, pickerCategoryList, dispatch]);
 
   const selectPreviousCategory = useCallback(() => {
     if (
@@ -155,10 +158,10 @@ export function useCategoryDerived(
     ) {
       dispatch({
         type: "SELECT_CATEGORY",
-        id: categoriesInSelectedGroup[selectedCategoryIndexInGroup - 1].id,
+        id: pickerCategoryList[selectedCategoryIndexInGroup - 1].id,
       });
     }
-  }, [selectedCategoryIndexInGroup, categoriesInSelectedGroup, dispatch]);
+  }, [selectedCategoryIndexInGroup, pickerCategoryList, dispatch]);
 
   return {
     selectedCategory,
