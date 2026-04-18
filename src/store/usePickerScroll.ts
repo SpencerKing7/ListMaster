@@ -24,6 +24,12 @@ export interface UsePickerScrollReturn {
 /**
  * Manages drag-to-scroll for the CategoryPicker horizontal scroll container.
  *
+ * Handles all pointer types (mouse and touch):
+ * - Mouse: captures the pointer and drives `scrollLeft` manually.
+ * - Touch: native `pan-x` on the container drives the scroll; this hook
+ *   only tracks the gesture so `hasDraggedRef` can suppress ghost clicks
+ *   on browsers that fire `click` after a touch scroll (e.g. Android Chrome).
+ *
  * Pill buttons must release their implicit pointer capture on pointerdown
  * (`e.currentTarget.releasePointerCapture(e.pointerId)`) so that this hook
  * can take over capture once the horizontal drag threshold (5px) is crossed.
@@ -42,16 +48,18 @@ export function usePickerScroll(): UsePickerScrollReturn {
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
-      // Touch scrolling is handled natively via touch-action: pan-x.
-      // Only intercept mouse pointer for drag-to-scroll.
-      if (e.pointerType !== "mouse") return;
       const el = scrollRef.current;
       if (!el) return;
       isDraggingRef.current = true;
       hasDraggedRef.current = false;
       startXRef.current = e.clientX;
       scrollLeftStartRef.current = el.scrollLeft;
-      el.setPointerCapture(e.pointerId);
+      // Mouse only: capture immediately for manual drag-scroll.
+      // Touch scroll is driven natively by touch-action: pan-x; we still
+      // track the gesture so hasDraggedRef suppresses ghost clicks.
+      if (e.pointerType === "mouse") {
+        el.setPointerCapture(e.pointerId);
+      }
     },
     [],
   );
@@ -65,7 +73,8 @@ export function usePickerScroll(): UsePickerScrollReturn {
       if (!hasDraggedRef.current && Math.abs(dx) > 5) {
         hasDraggedRef.current = true;
       }
-      if (hasDraggedRef.current) {
+      // Mouse only: drive scroll manually. Touch is driven natively by pan-x.
+      if (e.pointerType === "mouse" && hasDraggedRef.current) {
         el.scrollLeft = scrollLeftStartRef.current - dx;
       }
     },
@@ -76,7 +85,8 @@ export function usePickerScroll(): UsePickerScrollReturn {
     (e: React.PointerEvent<HTMLDivElement>) => {
       isDraggingRef.current = false;
       const el = scrollRef.current;
-      if (el?.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      if (el?.hasPointerCapture(e.pointerId))
+        el.releasePointerCapture(e.pointerId);
       setTimeout(() => {
         hasDraggedRef.current = false;
       }, 0);

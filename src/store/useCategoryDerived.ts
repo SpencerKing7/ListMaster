@@ -13,7 +13,7 @@ import type { StoreState, StoreAction } from "@/store/categoriesReducer";
 export interface CategoryDerived {
   /** The currently selected category, or null if none is found. */
   selectedCategory: Category | null;
-  /** Whether the store has more than one category (enables delete). */
+  /** Whether deleting the selected category is allowed (requires >1 in the active group view). */
   canDeleteCategories: boolean;
   /** Whether there is a next category to navigate to within the group. */
   canSelectNextCategory: boolean;
@@ -26,9 +26,9 @@ export interface CategoryDerived {
   /** Categories filtered to the currently selected group. */
   categoriesInSelectedGroup: Category[];
   /**
-   * Categories for the picker. When a specific group is active, ungrouped
-   * categories trail the assigned ones with `isUngrouped: true` so the
-   * picker can render them dimmed rather than hiding them entirely.
+   * Categories for the picker. In the "All" view, ungrouped categories come
+   * first with `isUngrouped: true`. In a specific-group view, only that
+   * group's categories are included and `isUngrouped` is always `false`.
    */
   pickerCategories: CategoryPickerItem[];
   /** Whether any groups exist in the store. */
@@ -82,7 +82,11 @@ export function useCategoryDerived(
         .map((c) => ({ category: c, isUngrouped: true }));
       const grouped = state.categories
         .filter((c) => c.groupID !== undefined)
-        .sort((a, b) => (groupOrder.get(a.groupID!) ?? 0) - (groupOrder.get(b.groupID!) ?? 0))
+        .sort(
+          (a, b) =>
+            (groupOrder.get(a.groupID!) ?? 0) -
+            (groupOrder.get(b.groupID!) ?? 0),
+        )
         .map((c) => ({ category: c, isUngrouped: false }));
       return [...ungrouped, ...grouped];
     }
@@ -93,18 +97,27 @@ export function useCategoryDerived(
   }, [state.categories, state.selectedGroupID, state.groups]);
 
   // Auto-select first visible category if current selection falls out of group.
+  // Uses raw state primitives as deps (instead of the derived array) to avoid
+  // spurious dispatches when a cloud sync replaces the categories array reference
+  // with identical content, which would otherwise cause a no-op effect loop.
   useEffect(() => {
-    if (categoriesInSelectedGroup.length === 0) return;
-    const isSelectionVisible = categoriesInSelectedGroup.some(
+    const inGroup =
+      state.selectedGroupID === null
+        ? state.categories
+        : state.categories.filter((c) => c.groupID === state.selectedGroupID);
+    if (inGroup.length === 0) return;
+    const isSelectionVisible = inGroup.some(
       (c) => c.id === state.selectedCategoryID,
     );
     if (!isSelectionVisible) {
-      dispatch({
-        type: "SELECT_CATEGORY",
-        id: categoriesInSelectedGroup[0].id,
-      });
+      dispatch({ type: "SELECT_CATEGORY", id: inGroup[0].id });
     }
-  }, [categoriesInSelectedGroup, state.selectedCategoryID, dispatch]);
+  }, [
+    state.categories,
+    state.selectedGroupID,
+    state.selectedCategoryID,
+    dispatch,
+  ]);
 
   const hasGroups = state.groups.length > 0;
 
@@ -149,7 +162,7 @@ export function useCategoryDerived(
 
   return {
     selectedCategory,
-    canDeleteCategories: state.categories.length > 1,
+    canDeleteCategories: categoriesInSelectedGroup.length > 1,
     canSelectNextCategory,
     canSelectPreviousCategory,
     nextCategory,

@@ -28,8 +28,10 @@ export interface CategoryGroup {
 
 /**
  * A category enriched with a display flag for the CategoryPicker.
- * When a specific group is active, ungrouped categories are appended
- * with `isUngrouped: true` so the picker can render them dimmed.
+ * In the "All" view (no group selected), ungrouped categories are placed
+ * first with `isUngrouped: true` so the picker can render them dimmed/italic.
+ * In a specific-group view, only that group's categories are included and
+ * `isUngrouped` is always `false`.
  */
 export interface CategoryPickerItem {
   category: Category;

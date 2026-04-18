@@ -1,5 +1,5 @@
 // src/components/CategoryPicker.tsx
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { usePickerScroll } from "@/store/usePickerScroll";
@@ -17,14 +17,28 @@ export function CategoryPicker(): JSX.Element {
     handlePointerUp,
   } = usePickerScroll();
 
+  /**
+   * When a pill is tapped, the resulting selectedCategoryID change should not
+   * trigger scrollIntoView — the pill is already visible and the smooth scroll
+   * fights the active touch momentum on iOS Safari. Set this ref true in the
+   * pill onClick and clear it in the effect.
+   */
+  const skipNextScrollRef = useRef(false);
+
   /** Map of groupID → group name for fast label lookup. */
   const groupNameMap = useMemo(
     () => new Map(groups.map((g) => [g.id, g.name])),
     [groups],
   );
 
-  // Scroll selected pill into view when selection changes
+  // Scroll selected pill into view when selection changes programmatically
+  // (e.g. arrow nav, auto-select). Skip when the user tapped a pill directly —
+  // scrollIntoView would fight the active touch momentum on iOS Safari.
   useEffect(() => {
+    if (skipNextScrollRef.current) {
+      skipNextScrollRef.current = false;
+      return;
+    }
     const container = scrollRef.current;
     if (!container) return;
     const selectedEl = container.querySelector(
@@ -37,6 +51,10 @@ export function CategoryPicker(): JSX.Element {
 
   /** True when we are in the "All" view and groups exist — enables section labels. */
   const isAllView = selectedGroupID === null && groups.length > 0;
+
+  /** True when at least one picker entry is grouped — suppresses the "No Group" label
+   *  when every category is ungrouped (user created groups but assigned nothing yet). */
+  const hasGroupedCategories = pickerCategories.some((p) => !p.isUngrouped);
 
   return (
     <>
@@ -70,7 +88,7 @@ export function CategoryPicker(): JSX.Element {
             className="rounded-full px-1 py-1 flex items-center gap-1 min-w-max"
             style={{
               background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
-              marginTop: isAllView ? 18 : 0,
+              marginTop: isAllView ? 20 : 0,
               position: "relative",
             }}
           >
@@ -101,24 +119,32 @@ export function CategoryPicker(): JSX.Element {
 
                 items.push(
                   <div key={category.id} style={{ position: "relative" }}>
-                    {/* Section label — floats above pill bar */}
-                    {isAllView && isFirstOfSection && (
-                      <span
-                        className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none text-center w-full"
-                        style={{
-                          color: "var(--color-text-secondary)",
-                          opacity: 0.45,
-                          position: "absolute",
-                          bottom: "100%",
-                          left: 0,
-                          right: 0,
-                          paddingBottom: 3,
-                        }}
-                        aria-hidden="true"
-                      >
-                        {isUngrouped ? "No Group" : (groupNameMap.get(currGroupID ?? "") ?? "")}
-                      </span>
-                    )}
+                    {/* Section label — floats above pill bar, left-aligned to group start */}
+                    {(() => {
+                      if (!isAllView || !isFirstOfSection) return null;
+                      // Suppress "No Group" label when every category is ungrouped
+                      // (user has groups but assigned nothing yet).
+                      const labelText = isUngrouped
+                        ? (hasGroupedCategories ? "No Group" : "")
+                        : (groupNameMap.get(currGroupID ?? "") ?? "");
+                      if (!labelText) return null;
+                      return (
+                        <span
+                          className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none"
+                          style={{
+                            color: "var(--color-text-secondary)",
+                            opacity: 0.45,
+                            position: "absolute",
+                            bottom: "100%",
+                            left: 0,
+                            paddingBottom: 3,
+                          }}
+                          aria-hidden="true"
+                        >
+                          {labelText}
+                        </span>
+                      );
+                    })()}
 
                     {/* Pill button */}
                     <button
@@ -128,31 +154,34 @@ export function CategoryPicker(): JSX.Element {
                       }}
                       onClick={() => {
                         if (!hasDraggedRef.current) {
+                          skipNextScrollRef.current = true;
                           selectCategory(category.id);
                           HapticService.selection();
                         }
                       }}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] touch-manipulation ${isSelected ? "shadow-sm" : ""}`}
+                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
                       style={
                         isSelected
                           ? {
-                              backgroundColor: "var(--color-surface-card)",
-                              color: "var(--color-brand-green)",
-                              fontWeight: 700,
-                              opacity: isUngrouped ? 0.65 : 1,
-                              boxShadow:
-                                "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                              transition:
-                                "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                            }
+                            backgroundColor: "var(--color-surface-card)",
+                            color: "var(--color-brand-green)",
+                            fontWeight: 700,
+                            opacity: isUngrouped ? 0.65 : 1,
+                            touchAction: "pan-x",
+                            boxShadow:
+                              "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                            transition:
+                              "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                          }
                           : {
-                              backgroundColor: "transparent",
-                              color: "var(--color-text-secondary)",
-                              opacity: isUngrouped ? 0.55 : 1,
-                              fontStyle: isUngrouped ? "italic" : "normal",
-                              transition:
-                                "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                            }
+                            backgroundColor: "transparent",
+                            color: "var(--color-text-secondary)",
+                            opacity: isUngrouped ? 0.55 : 1,
+                            fontStyle: isUngrouped ? "italic" : "normal",
+                            touchAction: "pan-x",
+                            transition:
+                              "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                          }
                       }
                     >
                       {category.name}

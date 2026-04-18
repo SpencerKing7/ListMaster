@@ -101,11 +101,12 @@ export function GroupTabBar({
       className="relative overflow-x-auto pb-[3px] mb-3 mt-1"
       style={{
         scrollbarWidth: "none",
-        touchAction: "pan-y",
+        touchAction: "pan-x",
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
       <div className="flex gap-1">
