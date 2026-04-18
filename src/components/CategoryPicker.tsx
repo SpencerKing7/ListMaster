@@ -158,7 +158,6 @@ export function CategoryPicker(): JSX.Element {
                       }}
                       onClick={() => {
                         if (!hasDraggedRef.current) {
-                          skipNextScrollRef.current = true;
                           selectCategory(category.id);
                           HapticService.selection();
                         }
