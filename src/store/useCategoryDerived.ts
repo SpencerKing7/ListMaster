@@ -74,13 +74,15 @@ export function useCategoryDerived(
 
   const pickerCategories = useMemo((): CategoryPickerItem[] => {
     if (state.selectedGroupID === null) {
-      // "All" view: surface ungrouped categories first so they are easy to find,
-      // then the assigned (grouped) categories follow.
+      // "All" view: ungrouped categories first, then grouped categories sorted
+      // by the display order of their group so same-group pills are always adjacent.
+      const groupOrder = new Map(state.groups.map((g, i) => [g.id, i]));
       const ungrouped = state.categories
         .filter((c) => c.groupID === undefined)
         .map((c) => ({ category: c, isUngrouped: true }));
       const grouped = state.categories
         .filter((c) => c.groupID !== undefined)
+        .sort((a, b) => (groupOrder.get(a.groupID!) ?? 0) - (groupOrder.get(b.groupID!) ?? 0))
         .map((c) => ({ category: c, isUngrouped: false }));
       return [...ungrouped, ...grouped];
     }
@@ -88,7 +90,7 @@ export function useCategoryDerived(
     return state.categories
       .filter((c) => c.groupID === state.selectedGroupID)
       .map((c) => ({ category: c, isUngrouped: false }));
-  }, [state.categories, state.selectedGroupID]);
+  }, [state.categories, state.selectedGroupID, state.groups]);
 
   // Auto-select first visible category if current selection falls out of group.
   useEffect(() => {
