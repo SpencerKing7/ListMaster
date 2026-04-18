@@ -70,7 +70,7 @@ export function CategoryPicker(): JSX.Element {
       ) : (
         <div
           ref={scrollRef}
-          className="overflow-x-auto cursor-grab active:cursor-grabbing w-full"
+          className="overflow-x-auto w-full"
           style={{ scrollbarWidth: "none", touchAction: "pan-x" }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -85,7 +85,7 @@ export function CategoryPicker(): JSX.Element {
             margin-top on the wrapper reserves space for labels in isAllView.
           */}
           <div
-            className={`rounded-full px-1 py-1 flex items-center gap-1 min-w-max${!isAllView ? " w-full" : ""}`}
+            className={`rounded-full px-1 py-1 flex items-center gap-1 min-w-max w-full`}
             style={{
               background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
               marginTop: groups.length > 0 ? 24 : 0,
