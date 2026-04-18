@@ -4,39 +4,12 @@
 
 import { useCallback } from "react";
 import type { Dispatch } from "react";
-import type { SortOrder, SortDirection } from "@/models/types";
-import type { StoreAction } from "@/store/categoriesReducer";
-
-// MARK: - Types
-
-/** All mutation callbacks exposed by the categories store. */
-export interface CategoryActions {
-  selectCategory: (id: string) => void;
-  addCategory: (name: string) => void;
-  setCategories: (names: string[]) => void;
-  renameCategory: (id: string, newName: string) => void;
-  deleteCategory: (id: string) => void;
-  moveCategories: (from: number, to: number) => void;
-  reorderCategories: (orderedIDs: string[]) => void;
-  setCategorySortOrder: (id: string, sortOrder: SortOrder) => void;
-  setCategorySortDirection: (id: string, sortDirection: SortDirection) => void;
-  addItemToSelectedCategory: (name: string) => void;
-  toggleItemInSelectedCategory: (itemID: string) => void;
-  deleteItemFromSelectedCategory: (itemID: string) => void;
-  clearCheckedItemsInSelectedCategory: () => void;
-  checkAllItemsInSelectedCategory: () => void;
-  uncheckAllItemsInSelectedCategory: () => void;
-  reload: () => void;
-  resetCategories: () => void;
-  selectGroup: (id: string | null) => void;
-  addGroup: (name: string) => void;
-  renameGroup: (id: string, newName: string) => void;
-  deleteGroup: (id: string) => void;
-  moveGroups: (from: number, to: number) => void;
-  setCategoryGroup: (categoryID: string, groupID: string | undefined) => void;
-  /** Atomically creates a new category and assigns it to the given group. */
-  addCategoryWithGroup: (name: string, groupID: string) => void;
-}
+import type {
+  SortOrder,
+  SortDirection,
+  StoreAction,
+  CategoryActions,
+} from "@/models/types";
 
 // MARK: - Hook
 

@@ -1,3 +1,4 @@
+<!-- Status: In Progress | Last updated: April 2026 -->
 # Plan: Onboarding Flow & Splash Screen Redesign
 
 ## Goal

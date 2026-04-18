@@ -13,64 +13,13 @@ import {
   createElement,
   type ReactNode,
 } from "react";
-import type {
-  Category,
-  CategoryGroup,
-  CategoryPickerItem,
-  SortOrder,
-  SortDirection,
-} from "@/models/types";
+import type { StoreContextValue } from "@/models/types";
 import { useSyncStore } from "@/store/useSyncStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { categoriesReducer, loadInitialState } from "@/store/categoriesReducer";
 import { useCloudSync } from "@/store/useCloudSync";
 import { useCategoryActions } from "@/store/useCategoryActions";
 import { useCategoryDerived } from "@/store/useCategoryDerived";
-
-// MARK: - Context Value
-
-/** Public API surface of the categories store. */
-interface StoreContextValue {
-  categories: Category[];
-  selectedCategoryID: string;
-  selectedCategory: Category | null;
-  canDeleteCategories: boolean;
-  canSelectNextCategory: boolean;
-  canSelectPreviousCategory: boolean;
-  nextCategory: Category | null;
-  previousCategory: Category | null;
-  selectCategory: (id: string) => void;
-  selectNextCategory: () => void;
-  selectPreviousCategory: () => void;
-  addCategory: (name: string) => void;
-  setCategories: (names: string[]) => void;
-  renameCategory: (id: string, newName: string) => void;
-  deleteCategory: (id: string) => void;
-  moveCategories: (from: number, to: number) => void;
-  reorderCategories: (orderedIDs: string[]) => void;
-  setCategorySortOrder: (id: string, sortOrder: SortOrder) => void;
-  setCategorySortDirection: (id: string, sortDirection: SortDirection) => void;
-  addItemToSelectedCategory: (name: string) => void;
-  toggleItemInSelectedCategory: (itemID: string) => void;
-  deleteItemFromSelectedCategory: (itemID: string) => void;
-  clearCheckedItemsInSelectedCategory: () => void;
-  checkAllItemsInSelectedCategory: () => void;
-  uncheckAllItemsInSelectedCategory: () => void;
-  reload: () => void;
-  resetCategories: () => void;
-  groups: CategoryGroup[];
-  selectedGroupID: string | null;
-  categoriesInSelectedGroup: Category[];
-  pickerCategories: CategoryPickerItem[];
-  hasGroups: boolean;
-  selectGroup: (id: string | null) => void;
-  addGroup: (name: string) => void;
-  renameGroup: (id: string, newName: string) => void;
-  deleteGroup: (id: string) => void;
-  moveGroups: (from: number, to: number) => void;
-  setCategoryGroup: (categoryID: string, groupID: string | undefined) => void;
-  addCategoryWithGroup: (name: string, groupID: string) => void;
-}
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 

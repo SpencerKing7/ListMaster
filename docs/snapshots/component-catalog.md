@@ -434,6 +434,51 @@ Sync code input with label ("Enter a Sync Code"), description text, and an `<Inp
 
 ---
 
+## `SyncFeatureRow`
+
+**File:** `src/components/SyncFeatureRow.tsx`
+**Used by:** `SyncBenefitsCard`
+
+Single benefit row: icon (JSX.Element) + title + subtitle. Props: `SyncFeatureRowProps { icon, title, subtitle }`. Stateless, no dependencies beyond React.
+
+---
+
+## `SyncBenefitsCard`
+
+**File:** `src/components/SyncBenefitsCard.tsx`
+**Used by:** `OnboardingSyncScreen`
+
+Animated card listing three sync benefit rows. Props: `SyncBenefitsCardProps { isEntered: boolean }`. Uses staggered translate/opacity animation driven by `isEntered`. Renders three `<SyncFeatureRow>` instances.
+
+---
+
+## `InstallSyncCodeCard`
+
+**File:** `src/components/InstallSyncCodeCard.tsx`
+**Used by:** `InstallSheet`
+
+Shows the user's sync code (copy button, "Copied!" feedback) or an offer to enable sync when sync is inactive. Props: `InstallSyncCodeCardProps { isSyncEnabled, syncCode, isCopied, syncStatus, onCopy }`. Imports `SyncStatus` from `@/store/useSyncStore`.
+
+---
+
+## `InstallDeviceToggle`
+
+**File:** `src/components/InstallDeviceToggle.tsx`
+**Used by:** `InstallSheet`
+
+Segmented Mobile / Desktop toggle. Props: `InstallDeviceToggleProps { deviceMode: "mobile" | "desktop"; onDeviceModeChange: (mode) => void }`. Stateless.
+
+---
+
+## `CategoryPickerPill`
+
+**File:** `src/components/CategoryPickerPill.tsx`
+**Used by:** `CategoryPicker`
+
+Single pill button + optional section label for the horizontal category picker. Props: `CategoryPickerPillProps { category, isUngrouped, isSelected, isFirstOfSection, isAllView, labelText, hasDraggedRef, onSelect }`. Fires haptic feedback on select; checks `hasDraggedRef.current` before calling `onSelect` to prevent accidental selection during drag.
+
+---
+
 ## UI Primitives (shadcn/ui)
 
 The files in `src/components/ui/` are generated shadcn/ui primitives. **Do not hand-edit these files.** The following is a usage reference only.

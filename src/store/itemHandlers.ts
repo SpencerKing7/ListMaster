@@ -3,7 +3,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import type { ChecklistItem } from "@/models/types";
-import type { StoreState } from "./categoriesReducer";
+import type { StoreState } from "@/models/types";
 import { normalizedName } from "./reducerHelpers";
 
 // MARK: - Helpers

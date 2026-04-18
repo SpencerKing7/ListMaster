@@ -1,3 +1,4 @@
+<!-- Status: In Progress | Last updated: April 2026 -->
 # Plan: iOS-Feel UI Overhaul
 
 **Goal:** Make ListMaster feel as close to a native SwiftUI / UIKit iOS app as possible through typography, animation, interaction physics, haptics, gesture handling, and layout conventions.

@@ -1,13 +1,7 @@
 // src/store/categoriesReducer.ts
 // Pure reducer orchestrator — delegates each action to a domain-specific handler module.
-// Owns state shape, action type union, initial-state loader, and persistence side effect.
 
-import type {
-  Category,
-  CategoryGroup,
-  SortOrder,
-  SortDirection,
-} from "@/models/types";
+import type { StoreState, StoreAction } from "@/models/types";
 import { PersistenceService } from "@/services/persistenceService";
 import {
   handleSelectCategory,
@@ -37,84 +31,13 @@ import {
   handleMoveGroups,
   handleSelectGroup,
 } from "./groupHandlers";
-import { sanitizeOrphanedGroupIDs } from "./reducerHelpers";
+import {
+  handleReload,
+  handleResetCategories,
+  handleSyncLoad,
+} from "./metaHandlers";
 
-// MARK: - State Shape
-
-/** Top-level shape of the categories store. */
-export interface StoreState {
-  categories: Category[];
-  selectedCategoryID: string;
-  groups: CategoryGroup[];
-  selectedGroupID: string | null;
-}
-
-/** Loads the initial store state from localStorage, or returns an empty state. */
-export function loadInitialState(): StoreState {
-  const saved = PersistenceService.load();
-  if (saved && saved.categories.length > 0) {
-    const savedGroups = saved.groups ?? [];
-    // Validate persisted selectedGroupID — ensure it still exists (or null = All)
-    const savedGroupID = saved.selectedGroupID;
-    const isValidGroupID =
-      savedGroupID === null || savedGroups.some((g) => g.id === savedGroupID);
-    return {
-      categories: sanitizeOrphanedGroupIDs(saved.categories, savedGroups),
-      selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
-      groups: savedGroups,
-      selectedGroupID: isValidGroupID ? savedGroupID : null,
-    };
-  }
-  return {
-    categories: [],
-    selectedCategoryID: "",
-    groups: [],
-    selectedGroupID: null,
-  };
-}
-
-// MARK: - Actions
-
-/** Discriminated union of every action the reducer can handle. */
-export type StoreAction =
-  | { type: "SELECT_CATEGORY"; id: string }
-  | { type: "ADD_CATEGORY"; name: string }
-  | { type: "SET_CATEGORIES"; names: string[] }
-  | { type: "RENAME_CATEGORY"; id: string; newName: string }
-  | { type: "DELETE_CATEGORY"; id: string }
-  | { type: "MOVE_CATEGORIES"; from: number; to: number }
-  | { type: "REORDER_CATEGORIES"; orderedIDs: string[] }
-  | { type: "SET_CATEGORY_SORT_ORDER"; id: string; sortOrder: SortOrder }
-  | {
-      type: "SET_CATEGORY_SORT_DIRECTION";
-      id: string;
-      sortDirection: SortDirection;
-    }
-  | { type: "ADD_ITEM"; name: string }
-  | { type: "TOGGLE_ITEM"; itemID: string }
-  | { type: "DELETE_ITEM"; itemID: string }
-  | { type: "CLEAR_CHECKED" }
-  | { type: "CHECK_ALL" }
-  | { type: "UNCHECK_ALL" }
-  | { type: "RELOAD" }
-  | { type: "RESET_CATEGORIES" }
-  | {
-      type: "SYNC_LOAD";
-      categories: Category[];
-      selectedCategoryID?: string | null;
-      groups?: CategoryGroup[];
-    }
-  | { type: "ADD_GROUP"; name: string }
-  | { type: "RENAME_GROUP"; id: string; newName: string }
-  | { type: "DELETE_GROUP"; id: string }
-  | { type: "MOVE_GROUPS"; from: number; to: number }
-  | { type: "SELECT_GROUP"; id: string | null }
-  | {
-      type: "SET_CATEGORY_GROUP";
-      categoryID: string;
-      groupID: string | undefined;
-    }
-  | { type: "ADD_CATEGORY_WITH_GROUP"; name: string; groupID: string };
+export { loadInitialState } from "./reducerHelpers";
 
 // MARK: - Reducer
 
@@ -202,84 +125,13 @@ export function categoriesReducer(
       next = handleSelectGroup(state, action.id);
       break;
 
-    // ── Meta actions (handled inline — they have unique persistence/return semantics) ──
-    case "RELOAD": {
-      const saved = PersistenceService.load();
-      if (!saved || saved.categories.length === 0) return state;
-      const reloadedGroups = saved.groups ?? [];
-      // Validate persisted selectedGroupID — preserve null (All view) as valid
-      const savedGroupID = saved.selectedGroupID;
-      const isValidGroupID =
-        savedGroupID === null ||
-        reloadedGroups.some((g) => g.id === savedGroupID);
-      const reloadedGroupID = isValidGroupID ? savedGroupID : null;
-      // Don't re-save on reload
-      return {
-        categories: sanitizeOrphanedGroupIDs(saved.categories, reloadedGroups),
-        selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
-        groups: reloadedGroups,
-        selectedGroupID: reloadedGroupID,
-      };
-    }
-
-    case "RESET_CATEGORIES": {
-      const reset: StoreState = {
-        categories: [],
-        selectedCategoryID: "",
-        groups: [],
-        selectedGroupID: null,
-      };
-      PersistenceService.save(
-        reset.categories,
-        reset.selectedCategoryID,
-        reset.groups,
-        reset.selectedGroupID,
-      );
-      return reset;
-    }
-
-    case "SYNC_LOAD": {
-      const syncGroups = action.groups ?? [];
-      const syncGroupStillExists =
-        state.selectedGroupID === null ||
-        syncGroups.some((g) => g.id === state.selectedGroupID);
-      const syncGroupID = syncGroupStillExists
-        ? state.selectedGroupID
-        : syncGroups.length > 0
-          ? syncGroups[0].id
-          : null;
-
-      let resolvedSelectedID: string;
-      // Always prefer the local selection if it still exists in the incoming
-      // categories — syncing the selection causes cross-device interference and
-      // overwrites the user's last-seen state on reload.
-      const localStillExists = action.categories.some(
-        (c) => c.id === state.selectedCategoryID,
-      );
-      if (localStillExists) {
-        resolvedSelectedID = state.selectedCategoryID;
-      } else if (action.selectedCategoryID !== undefined) {
-        // Local category was deleted — fall back to cloud-provided selection.
-        resolvedSelectedID =
-          action.selectedCategoryID ?? action.categories[0]?.id ?? "";
-      } else {
-        resolvedSelectedID = action.categories[0]?.id ?? "";
-      }
-
-      const syncNext: StoreState = {
-        categories: sanitizeOrphanedGroupIDs(action.categories, syncGroups),
-        selectedCategoryID: resolvedSelectedID,
-        groups: syncGroups,
-        selectedGroupID: syncGroupID,
-      };
-      PersistenceService.save(
-        syncNext.categories,
-        syncNext.selectedCategoryID,
-        syncNext.groups,
-        syncNext.selectedGroupID,
-      );
-      return syncNext;
-    }
+    // ── Meta actions — own their persistence, return directly ──
+    case "RELOAD":
+      return handleReload(state);
+    case "RESET_CATEGORIES":
+      return handleResetCategories();
+    case "SYNC_LOAD":
+      return handleSyncLoad(state, action);
 
     default:
       return state;

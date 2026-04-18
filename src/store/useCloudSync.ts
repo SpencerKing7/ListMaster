@@ -5,7 +5,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { Dispatch } from "react";
 import type { Category, CategoryGroup } from "@/models/types";
-import type { StoreState, StoreAction } from "@/store/categoriesReducer";
+import type { StoreState, StoreAction } from "@/models/types";
 import { useCloudSyncSubscription } from "@/store/useCloudSyncSubscription";
 
 // MARK: - Types

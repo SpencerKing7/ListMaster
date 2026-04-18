@@ -4,40 +4,12 @@
 
 import { useMemo, useEffect, useCallback } from "react";
 import type { Dispatch } from "react";
-import type { Category, CategoryPickerItem } from "@/models/types";
-import type { StoreState, StoreAction } from "@/store/categoriesReducer";
-
-// MARK: - Types
-
-/** Derived read-only values computed from the store state. */
-export interface CategoryDerived {
-  /** The currently selected category, or null if none is found. */
-  selectedCategory: Category | null;
-  /** Whether deleting the selected category is allowed (requires >1 in the active group view). */
-  canDeleteCategories: boolean;
-  /** Whether there is a next category to navigate to within the group. */
-  canSelectNextCategory: boolean;
-  /** Whether there is a previous category to navigate to within the group. */
-  canSelectPreviousCategory: boolean;
-  /** The next category in the current group, or null. */
-  nextCategory: Category | null;
-  /** The previous category in the current group, or null. */
-  previousCategory: Category | null;
-  /** Categories filtered to the currently selected group. */
-  categoriesInSelectedGroup: Category[];
-  /**
-   * Categories for the picker. In the "All" view, ungrouped categories come
-   * first with `isUngrouped: true`. In a specific-group view, only that
-   * group's categories are included and `isUngrouped` is always `false`.
-   */
-  pickerCategories: CategoryPickerItem[];
-  /** Whether any groups exist in the store. */
-  hasGroups: boolean;
-  /** Navigate to the next category in the current group. */
-  selectNextCategory: () => void;
-  /** Navigate to the previous category in the current group. */
-  selectPreviousCategory: () => void;
-}
+import type {
+  CategoryPickerItem,
+  StoreState,
+  StoreAction,
+  CategoryDerived,
+} from "@/models/types";
 
 // MARK: - Hook
 

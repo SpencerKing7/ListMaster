@@ -1,6 +1,11 @@
 // src/store/reducerHelpers.ts
 // Shared helper functions used by reducer handler modules.
 
+import type { StoreState } from "@/models/types";
+import { PersistenceService } from "@/services/persistenceService";
+
+// MARK: - Name helpers
+
 /** Trim whitespace from a name value. */
 export function normalizedName(value: string): string {
   return value.trim();
@@ -57,4 +62,32 @@ export function isGroupNameAvailable(
     if (excludingID && group.id === excludingID) return false;
     return group.name.toLowerCase() === name.toLowerCase();
   });
+}
+
+// MARK: - Initial state
+
+/**
+ * Loads the initial store state from localStorage, or returns an empty state.
+ * Called once on store mount as the `useReducer` initializer.
+ */
+export function loadInitialState(): StoreState {
+  const saved = PersistenceService.load();
+  if (saved && saved.categories.length > 0) {
+    const savedGroups = saved.groups ?? [];
+    const savedGroupID = saved.selectedGroupID;
+    const isValidGroupID =
+      savedGroupID === null || savedGroups.some((g) => g.id === savedGroupID);
+    return {
+      categories: sanitizeOrphanedGroupIDs(saved.categories, savedGroups),
+      selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
+      groups: savedGroups,
+      selectedGroupID: isValidGroupID ? savedGroupID : null,
+    };
+  }
+  return {
+    categories: [],
+    selectedCategoryID: "",
+    groups: [],
+    selectedGroupID: null,
+  };
 }

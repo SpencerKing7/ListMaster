@@ -1,10 +1,15 @@
 // src/store/categoryHandlers.ts
-// Reducer handlers for category-level actions (add, rename, delete, reorder, sort, group assignment).
+// Reducer handlers for category-level actions (add, rename, delete, reorder).
 
 import { v4 as uuidv4 } from "uuid";
-import type { Category, SortOrder, SortDirection } from "@/models/types";
-import type { StoreState } from "./categoriesReducer";
+import type { Category, StoreState } from "@/models/types";
 import { normalizedName, isCategoryNameAvailable } from "./reducerHelpers";
+export {
+  handleSetCategorySortOrder,
+  handleSetCategorySortDirection,
+  handleSetCategoryGroup,
+  handleAddCategoryWithGroup,
+} from "./categoryAttributeHandlers";
 
 /** SELECT_CATEGORY */
 export function handleSelectCategory(
@@ -124,72 +129,4 @@ export function handleReorderCategories(
     .filter((c): c is Category => c !== undefined);
   if (reordered.length !== state.categories.length) return null;
   return { ...state, categories: reordered };
-}
-
-/** SET_CATEGORY_SORT_ORDER */
-export function handleSetCategorySortOrder(
-  state: StoreState,
-  id: string,
-  sortOrder: SortOrder,
-): StoreState {
-  const updated = state.categories.map((c) =>
-    c.id === id ? { ...c, sortOrder } : c,
-  );
-  return { ...state, categories: updated };
-}
-
-/** SET_CATEGORY_SORT_DIRECTION */
-export function handleSetCategorySortDirection(
-  state: StoreState,
-  id: string,
-  sortDirection: SortDirection,
-): StoreState {
-  const updated = state.categories.map((c) =>
-    c.id === id ? { ...c, sortDirection } : c,
-  );
-  return { ...state, categories: updated };
-}
-
-/**
- * SET_CATEGORY_GROUP — reassign a category to a different group.
- * @returns null if the destination group already has a category with this name.
- */
-export function handleSetCategoryGroup(
-  state: StoreState,
-  categoryID: string,
-  groupID: string | undefined,
-): StoreState | null {
-  const cat = state.categories.find((c) => c.id === categoryID);
-  if (!cat) return null;
-  if (!isCategoryNameAvailable(state.categories, cat.name, categoryID, groupID))
-    return null;
-  const updated = state.categories.map((c) =>
-    c.id === categoryID ? { ...c, groupID } : c,
-  );
-  return { ...state, categories: updated };
-}
-
-/** ADD_CATEGORY_WITH_GROUP */
-export function handleAddCategoryWithGroup(
-  state: StoreState,
-  name: string,
-  groupID: string,
-): StoreState | null {
-  const trimmed = normalizedName(name);
-  if (
-    !trimmed ||
-    !isCategoryNameAvailable(state.categories, trimmed, undefined, groupID)
-  )
-    return null;
-  const newCategory: Category = {
-    id: uuidv4(),
-    name: trimmed,
-    items: [],
-    groupID,
-  };
-  return {
-    ...state,
-    categories: [...state.categories, newCategory],
-    selectedCategoryID: newCategory.id,
-  };
 }

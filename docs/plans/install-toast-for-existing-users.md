@@ -1,3 +1,4 @@
+<!-- Status: In Progress | Last updated: April 2026 -->
 # Install Toast for Existing Browser Users
 
 ## Objective

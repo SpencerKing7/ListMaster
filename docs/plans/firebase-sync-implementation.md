@@ -1,3 +1,4 @@
+<!-- Status: In Progress | Last updated: April 2026 -->
 # Firebase Firestore Sync — Detailed Implementation Plan
 
 **Branch:** `db-storage-research`  

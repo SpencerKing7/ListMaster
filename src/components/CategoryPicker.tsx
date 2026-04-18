@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { usePickerScroll } from "@/store/usePickerScroll";
-import { HapticService } from "@/services/hapticService";
+import { CategoryPickerPill } from "@/components/CategoryPickerPill";
 
 /** Horizontally scrollable pill row for selecting a category. Supports drag-to-scroll on touch and arrow buttons on desktop. */
 export function CategoryPicker(): JSX.Element {
@@ -117,79 +117,25 @@ export function CategoryPicker(): JSX.Element {
                   );
                 }
 
-                items.push(
-                  <div
-                    key={category.id}
-                    style={{ position: "relative" }}
-                    className="flex-1 min-w-fit"
-                  >
-                    {/* Section label — floats above pill bar, left-aligned to group start */}
-                    {(() => {
-                      if (!isAllView || !isFirstOfSection) return null;
-                      // Suppress "No Group" label when every category is ungrouped
-                      // (user has groups but assigned nothing yet).
-                      const labelText = isUngrouped
-                        ? (hasGroupedCategories ? "No Group" : "")
-                        : (groupNameMap.get(currGroupID ?? "") ?? "");
-                      if (!labelText) return null;
-                      return (
-                        <span
-                          className="text-[8px] font-semibold uppercase tracking-wider whitespace-nowrap leading-none"
-                          style={{
-                            color: "var(--color-text-secondary)",
-                            opacity: 0.55,
-                            position: "absolute",
-                            bottom: "100%",
-                            left: 0,
-                            paddingBottom: 6,
-                          }}
-                          aria-hidden="true"
-                        >
-                          {labelText}
-                        </span>
-                      );
-                    })()}
+                const labelText = (() => {
+                  if (!isAllView || !isFirstOfSection) return "";
+                  return isUngrouped
+                    ? (hasGroupedCategories ? "No Group" : "")
+                    : (groupNameMap.get(currGroupID ?? "") ?? "");
+                })();
 
-                    {/* Pill button */}
-                    <button
-                      data-category-id={category.id}
-                      onPointerDown={(e) => {
-                        e.currentTarget.releasePointerCapture(e.pointerId);
-                      }}
-                      onClick={() => {
-                        if (!hasDraggedRef.current) {
-                          selectCategory(category.id);
-                          HapticService.selection();
-                        }
-                      }}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] w-full${isSelected ? " shadow-sm" : ""}`}
-                      style={
-                        isSelected
-                          ? {
-                            backgroundColor: "var(--color-surface-card)",
-                            color: "var(--color-brand-green)",
-                            fontWeight: 700,
-                            opacity: isUngrouped ? 0.65 : 1,
-                            touchAction: "pan-x",
-                            boxShadow:
-                              "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                            transition:
-                              "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                          }
-                          : {
-                            backgroundColor: "transparent",
-                            color: "var(--color-text-secondary)",
-                            opacity: isUngrouped ? 0.55 : 1,
-                            fontStyle: isUngrouped ? "italic" : "normal",
-                            touchAction: "pan-x",
-                            transition:
-                              "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                          }
-                      }
-                    >
-                      {category.name}
-                    </button>
-                  </div>,
+                items.push(
+                  <CategoryPickerPill
+                    key={category.id}
+                    category={category}
+                    isUngrouped={isUngrouped}
+                    isSelected={isSelected}
+                    isFirstOfSection={isFirstOfSection}
+                    isAllView={isAllView}
+                    labelText={labelText}
+                    hasDraggedRef={hasDraggedRef}
+                    onSelect={selectCategory}
+                  />,
                 );
               });
               return items;

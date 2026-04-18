@@ -1,3 +1,4 @@
+<!-- Status: In Progress | Last updated: April 2026 -->
 # Plan: Settings Sheet — Sticky Header Fade + Groups Collapsed by Default
 
 **Date:** April 2026  

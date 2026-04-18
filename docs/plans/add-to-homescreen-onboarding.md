@@ -1,3 +1,4 @@
+<!-- Status: In Progress | Last updated: April 2026 -->
 # Plan: Add-to-Home-Screen Onboarding Step
 
 **Goal:** Insert a new first step in the onboarding flow that explains to users they'll get the best experience by adding ListMaster to their home screen, with clear step-by-step instructions and Safari/browser icons. Provide a "Skip" option for users who prefer the browser, and an "I've already done this" option for users who land on this screen after already installing.

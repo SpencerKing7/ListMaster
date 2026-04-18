@@ -2,8 +2,7 @@
 // Reducer handlers for group-level actions (add, rename, delete, reorder, select).
 
 import { v4 as uuidv4 } from "uuid";
-import type { CategoryGroup } from "@/models/types";
-import type { StoreState } from "./categoriesReducer";
+import type { CategoryGroup, StoreState } from "@/models/types";
 import { normalizedName, isGroupNameAvailable } from "./reducerHelpers";
 
 /** ADD_GROUP */

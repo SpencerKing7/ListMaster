@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { InstallInstructions } from "@/components/InstallInstructions";
+import { InstallSyncCodeCard } from "@/components/InstallSyncCodeCard";
+import { InstallDeviceToggle } from "@/components/InstallDeviceToggle";
 import { useSyncStore } from "@/store/useSyncStore";
 import { SettingsService } from "@/services/settingsService";
 import { detectPlatform } from "@/lib/detectPlatform";
@@ -130,115 +132,18 @@ export function InstallSheet({ isOpen, onOpenChange }: InstallSheetProps): JSX.E
                 </span>
               </div>
 
-              {isSyncEnabled && syncCode ? (
-                <div
-                  className="rounded-xl p-4 flex flex-col gap-3"
-                  style={{ backgroundColor: "var(--color-surface-input)" }}
-                >
-                  <div className="text-xs font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-                    Your Sync Code
-                  </div>
-                  <div
-                    className="font-mono text-lg font-bold tracking-wider"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    {syncCode}
-                  </div>
-                  <button
-                    type="button"
-                    className="self-start px-4 py-2 rounded-xl text-sm font-semibold active:scale-[0.96] transition-transform"
-                    style={{
-                      backgroundColor: isCopied
-                        ? "rgba(var(--color-brand-green-rgb), 0.15)"
-                        : "rgba(var(--color-brand-green-rgb), 0.12)",
-                      color: "var(--color-brand-green)",
-                      touchAction: "manipulation",
-                      cursor: "pointer",
-                    }}
-                    onClick={handleGetAndCopyCode}
-                  >
-                    {isCopied ? "✓ Copied!" : "Copy Code"}
-                  </button>
-                  <div
-                    className="text-xs"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    Paste this code in your setup after install to restore your lists. You can always find it in Settings.
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="rounded-xl p-4 flex flex-col gap-3"
-                  style={{ backgroundColor: "var(--color-surface-input)" }}
-                >
-                  <div className="text-xs font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-                    Sync Code
-                  </div>
-                  <div
-                    className="text-xs"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    Get a sync code to restore your lists after installing.
-                  </div>
-                  <button
-                    type="button"
-                    className="self-start px-4 py-2 rounded-xl text-sm font-semibold active:scale-[0.96] transition-transform"
-                    style={{
-                      backgroundColor: isCopied
-                        ? "rgba(var(--color-brand-green-rgb), 0.15)"
-                        : "rgba(var(--color-brand-green-rgb), 0.12)",
-                      color: "var(--color-brand-green)",
-                      touchAction: "manipulation",
-                      cursor: "pointer",
-                    }}
-                    onClick={handleGetAndCopyCode}
-                    disabled={syncStatus === "syncing"}
-                  >
-                    {syncStatus === "syncing"
-                      ? "Setting up…"
-                      : isCopied
-                        ? "✓ Copied!"
-                        : "Enable Sync & Copy Code"}
-                  </button>
-                  {isCopied && (
-                    <div
-                      className="text-xs"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
-                      Paste this code in your setup after install to restore your lists.
-                    </div>
-                  )}
-                </div>
-              )}
+              <InstallSyncCodeCard
+                isSyncEnabled={isSyncEnabled}
+                syncCode={syncCode}
+                isCopied={isCopied}
+                syncStatus={syncStatus}
+                onCopy={handleGetAndCopyCode}
+              />
 
-              <div className="flex rounded-lg p-0.5" style={{ backgroundColor: "var(--color-surface-input)" }}>
-                <button
-                  type="button"
-                  className="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200"
-                  style={{
-                    backgroundColor: deviceMode === "mobile" ? "var(--color-surface-card)" : "transparent",
-                    color: deviceMode === "mobile" ? "var(--color-brand-teal)" : "var(--color-text-secondary)",
-                    boxShadow: deviceMode === "mobile" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                    touchAction: "manipulation",
-                  }}
-                  onClick={() => setDeviceMode("mobile")}
-                >
-                  Mobile
-                </button>
-                <button
-                  type="button"
-                  className="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors duration-200"
-                  style={{
-                    backgroundColor: deviceMode === "desktop" ? "var(--color-surface-card)" : "transparent",
-                    color: deviceMode === "desktop" ? "var(--color-brand-teal)" : "var(--color-text-secondary)",
-                    boxShadow: deviceMode === "desktop" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                    touchAction: "manipulation",
-                  }}
-                  onClick={() => setDeviceMode("desktop")}
-                >
-                  Desktop
-                </button>
-              </div>
+              <InstallDeviceToggle
+                deviceMode={deviceMode}
+                onDeviceModeChange={setDeviceMode}
+              />
 
               <InstallInstructions
                 deviceMode={deviceMode}

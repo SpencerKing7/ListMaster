@@ -1,7 +1,7 @@
 // src/store/useCloudSyncSubscription.ts
 import { useEffect, useRef } from "react";
 import type { Dispatch, MutableRefObject } from "react";
-import type { StoreAction, StoreState } from "@/store/categoriesReducer";
+import type { StoreAction, StoreState } from "@/models/types";
 
 // MARK: - Types
 
