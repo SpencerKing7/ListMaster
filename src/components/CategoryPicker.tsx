@@ -40,113 +40,115 @@ export function CategoryPicker(): JSX.Element {
 
   return (
     <>
-      <div
-        className="rounded-full px-1 py-1 w-full"
-        style={{
-          background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
-        }}
-      >
-        {pickerCategories.length === 0 ? (
-          <div className="flex items-center justify-center py-2 px-4">
-            <p className="text-xs font-medium text-center" style={{ color: "var(--color-text-secondary)" }}>
-              No lists in this group yet
-            </p>
-          </div>
-        ) : (
-          <div
-            ref={scrollRef}
-            className="overflow-x-auto cursor-grab active:cursor-grabbing w-full"
-            style={{ scrollbarWidth: "none", touchAction: "none" }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-          >
-            <div className="flex items-stretch gap-1 w-full">
-              {pickerCategories.map(({ category, isUngrouped }, index) => {
-                const isSelected = category.id === selectedCategoryID;
-                const prevItem = index > 0 ? pickerCategories[index - 1] : null;
-
-                // Determine if this pill opens a new section in the "All" view.
-                // A new section starts when the groupID changes from the previous pill.
-                const prevGroupID = prevItem?.category.groupID;
-                const currGroupID = category.groupID;
-                const isFirstOfSection =
-                  isAllView && (index === 0 || prevGroupID !== currGroupID);
-
-                // Derive the section label text.
-                let sectionLabel: string | null = null;
-                if (isFirstOfSection) {
-                  sectionLabel = isUngrouped
-                    ? "No Group"
-                    : (groupNameMap.get(currGroupID ?? "") ?? null);
-                }
-
-                return (
-                  <div key={category.id} className="flex items-stretch gap-1">
-                    {/* Section divider + microlabel — rendered before the first pill of each group */}
-                    {isFirstOfSection && index > 0 && (
-                      <div className="flex flex-col items-center justify-center gap-0.5 mx-0.5 shrink-0">
+      {pickerCategories.length === 0 ? (
+        <div
+          className="rounded-full px-1 py-1 w-full flex items-center justify-center"
+          style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}
+        >
+          <p className="text-xs font-medium text-center py-2 px-4" style={{ color: "var(--color-text-secondary)" }}>
+            No lists in this group yet
+          </p>
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto cursor-grab active:cursor-grabbing w-full"
+          style={{ scrollbarWidth: "none", touchAction: "none" }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <div className="flex flex-col w-full">
+            {/* ── Labels row — only visible in "All" view with groups ── */}
+            {isAllView && (
+              <div className="flex items-end gap-1 pb-0.5 px-1">
+                {pickerCategories.map(({ category, isUngrouped }, index) => {
+                  const prevItem = index > 0 ? pickerCategories[index - 1] : null;
+                  const prevGroupID = prevItem?.category.groupID;
+                  const currGroupID = category.groupID;
+                  const isFirstOfSection = index === 0 || prevGroupID !== currGroupID;
+                  const label = isFirstOfSection
+                    ? isUngrouped ? "No Group" : (groupNameMap.get(currGroupID ?? "") ?? "")
+                    : null;
+                  return (
+                    <div key={category.id} className="flex items-end gap-1 flex-1 min-w-max">
+                      {isFirstOfSection && index > 0 && (
                         <div
-                          className="w-px flex-1 rounded-full"
-                          style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.20)` }}
+                          className="self-stretch w-px mb-0.5 rounded-full shrink-0"
+                          style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.22)` }}
                         />
-                      </div>
-                    )}
-                    <div className="flex flex-col items-center gap-0.5 flex-1">
-                      {sectionLabel !== null && (
+                      )}
+                      {label !== null ? (
                         <span
-                          className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap px-1 leading-none"
+                          className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none"
                           style={{ color: "var(--color-text-secondary)", opacity: 0.45 }}
                           aria-hidden="true"
                         >
-                          {sectionLabel}
+                          {label}
                         </span>
+                      ) : (
+                        <span className="flex-1" aria-hidden="true" />
                       )}
-                      <button
-                        data-category-id={category.id}
-                        onPointerDown={(e) => {
-                          // Release implicit pointer capture so the scroll container
-                          // can take over capture when a drag threshold is crossed.
-                          e.currentTarget.releasePointerCapture(e.pointerId);
-                        }}
-                        onClick={() => {
-                          if (!hasDraggedRef.current) {
-                            selectCategory(category.id);
-                            HapticService.selection();
-                          }
-                        }}
-                        className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
-                        style={
-                          isSelected
-                            ? {
-                              backgroundColor: "var(--color-surface-card)",
-                              color: "var(--color-brand-green)",
-                              fontWeight: 700,
-                              opacity: isUngrouped ? 0.65 : 1,
-                              boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                              transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                            }
-                            : {
-                              backgroundColor: "transparent",
-                              color: "var(--color-text-secondary)",
-                              opacity: isUngrouped ? 0.55 : 1,
-                              fontStyle: isUngrouped ? "italic" : "normal",
-                              transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                            }
-                        }
-                      >
-                        {category.name}
-                      </button>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Pill bar ── */}
+            <div
+              className="rounded-full px-1 py-1 w-full"
+              style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}
+            >
+              <div className="flex items-center gap-1 w-full">
+                {pickerCategories.map(({ category, isUngrouped }) => {
+                  const isSelected = category.id === selectedCategoryID;
+                  return (
+                    <button
+                      key={category.id}
+                      data-category-id={category.id}
+                      onPointerDown={(e) => {
+                        // Release implicit pointer capture so the scroll container
+                        // can take over capture when a drag threshold is crossed.
+                        e.currentTarget.releasePointerCapture(e.pointerId);
+                      }}
+                      onClick={() => {
+                        if (!hasDraggedRef.current) {
+                          selectCategory(category.id);
+                          HapticService.selection();
+                        }
+                      }}
+                      className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
+                      style={
+                        isSelected
+                          ? {
+                            backgroundColor: "var(--color-surface-card)",
+                            color: "var(--color-brand-green)",
+                            fontWeight: 700,
+                            opacity: isUngrouped ? 0.65 : 1,
+                            boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                            transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                          }
+                          : {
+                            backgroundColor: "transparent",
+                            color: "var(--color-text-secondary)",
+                            opacity: isUngrouped ? 0.55 : 1,
+                            fontStyle: isUngrouped ? "italic" : "normal",
+                            transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                          }
+                      }
+                    >
+                      {category.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 }
