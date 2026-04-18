@@ -121,7 +121,7 @@ export function CategoryPicker(): JSX.Element {
                   <div
                     key={category.id}
                     style={{ position: "relative" }}
-                    className={!isAllView ? "flex-1 min-w-fit" : undefined}
+                    className="flex-1 min-w-fit"
                   >
                     {/* Section label — floats above pill bar, left-aligned to group start */}
                     {(() => {
