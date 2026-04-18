@@ -53,68 +53,75 @@ export function CategoryPicker(): JSX.Element {
         <div
           ref={scrollRef}
           className="overflow-x-auto cursor-grab active:cursor-grabbing w-full"
-          style={{ scrollbarWidth: "none", touchAction: "none" }}
+          style={{ scrollbarWidth: "none", touchAction: "pan-x" }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          {/* min-w-max lets content grow beyond scroll container width */}
-          <div className="flex flex-col min-w-max">
-            {/* ── Labels row — only visible in "All" view with groups ── */}
-            {isAllView && (
-              <div className="flex items-end gap-1 pb-0.5 px-1">
-                {pickerCategories.map(({ category, isUngrouped }, index) => {
-                  const prevGroupID = index > 0 ? pickerCategories[index - 1].category.groupID : "__none__";
-                  const currGroupID = category.groupID;
-                  const isFirstOfSection = index === 0 || prevGroupID !== currGroupID;
-                  const label = isFirstOfSection
-                    ? isUngrouped ? "No Group" : (groupNameMap.get(currGroupID ?? "") ?? "")
-                    : "";
-                  return [
-                    // Divider between sections — sibling element, not nested
-                    isFirstOfSection && index > 0 ? (
-                      <div
-                        key={`div-${category.id}`}
-                        className="self-stretch w-px mb-0.5 rounded-full shrink-0"
-                        style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.22)` }}
-                      />
-                    ) : null,
-                    <span
-                      key={category.id}
-                      className="flex-1 min-w-max text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none"
-                      style={{ color: "var(--color-text-secondary)", opacity: label ? 0.45 : 0 }}
-                      aria-hidden="true"
-                    >
-                      {label || "\u00A0"}
-                    </span>,
-                  ];
-                })}
-              </div>
-            )}
+          {/*
+            Layout strategy: labels are absolutely positioned above each pill,
+            so they inherit the pill's width automatically. The pill bar uses a
+            single rounded-full background wrapper for visual cohesion.
+            margin-top on the wrapper reserves space for labels in isAllView.
+          */}
+          <div
+            className="rounded-full px-1 py-1 flex items-center gap-1 min-w-max"
+            style={{
+              background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
+              marginTop: isAllView ? 18 : 0,
+              position: "relative",
+            }}
+          >
+            {(() => {
+              const items: JSX.Element[] = [];
+              pickerCategories.forEach(({ category, isUngrouped }, index) => {
+                const prevGroupID =
+                  index > 0
+                    ? pickerCategories[index - 1].category.groupID
+                    : "__none__";
+                const currGroupID = category.groupID;
+                const isFirstOfSection =
+                  isAllView && (index === 0 || prevGroupID !== currGroupID);
+                const isSelected = category.id === selectedCategoryID;
 
-            {/* ── Pill bar ── */}
-            <div
-              className="rounded-full px-1 py-1"
-              style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}
-            >
-              <div className="flex items-center gap-1">
-                {pickerCategories.map(({ category, isUngrouped }, index) => {
-                  const isSelected = category.id === selectedCategoryID;
-                  const prevGroupID = index > 0 ? pickerCategories[index - 1].category.groupID : "__none__";
-                  const isFirstOfSection = isAllView && (index === 0 || prevGroupID !== category.groupID);
-                  return [
-                    // Matching divider so pill columns align with label columns above
-                    isFirstOfSection && index > 0 ? (
-                      <div
-                        key={`div-${category.id}`}
-                        className="self-stretch w-px rounded-full shrink-0"
-                        style={{ background: "transparent" }}
-                      />
-                    ) : null,
+                // Section divider between groups
+                if (isAllView && isFirstOfSection && index > 0) {
+                  items.push(
+                    <div
+                      key={`div-${category.id}`}
+                      className="self-stretch w-px rounded-full shrink-0 my-1"
+                      style={{
+                        background: `rgba(var(--color-brand-deep-green-rgb), 0.22)`,
+                      }}
+                    />,
+                  );
+                }
+
+                items.push(
+                  <div key={category.id} style={{ position: "relative" }}>
+                    {/* Section label — floats above pill bar */}
+                    {isAllView && isFirstOfSection && (
+                      <span
+                        className="text-[8px] font-semibold uppercase tracking-widest whitespace-nowrap leading-none text-center w-full"
+                        style={{
+                          color: "var(--color-text-secondary)",
+                          opacity: 0.45,
+                          position: "absolute",
+                          bottom: "100%",
+                          left: 0,
+                          right: 0,
+                          paddingBottom: 3,
+                        }}
+                        aria-hidden="true"
+                      >
+                        {isUngrouped ? "No Group" : (groupNameMap.get(currGroupID ?? "") ?? "")}
+                      </span>
+                    )}
+
+                    {/* Pill button */}
                     <button
-                      key={category.id}
                       data-category-id={category.id}
                       onPointerDown={(e) => {
                         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -125,32 +132,36 @@ export function CategoryPicker(): JSX.Element {
                           HapticService.selection();
                         }
                       }}
-                      className={`flex-1 min-w-max rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] ${isSelected ? "shadow-sm" : ""}`}
+                      className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] touch-manipulation ${isSelected ? "shadow-sm" : ""}`}
                       style={
                         isSelected
                           ? {
-                            backgroundColor: "var(--color-surface-card)",
-                            color: "var(--color-brand-green)",
-                            fontWeight: 700,
-                            opacity: isUngrouped ? 0.65 : 1,
-                            boxShadow: "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
-                            transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                          }
+                              backgroundColor: "var(--color-surface-card)",
+                              color: "var(--color-brand-green)",
+                              fontWeight: 700,
+                              opacity: isUngrouped ? 0.65 : 1,
+                              boxShadow:
+                                "0 2px 8px rgba(var(--color-brand-deep-green-rgb), 0.16), 0 1px 2px rgba(var(--color-brand-deep-green-rgb), 0.10)",
+                              transition:
+                                "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                            }
                           : {
-                            backgroundColor: "transparent",
-                            color: "var(--color-text-secondary)",
-                            opacity: isUngrouped ? 0.55 : 1,
-                            fontStyle: isUngrouped ? "italic" : "normal",
-                            transition: "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
-                          }
+                              backgroundColor: "transparent",
+                              color: "var(--color-text-secondary)",
+                              opacity: isUngrouped ? 0.55 : 1,
+                              fontStyle: isUngrouped ? "italic" : "normal",
+                              transition:
+                                "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
+                            }
                       }
                     >
                       {category.name}
-                    </button>,
-                  ];
-                })}
-              </div>
-            </div>
+                    </button>
+                  </div>,
+                );
+              });
+              return items;
+            })()}
           </div>
         </div>
       )}

@@ -42,12 +42,16 @@ export function usePickerScroll(): UsePickerScrollReturn {
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
+      // Touch scrolling is handled natively via touch-action: pan-x.
+      // Only intercept mouse pointer for drag-to-scroll.
+      if (e.pointerType !== "mouse") return;
       const el = scrollRef.current;
       if (!el) return;
       isDraggingRef.current = true;
       hasDraggedRef.current = false;
       startXRef.current = e.clientX;
       scrollLeftStartRef.current = el.scrollLeft;
+      el.setPointerCapture(e.pointerId);
     },
     [],
   );
@@ -60,7 +64,6 @@ export function usePickerScroll(): UsePickerScrollReturn {
       const dx = e.clientX - startXRef.current;
       if (!hasDraggedRef.current && Math.abs(dx) > 5) {
         hasDraggedRef.current = true;
-        el.setPointerCapture(e.pointerId);
       }
       if (hasDraggedRef.current) {
         el.scrollLeft = scrollLeftStartRef.current - dx;
