@@ -54,11 +54,15 @@ export function loadInitialState(): StoreState {
   const saved = PersistenceService.load();
   if (saved && saved.categories.length > 0) {
     const savedGroups = saved.groups ?? [];
+    // Validate persisted selectedGroupID — ensure it still exists (or null = All)
+    const savedGroupID = saved.selectedGroupID;
+    const isValidGroupID =
+      savedGroupID === null || savedGroups.some((g) => g.id === savedGroupID);
     return {
       categories: sanitizeOrphanedGroupIDs(saved.categories, savedGroups),
       selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
       groups: savedGroups,
-      selectedGroupID: savedGroups.length > 0 ? savedGroups[0].id : null,
+      selectedGroupID: isValidGroupID ? savedGroupID : null,
     };
   }
   return {
@@ -231,6 +235,7 @@ export function categoriesReducer(
         reset.categories,
         reset.selectedCategoryID,
         reset.groups,
+        reset.selectedGroupID,
       );
       return reset;
     }
@@ -238,7 +243,7 @@ export function categoriesReducer(
     case "SYNC_LOAD": {
       const syncGroups = action.groups ?? [];
       const syncGroupStillExists =
-        state.selectedGroupID !== null &&
+        state.selectedGroupID === null ||
         syncGroups.some((g) => g.id === state.selectedGroupID);
       const syncGroupID = syncGroupStillExists
         ? state.selectedGroupID
@@ -269,6 +274,7 @@ export function categoriesReducer(
         syncNext.categories,
         syncNext.selectedCategoryID,
         syncNext.groups,
+        syncNext.selectedGroupID,
       );
       return syncNext;
     }
@@ -285,6 +291,7 @@ export function categoriesReducer(
     next.categories,
     next.selectedCategoryID,
     next.groups,
+    next.selectedGroupID,
   );
   return next;
 }
