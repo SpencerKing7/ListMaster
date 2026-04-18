@@ -4,7 +4,7 @@
 
 import { useMemo, useEffect, useCallback } from "react";
 import type { Dispatch } from "react";
-import type { Category } from "@/models/types";
+import type { Category, CategoryPickerItem } from "@/models/types";
 import type { StoreState, StoreAction } from "@/store/categoriesReducer";
 
 // MARK: - Types
@@ -25,6 +25,12 @@ export interface CategoryDerived {
   previousCategory: Category | null;
   /** Categories filtered to the currently selected group. */
   categoriesInSelectedGroup: Category[];
+  /**
+   * Categories for the picker. When a specific group is active, ungrouped
+   * categories trail the assigned ones with `isUngrouped: true` so the
+   * picker can render them dimmed rather than hiding them entirely.
+   */
+  pickerCategories: CategoryPickerItem[];
   /** Whether any groups exist in the store. */
   hasGroups: boolean;
   /** Navigate to the next category in the current group. */
@@ -65,6 +71,24 @@ export function useCategoryDerived(
         : state.categories.filter((c) => c.groupID === state.selectedGroupID),
     [state.categories, state.selectedGroupID],
   );
+
+  const pickerCategories = useMemo((): CategoryPickerItem[] => {
+    if (state.selectedGroupID === null) {
+      // "All" view: surface ungrouped categories first so they are easy to find,
+      // then the assigned (grouped) categories follow.
+      const ungrouped = state.categories
+        .filter((c) => c.groupID === undefined)
+        .map((c) => ({ category: c, isUngrouped: true }));
+      const grouped = state.categories
+        .filter((c) => c.groupID !== undefined)
+        .map((c) => ({ category: c, isUngrouped: false }));
+      return [...ungrouped, ...grouped];
+    }
+    // Specific group: show only the categories assigned to that group.
+    return state.categories
+      .filter((c) => c.groupID === state.selectedGroupID)
+      .map((c) => ({ category: c, isUngrouped: false }));
+  }, [state.categories, state.selectedGroupID]);
 
   // Auto-select first visible category if current selection falls out of group.
   useEffect(() => {
@@ -130,6 +154,7 @@ export function useCategoryDerived(
     previousCategory,
     categoriesInSelectedGroup,
     hasGroups,
+    pickerCategories,
     selectNextCategory,
     selectPreviousCategory,
   };

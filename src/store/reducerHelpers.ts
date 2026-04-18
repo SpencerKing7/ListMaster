@@ -29,6 +29,24 @@ export function isCategoryNameAvailable(
   });
 }
 
+/**
+ * Clears `groupID` on any category whose `groupID` does not match an existing
+ * group. This prevents categories from becoming invisible in Settings when a
+ * group is deleted on one device but the sync payload arrives without the
+ * corresponding group.
+ */
+export function sanitizeOrphanedGroupIDs<T extends { groupID?: string }>(
+  categories: T[],
+  groups: { id: string }[],
+): T[] {
+  const groupIDs = new Set(groups.map((g) => g.id));
+  return categories.map((c) =>
+    c.groupID !== undefined && !groupIDs.has(c.groupID)
+      ? { ...c, groupID: undefined }
+      : c,
+  );
+}
+
 /** Check if a group name is unique (case-insensitive), optionally excluding a given ID. */
 export function isGroupNameAvailable(
   groups: { id: string; name: string }[],

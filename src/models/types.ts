@@ -26,6 +26,17 @@ export interface CategoryGroup {
   sortOrder: number; // Display order among groups
 }
 
+/**
+ * A category enriched with a display flag for the CategoryPicker.
+ * When a specific group is active, ungrouped categories are appended
+ * with `isUngrouped: true` so the picker can render them dimmed.
+ */
+export interface CategoryPickerItem {
+  category: Category;
+  /** True when this category has no group and trails the group's assigned categories. */
+  isUngrouped: boolean;
+}
+
 /** Five-step text size scale for checklist item text. */
 export type TextSize = "xs" | "s" | "m" | "l" | "xl";
 

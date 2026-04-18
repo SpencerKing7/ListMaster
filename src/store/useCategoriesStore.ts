@@ -16,6 +16,7 @@ import {
 import type {
   Category,
   CategoryGroup,
+  CategoryPickerItem,
   SortOrder,
   SortDirection,
 } from "@/models/types";
@@ -60,6 +61,7 @@ interface StoreContextValue {
   groups: CategoryGroup[];
   selectedGroupID: string | null;
   categoriesInSelectedGroup: Category[];
+  pickerCategories: CategoryPickerItem[];
   hasGroups: boolean;
   selectGroup: (id: string | null) => void;
   addGroup: (name: string) => void;
@@ -151,6 +153,7 @@ export function StoreProvider({
     groups: state.groups,
     selectedGroupID: state.selectedGroupID,
     categoriesInSelectedGroup: derived.categoriesInSelectedGroup,
+    pickerCategories: derived.pickerCategories,
     hasGroups: derived.hasGroups,
     selectGroup: actions.selectGroup,
     addGroup: actions.addGroup,

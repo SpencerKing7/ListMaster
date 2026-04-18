@@ -37,6 +37,7 @@ import {
   handleMoveGroups,
   handleSelectGroup,
 } from "./groupHandlers";
+import { sanitizeOrphanedGroupIDs } from "./reducerHelpers";
 
 // MARK: - State Shape
 
@@ -54,7 +55,7 @@ export function loadInitialState(): StoreState {
   if (saved && saved.categories.length > 0) {
     const savedGroups = saved.groups ?? [];
     return {
-      categories: saved.categories,
+      categories: sanitizeOrphanedGroupIDs(saved.categories, savedGroups),
       selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
       groups: savedGroups,
       selectedGroupID: savedGroups.length > 0 ? savedGroups[0].id : null,
@@ -212,7 +213,7 @@ export function categoriesReducer(
           : null;
       // Don't re-save on reload
       return {
-        categories: saved.categories,
+        categories: sanitizeOrphanedGroupIDs(saved.categories, reloadedGroups),
         selectedCategoryID: saved.selectedCategoryID ?? saved.categories[0].id,
         groups: reloadedGroups,
         selectedGroupID: reloadedGroupID,
@@ -259,7 +260,7 @@ export function categoriesReducer(
       }
 
       const syncNext: StoreState = {
-        categories: action.categories,
+        categories: sanitizeOrphanedGroupIDs(action.categories, syncGroups),
         selectedCategoryID: resolvedSelectedID,
         groups: syncGroups,
         selectedGroupID: syncGroupID,
