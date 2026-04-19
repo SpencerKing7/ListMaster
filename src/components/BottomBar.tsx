@@ -21,7 +21,7 @@ export function BottomBar(): JSX.Element {
         style={{
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
           background:
-            "linear-gradient(to bottom, transparent 0%, var(--color-surface-background) 40%, var(--color-surface-background) 100%)",
+            "linear-gradient(to bottom, transparent 0%, var(--color-surface-chrome, var(--color-surface-background)) 40%, var(--color-surface-chrome, var(--color-surface-background)) 100%)",
         }}
       >
         {/* ── Navigation row: 3-column grid so centre is always truly centred ── */}
@@ -66,7 +66,7 @@ export function BottomBar(): JSX.Element {
                 className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
                 style={{
                   color: "var(--color-danger)",
-                  backgroundColor: "rgba(212, 75, 74, 0.10)",
+                  backgroundColor: "rgba(var(--color-danger-rgb), 0.12)",
                   touchAction: "manipulation",
                 }}
                 onClick={() => {

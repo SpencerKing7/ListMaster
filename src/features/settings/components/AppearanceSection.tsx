@@ -56,7 +56,7 @@ export function AppearanceSection({ appearanceMode, onChangeMode }: AppearanceSe
         }}
         className="w-full rounded-xl p-1"
         style={{
-          backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+          backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
         }}
       >
         {(["system", "light", "dark"] as const).map((mode) => (

@@ -32,7 +32,7 @@ export function AddItemInput(): JSX.Element {
         className="flex items-center h-12 rounded-[16px] px-4 gap-2"
         style={{
           backgroundColor: "var(--color-surface-card)",
-          boxShadow: "var(--elevation-card)",
+          border: "1px solid var(--color-border-subtle)",
         }}
       >
         <input

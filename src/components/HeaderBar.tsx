@@ -33,7 +33,7 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
         background:
-          "linear-gradient(to top, transparent 0%, var(--color-surface-background) 35%, var(--color-surface-background) 100%)",
+          "linear-gradient(to top, transparent 0%, var(--color-surface-chrome, var(--color-surface-background)) 35%, var(--color-surface-chrome, var(--color-surface-background)) 100%)",
       }}
     >
       <div className="flex items-center gap-2 mb-4">

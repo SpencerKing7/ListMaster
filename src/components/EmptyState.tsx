@@ -36,7 +36,7 @@ export function EmptyState({ icon, title, subtitle }: EmptyStateProps): JSX.Elem
       >
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.10)" }}
+          style={{ backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.14)" }}
         >
           {icon}
         </div>

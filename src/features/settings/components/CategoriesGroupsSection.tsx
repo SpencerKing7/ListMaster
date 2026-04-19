@@ -177,7 +177,7 @@ export function CategoriesGroupsSection({
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.97] active:opacity-80"
           style={{
             color: "var(--color-brand-green)",
-            backgroundColor: "rgba(var(--color-brand-green-rgb), 0.10)",
+            backgroundColor: `rgba(var(--color-brand-green-rgb), 0.12)`,
             touchAction: "manipulation",
           }}
           onClick={onOpenAddSheet}

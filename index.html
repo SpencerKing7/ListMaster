@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="List Master" />
     <link rel="apple-touch-icon" href="/ListMaster/icon-192.png" />
-    <meta name="theme-color" content="#0e1714" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f0f6f3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#080f0c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#edf3f0" media="(prefers-color-scheme: light)" />
     <link rel="icon" type="image/png" href="/ListMaster/icon-192.png" />
     <title>List Master</title>
 
@@ -16,8 +16,8 @@
     <script>
       (function () {
         var mode = localStorage.getItem("appearanceMode") || "system";
-        var lightBg = "#f0f6f3";
-        var darkBg = "#0e1714";
+        var lightBg = "#edf3f0";
+        var darkBg = "#080f0c";
 
         if (mode === "light" || mode === "dark") {
           document.documentElement.setAttribute("data-theme", mode);

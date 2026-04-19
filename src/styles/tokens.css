@@ -7,15 +7,16 @@
   --color-brand-blue: #3275b5;
   --color-brand-deep-green: #1a5e4b;
 
-  --color-surface-background: #f0f6f3;
+  --color-surface-background: #edf3f0;
   --color-surface-card: #f8fcf9;
-  --color-surface-input: #e8f0ec;
+  --color-surface-input: #e5ede9;
+  --color-surface-chrome: #edf3f0;
   --color-surface-green-tint: rgba(57, 179, 133, 0.06);
 
   --color-danger: #d44b4a;
   --color-danger-rgb: 212, 75, 74;
 
-  --color-text-primary: #000000;
+  --color-text-primary: #1a1a1a;
   --color-text-secondary: rgba(0, 0, 0, 0.5);
 
   --color-brand-deep-green-rgb: 26, 94, 75;
@@ -26,9 +27,9 @@
   --color-surface-overlay: rgba(0, 0, 0, 0.45);
 
   /* Subtle border for cards and dialogs */
-  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
   /* Slightly stronger border for dialogs / elevated surfaces */
-  --color-border-dialog: rgba(0, 0, 0, 0.08);
+  --color-border-dialog: rgba(0, 0, 0, 0.1);
 
   /* Elevation shadow for cards — subtle on light */
   --elevation-card:
@@ -76,35 +77,41 @@
     --color-brand-blue: #4c8dcb;
     --color-brand-deep-green: #277862;
 
-    --color-surface-background: #0e1714;
-    --color-surface-card: #131f1b;
-    --color-surface-input: #0a110e;
-    --color-surface-green-tint: rgba(73, 203, 154, 0.15);
+    --color-surface-background: #080f0c;
+    --color-surface-card: #1a2924;
+    --color-surface-input: #111b17;
+    --color-surface-chrome: #141f1b;
+    --color-surface-green-tint: rgba(73, 203, 154, 0.1);
 
     --color-danger: #e76560;
     --color-danger-rgb: 231, 101, 96;
 
     --color-text-primary: #ffffff;
-    --color-text-secondary: rgba(255, 255, 255, 0.5);
+    --color-text-secondary: rgba(255, 255, 255, 0.63);
 
     --color-brand-deep-green-rgb: 39, 120, 98;
     --color-brand-green-rgb: 73, 203, 154;
     --color-brand-teal-rgb: 61, 170, 176;
 
     /* Overlay / scrim — slightly darker for dark mode */
-    --color-surface-overlay: rgba(0, 0, 0, 0.6);
+    --color-surface-overlay: rgba(0, 0, 0, 0.7);
 
     /* Subtle border for cards and dialogs — lighter strokes on dark */
-    --color-border-subtle: rgba(255, 255, 255, 0.06);
-    --color-border-dialog: rgba(255, 255, 255, 0.1);
+    --color-border-subtle: rgba(255, 255, 255, 0.1);
+    --color-border-dialog: rgba(255, 255, 255, 0.16);
 
     /* Elevation shadows — more opaque on dark */
     --elevation-card:
-      0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+      0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
     --elevation-sheet:
-      0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
+      0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 4px rgba(0, 0, 0, 0.3);
 
-    /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+    --gradient-brand-wide: linear-gradient(
+      135deg,
+      rgba(39, 120, 98, 0.22) 0%,
+      rgba(61, 170, 176, 0.14) 50%,
+      rgba(76, 141, 203, 0.1) 100%
+    ); /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
     --text-size-base: 1rem;
 
     /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
@@ -119,15 +126,16 @@
   --color-brand-blue: #3275b5;
   --color-brand-deep-green: #1a5e4b;
 
-  --color-surface-background: #f0f6f3;
+  --color-surface-background: #edf3f0;
   --color-surface-card: #f8fcf9;
-  --color-surface-input: #e8f0ec;
+  --color-surface-input: #e5ede9;
+  --color-surface-chrome: #edf3f0;
   --color-surface-green-tint: rgba(57, 179, 133, 0.06);
 
   --color-danger: #d44b4a;
   --color-danger-rgb: 212, 75, 74;
 
-  --color-text-primary: #000000;
+  --color-text-primary: #1a1a1a;
   --color-text-secondary: rgba(0, 0, 0, 0.5);
 
   --color-brand-deep-green-rgb: 26, 94, 75;
@@ -135,8 +143,8 @@
   --color-brand-teal-rgb: 44, 144, 150;
 
   --color-surface-overlay: rgba(0, 0, 0, 0.45);
-  --color-border-subtle: rgba(0, 0, 0, 0.06);
-  --color-border-dialog: rgba(0, 0, 0, 0.08);
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
+  --color-border-dialog: rgba(0, 0, 0, 0.1);
   --elevation-card:
     0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
   --elevation-sheet:
@@ -156,27 +164,35 @@
   --color-brand-blue: #4c8dcb;
   --color-brand-deep-green: #277862;
 
-  --color-surface-background: #0e1714;
-  --color-surface-card: #131f1b;
-  --color-surface-input: #0a110e;
-  --color-surface-green-tint: rgba(73, 203, 154, 0.15);
+  --color-surface-background: #080f0c;
+  --color-surface-card: #1a2924;
+  --color-surface-input: #111b17;
+  --color-surface-chrome: #141f1b;
+  --color-surface-green-tint: rgba(73, 203, 154, 0.1);
 
   --color-danger: #e76560;
   --color-danger-rgb: 231, 101, 96;
 
   --color-text-primary: #ffffff;
-  --color-text-secondary: rgba(255, 255, 255, 0.5);
+  --color-text-secondary: rgba(255, 255, 255, 0.63);
 
   --color-brand-deep-green-rgb: 39, 120, 98;
   --color-brand-green-rgb: 73, 203, 154;
   --color-brand-teal-rgb: 61, 170, 176;
 
-  --color-surface-overlay: rgba(0, 0, 0, 0.6);
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border-dialog: rgba(255, 255, 255, 0.1);
-  --elevation-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+  --color-surface-overlay: rgba(0, 0, 0, 0.7);
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
+  --color-border-dialog: rgba(255, 255, 255, 0.16);
+  --elevation-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
   --elevation-sheet:
-    0 -4px 24px rgba(0, 0, 0, 0.35), 0 -1px 4px rgba(0, 0, 0, 0.2);
+    0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 4px rgba(0, 0, 0, 0.3);
+
+  --gradient-brand-wide: linear-gradient(
+    135deg,
+    rgba(39, 120, 98, 0.22) 0%,
+    rgba(61, 170, 176, 0.14) 50%,
+    rgba(76, 141, 203, 0.1) 100%
+  );
 
   /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
   --text-size-base: 1rem;

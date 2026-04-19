@@ -136,7 +136,7 @@ export function AddCategoryDialog({
           <Button
             variant="ghost"
             className="flex-1 rounded-xl font-semibold hover:!bg-[color:var(--color-surface-input)]"
-            style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.10)" }}
+            style={{ color: "var(--color-brand-green)", backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)" }}
             disabled={categoryName.trim().length === 0 || isDuplicate}
             onClick={onConfirm}
           >

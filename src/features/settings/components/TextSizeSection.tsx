@@ -46,7 +46,7 @@ export function TextSizeSection({ textSize, onChangeSize }: TextSizeSectionProps
         }}
         className="w-full rounded-xl p-1"
         style={{
-          backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.10)`,
+          backgroundColor: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
         }}
       >
         {(["xs", "s", "m", "l", "xl"] as const).map((size) => (

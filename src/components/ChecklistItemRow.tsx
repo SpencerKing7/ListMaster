@@ -24,8 +24,9 @@ export function ChecklistItemRow({ item, isTapped, onTap }: ChecklistItemRowProp
         paddingTop: "var(--row-padding-y)",
         paddingBottom: "var(--row-padding-y)",
         backgroundColor: item.isChecked
-          ? "rgba(var(--color-brand-deep-green-rgb), 0.04)"
+          ? "rgba(var(--color-brand-deep-green-rgb), 0.08)"
           : "var(--color-surface-card)",
+        border: item.isChecked ? "1px solid transparent" : "1px solid var(--color-border-subtle)",
         boxShadow: item.isChecked ? "none" : "var(--elevation-card)",
         transition: isTapped
           ? "transform 80ms ease-out, opacity 80ms ease-out"

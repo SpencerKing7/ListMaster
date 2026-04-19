@@ -3,8 +3,8 @@ import type { TextSize } from "@/models/types";
 
 /** Surface-background hex values matching tokens.css — used to keep the
  *  `<meta name="theme-color">` in sync so the iOS status bar area matches. */
-const SURFACE_BG_LIGHT = "#f0f6f3";
-const SURFACE_BG_DARK = "#0e1714";
+const SURFACE_BG_LIGHT = "#edf3f0";
+const SURFACE_BG_DARK = "#080f0c";
 
 /** Maps TextSize tokens to their rem values, matching the 5-step scale. */
 const TEXT_SIZE_VALUES: Record<TextSize, string> = {

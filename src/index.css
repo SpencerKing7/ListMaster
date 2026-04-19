@@ -45,6 +45,7 @@
   --color-surface-background: var(--color-surface-background);
   --color-surface-card: var(--color-surface-card);
   --color-surface-input: var(--color-surface-input);
+  --color-surface-chrome: var(--color-surface-chrome);
   --color-surface-green-tint: var(--color-surface-green-tint);
 
   --color-danger: var(--color-danger);
