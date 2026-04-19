@@ -36,23 +36,33 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
           "linear-gradient(to top, transparent 0%, var(--color-surface-chrome, var(--color-surface-background)) 35%, var(--color-surface-chrome, var(--color-surface-background)) 100%)",
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        {trimmedName.length > 0 && (
-          <p
-            className={`font-bold flex-1 min-w-0 truncate transition-all duration-220 ease-out ${scrolled ? "text-sm opacity-60" : "text-2xl"
-              }`}
-            style={{
-              color: "var(--color-text-primary)",
-              letterSpacing: scrolled ? "0" : "-0.01em",
-              transform: scrolled ? "scale(0.75) translateX(-8%)" : "scale(1)",
-              transformOrigin: "left center",
-            }}
+      {/* MARK: - Brand row */}
+      <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-brand-green)"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            Welcome,{" "}
-            <span style={{ color: "var(--color-brand-green)" }}>{trimmedName}</span>
-          </p>
-        )}
-        {trimmedName.length === 0 && <div className="flex-1" />}
+            <line x1="9" y1="6" x2="20" y2="6" />
+            <line x1="9" y1="12" x2="20" y2="12" />
+            <line x1="9" y1="18" x2="20" y2="18" />
+            <polyline points="4 6 5 7 7 5" />
+            <polyline points="4 12 5 13 7 11" />
+            <polyline points="4 18 5 19 7 17" />
+          </svg>
+          <span
+            className="text-xs font-semibold tracking-wide uppercase"
+            style={{ color: "var(--color-brand-green)" }}
+          >
+            ListMaster
+          </span>
+        </div>
         <button
           onClick={handleRefresh}
           className="relative shrink-0 w-9 h-9 rounded-full flex items-center justify-center press-scale"
@@ -100,6 +110,21 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
           </svg>
         </button>
       </div>
+      {/* MARK: - Greeting row */}
+      {trimmedName.length > 0 && (
+        <p
+          className={`font-bold min-w-0 truncate transition-all duration-220 ease-out mb-2 ${scrolled ? "text-sm opacity-60" : "text-2xl"}`}
+          style={{
+            color: "var(--color-text-primary)",
+            letterSpacing: scrolled ? "0" : "-0.01em",
+            transform: scrolled ? "scale(0.75) translateX(-8%)" : "scale(1)",
+            transformOrigin: "left center",
+          }}
+        >
+          Welcome,{" "}
+          <span style={{ color: "var(--color-brand-green)" }}>{trimmedName}</span>
+        </p>
+      )}
       {hasGroups && (
         <GroupTabBar
           groups={groups}
