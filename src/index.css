@@ -182,6 +182,7 @@
 .picker-scroll {
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: rgba(var(--color-brand-deep-green-rgb), 0.25) transparent;
+  padding-bottom: 6px;
 }
 .picker-scroll::-webkit-scrollbar {
   display: block;
