@@ -29,22 +29,22 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
 
   return (
     <header
-      className="sticky top-0 z-10 px-4 pt-2 pb-4"
+      className="sticky top-0 z-10 px-4 pt-2 pb-2"
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
         background:
           "linear-gradient(to top, transparent 0%, var(--color-surface-chrome, var(--color-surface-background)) 35%, var(--color-surface-chrome, var(--color-surface-background)) 100%)",
       }}
     >
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-2">
         {trimmedName.length > 0 && (
           <p
-            className={`font-bold flex-1 min-w-0 truncate transition-all duration-220 ease-out ${scrolled ? "text-base opacity-60" : "text-2xl"
+            className={`font-bold flex-1 min-w-0 truncate transition-all duration-220 ease-out ${scrolled ? "text-sm opacity-60" : "text-2xl"
               }`}
             style={{
               color: "var(--color-text-primary)",
               letterSpacing: scrolled ? "0" : "-0.01em",
-              transform: scrolled ? "scale(0.88) translateX(-6%)" : "scale(1)",
+              transform: scrolled ? "scale(0.75) translateX(-8%)" : "scale(1)",
               transformOrigin: "left center",
             }}
           >

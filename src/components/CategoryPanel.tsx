@@ -14,6 +14,9 @@ import { RenameItemDialog } from "./RenameItemDialog";
 
 interface CategoryPanelProps {
   category: Category | null;
+  isAddingItem: boolean;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
+  onDismissAddItem: () => void;
 }
 
 // MARK: - Icons (used by EmptyState)
@@ -44,7 +47,7 @@ const noItemsIcon = (
 
 /** Displays the selected category's items with add input, sort controls, and
  *  checklist rows with inline edit/delete actions. Shows contextual empty states when appropriate. */
-export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | null {
+export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDismissAddItem }: CategoryPanelProps): JSX.Element | null {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string; name: string } | null>(null);
@@ -67,8 +70,8 @@ export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | n
 
   if (category.items.length === 0) {
     return (
-      <div className="flex-1 flex flex-col px-4 pt-2">
-        <AddItemInput />
+      <div className="flex-1 flex flex-col px-3 pt-2">
+        <AddItemInput isVisible={true} onDismiss={onDismissAddItem} />
         <EmptyState
           icon={noItemsIcon}
           title="No items yet"
@@ -98,10 +101,10 @@ export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | n
   const allChecked = uncheckedItems.length === 0;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 px-4 pt-1">
+    <div className="flex-1 flex flex-col min-h-0 px-3 pt-1">
       {/* ── Sticky header: input + sort row ── */}
       <div className="shrink-0 pb-1">
-        <AddItemInput />
+        <AddItemInput isVisible={isAddingItem} onDismiss={onDismissAddItem} />
         <ListMetaBar
           itemCount={sortedItems.length}
           allChecked={allChecked}
@@ -116,13 +119,14 @@ export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | n
 
       {/* ── Scrollable list ── */}
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{
-          maskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 24px, black calc(100% - 32px), transparent)",
+          maskImage: "linear-gradient(to bottom, transparent, black 12px, black calc(100% - 16px), transparent)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 12px, black calc(100% - 16px), transparent)",
         }}
       >
-        <ul className="flex flex-col gap-2 pt-3 pb-10">
+        <ul className="flex flex-col gap-1.5 pt-3 pb-4">
           {sortedItems.map((item) => (
             <ChecklistItemRow
               key={item.id}

@@ -1,5 +1,5 @@
 // src/screens/MainScreen.tsx
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HeaderBar } from "@/components/HeaderBar";
@@ -14,6 +14,8 @@ export function MainScreen(): JSX.Element {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isInstallSheetOpen, setIsInstallSheetOpen] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Reset scroll position on mount — clears any residual scroll offset left
   // from a previous screen (e.g. onboarding with keyboard open).
@@ -22,6 +24,22 @@ export function MainScreen(): JSX.Element {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, []);
+
+  // Reset isAddingItem when category changes
+  useEffect(() => {
+    setIsAddingItem(false);
+  }, [store.selectedCategory?.id]);
+
+  const handleToggleAddItem = useCallback(() => {
+    if (isAddingItem) {
+      // Dismissing - just close
+      setIsAddingItem(false);
+    } else {
+      // Opening - scroll to top first, then open
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      setIsAddingItem(true);
+    }
+  }, [isAddingItem]);
 
   // Dismiss keyboard on scroll
   const handleScroll = useCallback(() => {
@@ -74,10 +92,18 @@ export function MainScreen(): JSX.Element {
           className="flex-1 overflow-hidden relative flex flex-col min-h-0"
           onScroll={handleScrollWithPosition}
         >
-          <CategoryPanel category={store.selectedCategory} />
+          <CategoryPanel
+            category={store.selectedCategory}
+            isAddingItem={isAddingItem}
+            scrollContainerRef={scrollContainerRef}
+            onDismissAddItem={() => setIsAddingItem(false)}
+          />
         </div>
 
-        <BottomBar />
+        <BottomBar
+          isAddingItem={isAddingItem}
+          onToggleAddItem={handleToggleAddItem}
+        />
 
         <SettingsSheet
           isOpen={isSettingsOpen}

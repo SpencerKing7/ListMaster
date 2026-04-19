@@ -31,7 +31,7 @@ export function ListMetaBar({
   onChangeSortDirection,
 }: ListMetaBarProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between mt-4 mb-1 px-1">
+    <div className="flex items-center justify-between mt-1.5 mb-1 px-1">
       <div className="flex items-center gap-2">
         {/* Check-all / uncheck-all toggle */}
         <button
