@@ -73,8 +73,14 @@ export function CategoryPicker(): JSX.Element {
         >
           {/* Rounded background shape — always visible at viewport edges regardless of scroll position */}
           <div
-            className="rounded-full absolute inset-0 pointer-events-none"
-            style={{ background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}
+            className="rounded-full absolute pointer-events-none"
+            style={{
+              background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 6,
+            }}
           />
           <div
             ref={scrollRef}
