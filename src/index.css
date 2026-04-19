@@ -183,6 +183,21 @@
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: rgba(var(--color-brand-deep-green-rgb), 0.25) transparent;
   padding-bottom: 6px;
+  /* Soften clipped edges when scrolled mid-way */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%
+  );
 }
 .picker-scroll::-webkit-scrollbar {
   display: block;
