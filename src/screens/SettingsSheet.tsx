@@ -92,18 +92,6 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
               </Button>
             </SheetHeader>
 
-            {/* Gradient fade — blends content scrolling under the sticky header */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-0 right-0 z-10"
-              style={{
-                top: "60px",
-                height: "28px",
-                background:
-                  "linear-gradient(to bottom, var(--color-surface-background) 0%, transparent 100%)",
-              }}
-            />
-
             <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-4 px-4 pb-10 pt-2">
                 <CategoriesGroupsSection
