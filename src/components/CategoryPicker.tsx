@@ -69,73 +69,71 @@ export function CategoryPicker(): JSX.Element {
         </div>
       ) : (
         <div
-          style={{ marginTop: groups.length > 0 ? 24 : 0, position: "relative" }}
+          ref={scrollRef}
+          className="overflow-x-auto w-full picker-scroll"
+          style={{ touchAction: "pan-x" }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onPointerCancel={handlePointerUp}
         >
           <div
-            ref={scrollRef}
-            className="overflow-x-auto w-full picker-scroll"
+            className="rounded-full px-1 py-1 flex items-center gap-1 min-w-max w-full"
             style={{
-              touchAction: "pan-x",
+              background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
+              marginTop: groups.length > 0 ? 24 : 0,
+              position: "relative",
             }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            onPointerCancel={handlePointerUp}
           >
-            <div
-              className="px-1 py-1 flex items-center gap-1 min-w-max w-full rounded-full"
-              style={{ position: "relative", background: `rgba(var(--color-brand-deep-green-rgb), 0.12)` }}
-            >
-              {(() => {
-                const items: JSX.Element[] = [];
-                pickerCategories.forEach(({ category, isUngrouped }, index) => {
-                  const prevGroupID =
-                    index > 0
-                      ? pickerCategories[index - 1].category.groupID
-                      : "__none__";
-                  const currGroupID = category.groupID;
-                  const isFirstOfSection =
-                    isAllView && (index === 0 || prevGroupID !== currGroupID);
-                  const isSelected = category.id === selectedCategoryID;
+            {(() => {
+              const items: JSX.Element[] = [];
+              pickerCategories.forEach(({ category, isUngrouped }, index) => {
+                const prevGroupID =
+                  index > 0
+                    ? pickerCategories[index - 1].category.groupID
+                    : "__none__";
+                const currGroupID = category.groupID;
+                const isFirstOfSection =
+                  isAllView && (index === 0 || prevGroupID !== currGroupID);
+                const isSelected = category.id === selectedCategoryID;
 
-                  // Section divider between groups
-                  if (isAllView && isFirstOfSection && index > 0) {
-                    items.push(
-                      <div
-                        key={`div-${category.id}`}
-                        className="self-stretch w-px rounded-full shrink-0 my-1"
-                        style={{
-                          background: `rgba(var(--color-brand-deep-green-rgb), 0.22)`,
-                        }}
-                      />,
-                    );
-                  }
-
-                  const labelText = (() => {
-                    if (!isAllView || !isFirstOfSection) return "";
-                    return isUngrouped
-                      ? (hasGroupedCategories ? "No Group" : "")
-                      : (groupNameMap.get(currGroupID ?? "") ?? "");
-                  })();
-
+                // Section divider between groups
+                if (isAllView && isFirstOfSection && index > 0) {
                   items.push(
-                    <CategoryPickerPill
-                      key={category.id}
-                      category={category}
-                      isUngrouped={isUngrouped}
-                      isSelected={isSelected}
-                      isFirstOfSection={isFirstOfSection}
-                      isAllView={isAllView}
-                      labelText={labelText}
-                      hasDraggedRef={hasDraggedRef}
-                      onSelect={selectCategory}
+                    <div
+                      key={`div-${category.id}`}
+                      className="self-stretch w-px rounded-full shrink-0 my-1"
+                      style={{
+                        background: `rgba(var(--color-brand-deep-green-rgb), 0.22)`,
+                      }}
                     />,
                   );
-                });
-                return items;
-              })()}
-            </div>
+                }
+
+                const labelText = (() => {
+                  if (!isAllView || !isFirstOfSection) return "";
+                  return isUngrouped
+                    ? (hasGroupedCategories ? "No Group" : "")
+                    : (groupNameMap.get(currGroupID ?? "") ?? "");
+                })();
+
+                items.push(
+                  <CategoryPickerPill
+                    key={category.id}
+                    category={category}
+                    isUngrouped={isUngrouped}
+                    isSelected={isSelected}
+                    isFirstOfSection={isFirstOfSection}
+                    isAllView={isAllView}
+                    labelText={labelText}
+                    hasDraggedRef={hasDraggedRef}
+                    onSelect={selectCategory}
+                  />,
+                );
+              });
+              return items;
+            })()}
           </div>
         </div>
       )}
