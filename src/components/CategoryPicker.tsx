@@ -74,10 +74,10 @@ export function CategoryPicker(): JSX.Element {
             className="rounded-full absolute pointer-events-none"
             style={{
               background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
-              top: 2,
+              top: 3,
               left: 0,
               right: 0,
-              bottom: 4,
+              bottom: 3,
             }}
           />
           <div
@@ -91,8 +91,8 @@ export function CategoryPicker(): JSX.Element {
             onPointerCancel={handlePointerUp}
           >
             <div
-              className="px-1 py-1 flex items-center gap-1 min-w-max w-full"
-              style={{ position: "relative" }}
+              className="px-1 flex items-center gap-1 min-w-max w-full"
+              style={{ position: "relative", paddingTop: 5, paddingBottom: 5 }}
             >
               {(() => {
                 const items: JSX.Element[] = [];
