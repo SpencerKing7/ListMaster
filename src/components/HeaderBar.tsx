@@ -60,7 +60,7 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
             className="text-xs font-semibold tracking-wide uppercase"
             style={{ color: "var(--color-brand-green)" }}
           >
-            ListMaster
+            List Master
           </span>
         </div>
         <button
