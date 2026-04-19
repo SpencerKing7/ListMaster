@@ -69,23 +69,23 @@ export function CategoryPicker(): JSX.Element {
         </div>
       ) : (
         <div
-          style={{ position: "relative", marginTop: isAllView ? 0 : (groups.length > 0 ? 8 : 0) }}
+          style={{ marginTop: groups.length > 0 ? 24 : 0, position: "relative" }}
         >
           {/* Rounded background shape — always visible at viewport edges regardless of scroll position */}
           <div
             className="rounded-full absolute pointer-events-none"
             style={{
               background: `rgba(var(--color-brand-deep-green-rgb), 0.12)`,
-              top: isAllView ? 14 : 0,
+              top: 0,
               left: 0,
               right: 0,
-              bottom: 0,
+              bottom: 6,
             }}
           />
           <div
             ref={scrollRef}
             className="overflow-x-auto w-full picker-scroll"
-            style={{ touchAction: "pan-x", position: "relative" }}
+            style={{ touchAction: "pan-x", position: "relative", overflowY: "visible" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -93,8 +93,8 @@ export function CategoryPicker(): JSX.Element {
             onPointerCancel={handlePointerUp}
           >
             <div
-              className="px-1 flex items-center gap-1 min-w-max w-full"
-              style={{ position: "relative", paddingTop: isAllView ? 20 : 6, paddingBottom: 6 }}
+              className="px-1 py-1 flex items-center gap-1 min-w-max w-full"
+              style={{ position: "relative" }}
             >
               {(() => {
                 const items: JSX.Element[] = [];
