@@ -57,7 +57,7 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
             <polyline points="4 18 5 19 7 17" />
           </svg>
           <span
-            className="text-xs font-semibold tracking-wide uppercase"
+            className="text-xs font-semibold tracking-wide"
             style={{ color: "var(--color-brand-green)" }}
           >
             List Master
