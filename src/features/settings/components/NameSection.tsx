@@ -31,6 +31,10 @@ export function NameSection({ userName, onChangeName }: NameSectionProps): JSX.E
         placeholder="Your name"
         className={INPUT_CLASS}
         style={{ color: "var(--color-text-primary)" }}
+        autoCapitalize="words"
+        autoCorrect="off"
+        spellCheck={false}
+        enterKeyHint="done"
       />
     </SettingsCard>
   );

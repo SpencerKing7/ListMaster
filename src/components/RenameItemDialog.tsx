@@ -67,6 +67,10 @@ export function RenameItemDialog({
           }}
           className={INPUT_CLASS}
           autoFocus
+          autoCapitalize="words"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
         />
         <DialogFooter className="flex-row gap-2 mt-1">
           <Button

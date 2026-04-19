@@ -76,6 +76,9 @@ export function AddCategoryDialog({
           className={INPUT_CLASS}
           autoFocus
           autoCapitalize="words"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
         />
         {isDuplicate && (
           <p className="text-xs px-0.5 -mt-1" style={{ color: "var(--color-danger)" }}>

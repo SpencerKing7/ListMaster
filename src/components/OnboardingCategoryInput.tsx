@@ -29,8 +29,11 @@ export function OnboardingCategoryInput({
     if (categories.some((n) => n.toLowerCase() === trimmed.toLowerCase())) return;
     onAdd(trimmed);
     setText("");
-    inputRef.current?.blur();
-    requestAnimationFrame(() => inputRef.current?.focus());
+    // Reset caret position so iOS recalculates shift state without keyboard dismissal
+    requestAnimationFrame(() => {
+      if (!inputRef.current) return;
+      inputRef.current.setSelectionRange(0, 0);
+    });
   }
 
   return (
@@ -56,6 +59,8 @@ export function OnboardingCategoryInput({
             style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
             enterKeyHint="send"
             autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
           />
           <Button
             variant="ghost"

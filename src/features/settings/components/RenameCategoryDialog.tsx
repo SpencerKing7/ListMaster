@@ -66,6 +66,10 @@ export function RenameCategoryDialog({
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSave(); } }}
           className={INPUT_CLASS}
           autoFocus
+          autoCapitalize="words"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
         />
         {isRenameDuplicate && (
           <p className="text-xs px-0.5 -mt-1" style={{ color: "var(--color-danger)" }}>

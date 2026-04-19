@@ -54,6 +54,11 @@ export function AdoptSyncCodeDialog({
           placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
           className={INPUT_CLASS}
           autoFocus
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
+          inputMode="text"
         />
         <DialogFooter className="flex-row gap-2 mt-1">
           <Button

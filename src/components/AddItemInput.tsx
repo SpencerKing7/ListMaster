@@ -31,9 +31,11 @@ export function AddItemInput({ isVisible, onDismiss }: AddItemInputProps): JSX.E
     store.addItemToSelectedCategory(trimmedName);
     setNewItemName("");
     HapticService.light();
-    // Blur then refocus so iOS resets the keyboard shift state (auto-capitalize)
-    inputRef.current?.blur();
-    requestAnimationFrame(() => inputRef.current?.focus());
+    // Reset caret position so iOS recalculates shift state without keyboard dismissal
+    requestAnimationFrame(() => {
+      if (!inputRef.current) return;
+      inputRef.current.setSelectionRange(0, 0);
+    });
   }
 
   // Don't render if not visible
@@ -69,6 +71,7 @@ export function AddItemInput({ isVisible, onDismiss }: AddItemInputProps): JSX.E
           autoCapitalize="sentences"
           autoComplete="off"
           autoCorrect="off"
+          spellCheck={false}
         />
         <button
           className="press-scale shrink-0 p-1 rounded-lg transition-all disabled:opacity-25"

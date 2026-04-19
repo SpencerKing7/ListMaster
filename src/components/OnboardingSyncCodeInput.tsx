@@ -44,6 +44,9 @@ export function OnboardingSyncCodeInput({
         style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
         autoCapitalize="characters"
         spellCheck={false}
+        autoCorrect="off"
+        enterKeyHint="done"
+        inputMode="text"
       />
     </div>
   );
