@@ -59,7 +59,7 @@ export function CategoryPicker(): JSX.Element {
         </div>
       ) : (
         <div
-          style={{ marginTop: groups.length > 0 ? 24 : 0, position: "relative" }}
+          style={{ marginTop: groups.length > 0 ? 8 : 0, position: "relative" }}
         >
           {/* Rounded background shape — always visible at viewport edges regardless of scroll position */}
           <div
