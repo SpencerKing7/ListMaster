@@ -26,8 +26,10 @@ export function CategoryPicker(): JSX.Element {
   const skipNextScrollRef = useRef(false);
 
   // Scroll selected pill into view when selection changes programmatically
-  // (e.g. arrow nav, auto-select). Skip when the user tapped a pill directly —
-  // scrollIntoView would fight the active touch momentum on iOS Safari.
+  // (e.g. arrow nav, auto-select). Skip when the user tapped a pill directly.
+  // Uses container.scroll() instead of scrollIntoView to guarantee only
+  // horizontal scrolling — scrollIntoView can scroll the page vertically on
+  // desktop, causing the sticky header height to shift.
   useEffect(() => {
     if (skipNextScrollRef.current) {
       skipNextScrollRef.current = false;
@@ -36,11 +38,17 @@ export function CategoryPicker(): JSX.Element {
     const container = scrollRef.current;
     if (!container) return;
     const selectedEl = container.querySelector(
-      `[data-category-id="${selectedCategoryID}"]`
+      `[data-category-id="${selectedCategoryID}"]`,
     );
-    if (selectedEl) {
-      selectedEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    }
+    if (!selectedEl) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = selectedEl.getBoundingClientRect();
+    const targetScrollLeft =
+      container.scrollLeft +
+      elRect.left -
+      containerRect.left -
+      (containerRect.width - elRect.width) / 2;
+    container.scroll({ left: targetScrollLeft, behavior: "smooth" });
   }, [selectedCategoryID, scrollRef]);
 
   /** True when we are in the "All" view and groups exist — enables section dividers. */
