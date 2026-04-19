@@ -37,7 +37,9 @@ export function SplashScreen({ onFinished, isReturningUser }: SplashScreenProps)
         left: "calc(-1 * env(safe-area-inset-left, 0px))",
         right: "calc(-1 * env(safe-area-inset-right, 0px))",
         bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
-        background: `linear-gradient(160deg, var(--color-brand-deep-green) 0%, var(--color-brand-green) 55%, var(--color-brand-teal) 100%)`,
+        backgroundColor: "var(--color-surface-background)",
+        backgroundImage: "var(--gradient-brand-wide)",
+        backgroundAttachment: "fixed",
         opacity: isFading ? 0 : 1,
         transition: "opacity 420ms ease-out",
       }}
@@ -53,8 +55,9 @@ export function SplashScreen({ onFinished, isReturningUser }: SplashScreenProps)
         <div
           className="w-20 h-20 rounded-[22px] flex items-center justify-center"
           style={{
-            backgroundColor: "rgba(255,255,255,0.18)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25)",
+            backgroundColor: "var(--color-surface-card)",
+            boxShadow: "var(--elevation-card)",
+            border: "1px solid var(--color-border-subtle)",
           }}
         >
           <svg
@@ -62,7 +65,7 @@ export function SplashScreen({ onFinished, isReturningUser }: SplashScreenProps)
             height="44"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
+            stroke="var(--color-brand-green)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -86,17 +89,11 @@ export function SplashScreen({ onFinished, isReturningUser }: SplashScreenProps)
         }}
       >
         <h1
-          className="text-3xl font-bold text-white text-center"
-          style={{ letterSpacing: "-0.02em" }}
+          className="text-3xl font-bold text-center"
+          style={{ letterSpacing: "-0.02em", color: "var(--color-text-primary)" }}
         >
           List Master
         </h1>
-        <p
-          className="text-sm text-center mt-1"
-          style={{ color: "rgba(255,255,255,0.65)", letterSpacing: "0.04em" }}
-        >
-          YOUR CHECKLIST COMPANION
-        </p>
       </div>
     </div>
   );
