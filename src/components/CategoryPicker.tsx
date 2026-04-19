@@ -119,7 +119,10 @@ export function CategoryPicker(): JSX.Element {
                       isUngrouped={isUngrouped}
                       isSelected={isSelected}
                       hasDraggedRef={hasDraggedRef}
-                      onSelect={selectCategory}
+                      onSelect={(id) => {
+                        skipNextScrollRef.current = true;
+                        selectCategory(id);
+                      }}
                     />,
                   );
                 });
