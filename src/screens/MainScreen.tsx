@@ -97,13 +97,11 @@ export function MainScreen(): JSX.Element {
             isAddingItem={isAddingItem}
             scrollContainerRef={scrollContainerRef}
             onDismissAddItem={() => setIsAddingItem(false)}
+            onToggleAddItem={handleToggleAddItem}
           />
         </div>
 
-        <BottomBar
-          isAddingItem={isAddingItem}
-          onToggleAddItem={handleToggleAddItem}
-        />
+        <BottomBar />
 
         <SettingsSheet
           isOpen={isSettingsOpen}

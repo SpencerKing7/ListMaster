@@ -17,6 +17,7 @@ interface CategoryPanelProps {
   isAddingItem: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   onDismissAddItem: () => void;
+  onToggleAddItem: () => void;
 }
 
 // MARK: - Icons (used by EmptyState)
@@ -47,7 +48,7 @@ const noItemsIcon = (
 
 /** Displays the selected category's items with add input, sort controls, and
  *  checklist rows with inline edit/delete actions. Shows contextual empty states when appropriate. */
-export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDismissAddItem }: CategoryPanelProps): JSX.Element | null {
+export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDismissAddItem, onToggleAddItem }: CategoryPanelProps): JSX.Element | null {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string; name: string } | null>(null);
@@ -110,6 +111,8 @@ export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDi
           allChecked={allChecked}
           sortOrder={sortOrder}
           sortDirection={sortDirection}
+          isAddingItem={isAddingItem}
+          onToggleAddItem={onToggleAddItem}
           onCheckAll={() => store.checkAllItemsInSelectedCategory()}
           onUncheckAll={() => store.uncheckAllItemsInSelectedCategory()}
           onChangeSortOrder={(next) => store.setCategorySortOrder(category.id, next)}

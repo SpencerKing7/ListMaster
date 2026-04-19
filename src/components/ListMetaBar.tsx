@@ -11,6 +11,8 @@ interface ListMetaBarProps {
   allChecked: boolean;
   sortOrder: SortOrder;
   sortDirection: SortDirection;
+  isAddingItem: boolean;
+  onToggleAddItem: () => void;
   onCheckAll: () => void;
   onUncheckAll: () => void;
   onChangeSortOrder: (next: SortOrder) => void;
@@ -19,12 +21,14 @@ interface ListMetaBarProps {
 
 // MARK: - Component
 
-/** Renders check-all button + item count (left) and sort controls (right). */
+/** Renders check-all button + item count + add FAB (left) and sort controls (right). */
 export function ListMetaBar({
   itemCount,
   allChecked,
   sortOrder,
   sortDirection,
+  isAddingItem,
+  onToggleAddItem,
   onCheckAll,
   onUncheckAll,
   onChangeSortOrder,
@@ -83,6 +87,46 @@ export function ListMetaBar({
         >
           {itemCount} {itemCount === 1 ? "item" : "items"}
         </span>
+
+        {/* Add item FAB — inline next to count */}
+        <button
+          className="press-scale w-6 h-6 rounded-full flex items-center justify-center"
+          style={{
+            backgroundColor: isAddingItem
+              ? "var(--color-brand-green)"
+              : "rgba(var(--color-brand-deep-green-rgb), 0.12)",
+            color: isAddingItem ? "white" : "var(--color-brand-green)",
+            touchAction: "manipulation",
+          }}
+          onClick={() => {
+            onToggleAddItem();
+            HapticService.light();
+          }}
+          aria-label={isAddingItem ? "Close add item" : "Add item"}
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {isAddingItem ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </>
+            ) : (
+              <>
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </>
+            )}
+          </svg>
+        </button>
       </div>
 
       <div className="flex items-center gap-2">
