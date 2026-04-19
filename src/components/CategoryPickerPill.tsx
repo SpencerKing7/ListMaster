@@ -1,5 +1,5 @@
 // src/components/CategoryPickerPill.tsx
-// A single pill + optional section-label for the CategoryPicker scroll row.
+// A single pill for the CategoryPicker scroll row.
 import type { JSX, RefObject } from "react";
 import type { Category } from "@/models/types";
 import { HapticService } from "@/services/hapticService";
@@ -12,15 +12,6 @@ export interface CategoryPickerPillProps {
   isUngrouped: boolean;
   /** Whether this pill is the currently selected category. */
   isSelected: boolean;
-  /** Whether this pill is the first in its section (group or ungrouped block). */
-  isFirstOfSection: boolean;
-  /** Whether the picker is in the multi-group "All" view — enables section labels. */
-  isAllView: boolean;
-  /**
-   * The label text to render above the pill. Empty string = no label.
-   * Only rendered when `isAllView && isFirstOfSection`.
-   */
-  labelText: string;
   /**
    * Ref to the drag state tracker — prevents `selectCategory` from firing
    * on scroll-release when the user drags the picker instead of tapping.
@@ -31,44 +22,18 @@ export interface CategoryPickerPillProps {
 }
 
 /**
- * Renders a single category pill with an optional section-label floating above it.
+ * Renders a single category pill.
  * Used inside the {@link CategoryPicker} scroll row.
  */
 export function CategoryPickerPill({
   category,
   isUngrouped,
   isSelected,
-  isFirstOfSection,
-  isAllView,
-  labelText,
   hasDraggedRef,
   onSelect,
 }: CategoryPickerPillProps): JSX.Element {
   return (
-    <div
-      key={category.id}
-      style={{ position: "relative" }}
-      className="flex-1 min-w-fit"
-    >
-      {/* Section label — floats above pill bar, left-aligned to group start */}
-      {isAllView && isFirstOfSection && labelText ? (
-        <span
-          className="text-[8px] font-semibold uppercase tracking-wider whitespace-nowrap leading-none"
-          style={{
-            color: "var(--color-text-secondary)",
-            opacity: 0.55,
-            position: "absolute",
-            bottom: "100%",
-            left: 0,
-            paddingBottom: 6,
-          }}
-          aria-hidden="true"
-        >
-          {labelText}
-        </span>
-      ) : null}
-
-      {/* Pill button */}
+    <div className="flex-1 min-w-fit">
       <button
         data-category-id={category.id}
         onPointerDown={(e) => {

@@ -1,5 +1,5 @@
 // src/components/CategoryPicker.tsx
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { usePickerScroll } from "@/store/usePickerScroll";
@@ -25,12 +25,6 @@ export function CategoryPicker(): JSX.Element {
    */
   const skipNextScrollRef = useRef(false);
 
-  /** Map of groupID → group name for fast label lookup. */
-  const groupNameMap = useMemo(
-    () => new Map(groups.map((g) => [g.id, g.name])),
-    [groups],
-  );
-
   // Scroll selected pill into view when selection changes programmatically
   // (e.g. arrow nav, auto-select). Skip when the user tapped a pill directly —
   // scrollIntoView would fight the active touch momentum on iOS Safari.
@@ -49,12 +43,8 @@ export function CategoryPicker(): JSX.Element {
     }
   }, [selectedCategoryID, scrollRef]);
 
-  /** True when we are in the "All" view and groups exist — enables section labels. */
+  /** True when we are in the "All" view and groups exist — enables section dividers. */
   const isAllView = selectedGroupID === null && groups.length > 0;
-
-  /** True when at least one picker entry is grouped — suppresses the "No Group" label
-   *  when every category is ungrouped (user created groups but assigned nothing yet). */
-  const hasGroupedCategories = pickerCategories.some((p) => !p.isUngrouped);
 
   return (
     <>
@@ -85,7 +75,7 @@ export function CategoryPicker(): JSX.Element {
           <div
             ref={scrollRef}
             className="overflow-x-auto w-full picker-scroll"
-            style={{ touchAction: "pan-x", position: "relative", overflowY: "visible" }}
+            style={{ touchAction: "pan-x", position: "relative" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -113,20 +103,14 @@ export function CategoryPicker(): JSX.Element {
                     items.push(
                       <div
                         key={`div-${category.id}`}
-                        className="self-stretch w-px rounded-full shrink-0 my-1"
+                        className="self-stretch rounded-full shrink-0 my-0.5"
                         style={{
-                          background: `rgba(var(--color-brand-deep-green-rgb), 0.22)`,
+                          width: 2,
+                          background: `rgba(var(--color-brand-deep-green-rgb), 0.45)`,
                         }}
                       />,
                     );
                   }
-
-                  const labelText = (() => {
-                    if (!isAllView || !isFirstOfSection) return "";
-                    return isUngrouped
-                      ? (hasGroupedCategories ? "No Group" : "")
-                      : (groupNameMap.get(currGroupID ?? "") ?? "");
-                  })();
 
                   items.push(
                     <CategoryPickerPill
@@ -134,9 +118,6 @@ export function CategoryPicker(): JSX.Element {
                       category={category}
                       isUngrouped={isUngrouped}
                       isSelected={isSelected}
-                      isFirstOfSection={isFirstOfSection}
-                      isAllView={isAllView}
-                      labelText={labelText}
                       hasDraggedRef={hasDraggedRef}
                       onSelect={selectCategory}
                     />,
