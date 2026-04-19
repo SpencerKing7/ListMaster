@@ -8,7 +8,8 @@ ListMaster is a Progressive Web App (PWA) that serves as the web port of the Lis
 
 - **Category Management**: Create, edit, reorder, and organize categories of checklist items.
 - **Group Tabs**: Organize categories into groups with a tab bar for quick filtering.
-- **Swipe Gestures**: Navigate between category panels with horizontal swipe gestures and swipe-to-delete on items.
+- **Category Picker**: Tap or drag-to-scroll the category picker to switch between lists.
+- **Item Actions**: Inline edit (rename) and delete buttons on each checklist item.
 - **Drag-to-Scroll Picker**: Smooth scrolling category picker with drag support.
 - **Theme Support**: Light, dark, and system appearance modes with CSS custom property tokens.
 - **Onboarding Flow**: Multi-step guided setup for new users, including category creation and cloud sync opt-in.
