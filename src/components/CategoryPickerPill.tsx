@@ -45,10 +45,11 @@ export function CategoryPickerPill({
             HapticService.selection();
           }
         }}
-        className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap active:scale-[0.97] w-full${isSelected ? " shadow-sm" : ""}`}
+        className={`rounded-full px-4 text-xs font-semibold whitespace-nowrap active:scale-[0.97] w-full${isSelected ? " shadow-sm" : ""}`}
         style={
           isSelected
             ? {
+              height: 28,
               backgroundColor: "var(--color-surface-card)",
               color: "var(--color-brand-green)",
               fontWeight: 700,
@@ -60,6 +61,7 @@ export function CategoryPickerPill({
                 "background-color var(--duration-element) var(--ease-decelerate), box-shadow var(--duration-element) var(--ease-decelerate), color var(--duration-element) var(--ease-decelerate)",
             }
             : {
+              height: 28,
               backgroundColor: "transparent",
               color: "var(--color-text-secondary)",
               opacity: isUngrouped ? 0.55 : 1,
