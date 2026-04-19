@@ -2,42 +2,51 @@
 
 🚀 **[See the deployed app here →](https://spencerking7.github.io/ListMaster/)**
 
-ListMaster is a Progressive Web App (PWA) that serves as the web port of the ListMaster iOS app. It provides a mobile-first, iOS-feel interface for managing lists and categories, allowing users to organize their tasks and items efficiently.
+ListMaster is a Progressive Web App (PWA) that serves as the web port of the ListMaster iOS app. It provides a mobile-first, iOS-feel interface for managing checklists and categories, allowing users to organize their tasks and items efficiently.
 
 ## Features
 
-- **Category Management**: Create, edit, and organize categories of lists.
-- **Swipe Gestures**: Navigate between screens with horizontal swipe gestures.
+- **Category Management**: Create, edit, reorder, and organize categories of checklist items.
+- **Group Tabs**: Organize categories into groups with a tab bar for quick filtering.
+- **Swipe Gestures**: Navigate between category panels with horizontal swipe gestures and swipe-to-delete on items.
 - **Drag-to-Scroll Picker**: Smooth scrolling category picker with drag support.
-- **Theme Support**: Light, dark, and system theme modes.
-- **Onboarding Flow**: Guided setup for new users.
-- **Persistent Storage**: Data saved locally using localStorage.
-- **PWA Capabilities**: Installable on mobile devices, works offline.
+- **Theme Support**: Light, dark, and system appearance modes with CSS custom property tokens.
+- **Onboarding Flow**: Multi-step guided setup for new users, including category creation and cloud sync opt-in.
+- **Cloud Sync**: Optional Firebase-backed sync across devices using a shareable sync code.
+- **Persistent Storage**: Data saved locally via a `PersistenceService` singleton wrapping `localStorage`.
+- **PWA Capabilities**: Installable on mobile and desktop, works offline via Workbox service worker.
+- **Haptic Feedback**: Vibration API integration for tactile responses on supported devices.
 
 ## Tech Stack
 
-- **Frontend Framework**: React 19 with TypeScript 5
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS v4 with custom design tokens
-- **UI Components**: shadcn/ui
-- **Routing**: React Router v7 (HashRouter for PWA deployment)
-- **State Management**: Zustand-style Context + useReducer stores
-- **PWA**: vite-plugin-pwa
-- **Gestures**: Pointer Events API for touch and mouse interactions
+| Layer             | Technology                                                        |
+| ----------------- | ----------------------------------------------------------------- |
+| **Framework**     | React 19 with TypeScript ~5.8 (strict mode)                       |
+| **Build**         | Vite 6                                                            |
+| **Styling**       | Tailwind CSS v4 + CSS custom properties (`src/styles/tokens.css`) |
+| **UI Components** | shadcn/ui via `@base-ui/react` ^1.3.0                             |
+| **Routing**       | React Router v7 — `HashRouter` (required for GitHub Pages)        |
+| **State**         | React Context + `useReducer` / `useState`                         |
+| **Persistence**   | `localStorage` via `PersistenceService` singleton                 |
+| **Cloud Sync**    | Firebase Firestore + Firebase Auth (anonymous)                    |
+| **PWA**           | `vite-plugin-pwa` + Workbox                                       |
+| **Icons**         | Lucide React                                                      |
+| **Gestures**      | Pointer Events API                                                |
+| **Deployment**    | GitHub Pages via `gh-pages`                                       |
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (version 18 or higher)
-- npm or yarn
+- npm
 
 ### Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/SpencerKing7/ListMaster.git
    cd ListMasterPWA
    ```
 
@@ -61,37 +70,82 @@ ListMaster is a Progressive Web App (PWA) that serves as the web port of the Lis
 npm run build
 ```
 
-The built files will be in the `dist/` directory, ready for deployment.
+This runs `tsc --noEmit` followed by `vite build`. The output is written to the `dist/` directory.
+
+### Preview the Production Build
+
+```bash
+npm run preview
+```
+
+### Deploy to GitHub Pages
+
+> **Note:** Deployment is a manual, human-only step.
+
+```bash
+npm run deploy
+```
 
 ## Project Structure
 
-The project follows a **feature-by-layer** folder convention:
+```
+src/
+├── App.tsx                      # Routing + top-level layout
+├── main.tsx                     # createRoot entry point + provider nesting
+├── index.css                    # Tailwind imports, @theme aliases, global resets
+├── vite-env.d.ts                # Vite type declarations
+├── models/types.ts              # All interface/type declarations (no logic)
+├── store/                       # React Context + useReducer hooks (global state)
+├── screens/                     # One file per route (thin composition of components)
+├── components/                  # Reusable UI components
+│   └── ui/                      # shadcn/ui primitives (read-only, never edit)
+├── features/settings/           # Settings feature module (components, hooks, utils)
+├── services/                    # Stateless I/O singletons (persistence, sync, haptics)
+├── styles/tokens.css            # CSS custom property definitions (all color tokens)
+├── lib/                         # Pure utility functions
+└── assets/                      # Static assets (icons, images)
+```
 
-- `src/App.tsx`: Root component with routing and providers
-- `src/main.tsx`: React entry point
-- `src/screens/`: Full-screen route components (e.g., MainScreen, SettingsSheet)
-- `src/components/`: Reusable UI components (e.g., CategoryPicker, BottomBar)
-- `src/store/`: Global state management with React Context + useReducer
-- `src/services/`: Side-effectful services (e.g., persistence via localStorage)
-- `src/models/`: TypeScript interfaces and types
-- `src/lib/`: Pure utility functions
-- `src/styles/`: CSS custom property tokens
-- `src/assets/`: Static assets
+### Key Screens
+
+| Screen                    | Route                 | Description                                 |
+| ------------------------- | --------------------- | ------------------------------------------- |
+| `SplashScreen`            | —                     | Brief branded splash on app launch          |
+| `OnboardingWelcomeScreen` | `/onboarding`         | First-run welcome page                      |
+| `OnboardingSetupScreen`   | `/onboarding/setup`   | Category creation during onboarding         |
+| `OnboardingSyncScreen`    | `/onboarding/sync`    | Cloud sync opt-in                           |
+| `OnboardingInstallScreen` | `/onboarding/install` | Add-to-homescreen instructions              |
+| `MainScreen`              | `/`                   | Primary checklist view with category picker |
+| `SettingsSheet`           | —                     | Bottom sheet overlay for settings           |
 
 ## Development Notes
 
-- **Mobile-First Design**: Optimized for mobile with safe-area insets for iOS notch/home indicator.
-- **Gestures**: Uses Pointer Events for swipe and drag interactions, with rubber-band resistance.
-- **Theming**: Applied via `data-theme` attribute on `document.documentElement`, using CSS custom properties.
-- **Routing**: HashRouter is used for compatibility with GitHub Pages and PWA deployment.
+- **Mobile-First Design**: Optimized for iPhone Safari with safe-area insets for the notch and home indicator.
+- **Gestures**: Uses the Pointer Events API exclusively (`onPointerDown`, `onPointerMove`, `onPointerUp`) — no mouse-specific events.
+- **Theming**: Applied via a `data-theme` attribute on `document.documentElement`, using CSS custom properties defined in `src/styles/tokens.css`. Tailwind's `dark:` variant is not used for themed colors.
+- **Routing**: `HashRouter` is required for GitHub Pages compatibility and must not be changed to `BrowserRouter`.
 - **Linting**: ESLint configured for TypeScript and React.
+- **No Test Suite**: Validation is done via `npm run build` (`tsc --noEmit && vite build`).
+
+## Documentation
+
+Detailed reference documentation lives in `docs/reference/`:
+
+- `getting-started.md` — Setup and deployment
+- `architecture-overview.md` — App entry flow, layer contracts
+- `project-structure.md` — Folder rules, naming conventions
+- `state-management.md` — Stores, reducers, actions
+- `data-models.md` — TypeScript types and interfaces
+- `services.md` — PersistenceService, SettingsService, HapticService
+- `theming-and-colors.md` — Appearance modes, CSS tokens
+- `ui-patterns.md` — iOS-feel patterns, gestures, animations
+- `pwa-configuration.md` — Service worker, manifest, icons
+
+Design plans and UI snapshots are in `docs/plans/` and `docs/snapshots/`.
 
 ## Contributing
 
 1. Follow the strict change discipline outlined in `.github/copilot-instructions.md`.
 2. Use the specified naming conventions and folder structure.
 3. Ensure mobile-first, iOS-feel UI/UX.
-
-## License
-
-[Add license if applicable]
+4. Run `npm run build` and fix all errors before submitting changes.

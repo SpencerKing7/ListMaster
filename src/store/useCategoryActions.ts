@@ -76,6 +76,11 @@ export function useCategoryActions(
     (itemID: string) => dispatch({ type: "DELETE_ITEM", itemID }),
     [dispatch],
   );
+  const renameItemInSelectedCategory = useCallback(
+    (itemID: string, newName: string) =>
+      dispatch({ type: "RENAME_ITEM", itemID, newName }),
+    [dispatch],
+  );
   const clearCheckedItemsInSelectedCategory = useCallback(
     () => dispatch({ type: "CLEAR_CHECKED" }),
     [dispatch],
@@ -138,6 +143,7 @@ export function useCategoryActions(
     addItemToSelectedCategory,
     toggleItemInSelectedCategory,
     deleteItemFromSelectedCategory,
+    renameItemInSelectedCategory,
     clearCheckedItemsInSelectedCategory,
     checkAllItemsInSelectedCategory,
     uncheckAllItemsInSelectedCategory,

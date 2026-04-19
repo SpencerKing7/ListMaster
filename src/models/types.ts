@@ -76,6 +76,7 @@ export type StoreAction =
   | { type: "ADD_ITEM"; name: string }
   | { type: "TOGGLE_ITEM"; itemID: string }
   | { type: "DELETE_ITEM"; itemID: string }
+  | { type: "RENAME_ITEM"; itemID: string; newName: string }
   | { type: "CLEAR_CHECKED" }
   | { type: "CHECK_ALL" }
   | { type: "UNCHECK_ALL" }
@@ -113,6 +114,7 @@ export interface CategoryActions {
   addItemToSelectedCategory: (name: string) => void;
   toggleItemInSelectedCategory: (itemID: string) => void;
   deleteItemFromSelectedCategory: (itemID: string) => void;
+  renameItemInSelectedCategory: (itemID: string, newName: string) => void;
   clearCheckedItemsInSelectedCategory: () => void;
   checkAllItemsInSelectedCategory: () => void;
   uncheckAllItemsInSelectedCategory: () => void;
@@ -182,6 +184,7 @@ export interface StoreContextValue {
   addItemToSelectedCategory: (name: string) => void;
   toggleItemInSelectedCategory: (itemID: string) => void;
   deleteItemFromSelectedCategory: (itemID: string) => void;
+  renameItemInSelectedCategory: (itemID: string, newName: string) => void;
   clearCheckedItemsInSelectedCategory: () => void;
   checkAllItemsInSelectedCategory: () => void;
   uncheckAllItemsInSelectedCategory: () => void;

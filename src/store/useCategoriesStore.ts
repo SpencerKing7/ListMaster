@@ -93,6 +93,7 @@ export function StoreProvider({
     addItemToSelectedCategory: actions.addItemToSelectedCategory,
     toggleItemInSelectedCategory: actions.toggleItemInSelectedCategory,
     deleteItemFromSelectedCategory: actions.deleteItemFromSelectedCategory,
+    renameItemInSelectedCategory: actions.renameItemInSelectedCategory,
     clearCheckedItemsInSelectedCategory:
       actions.clearCheckedItemsInSelectedCategory,
     checkAllItemsInSelectedCategory: actions.checkAllItemsInSelectedCategory,

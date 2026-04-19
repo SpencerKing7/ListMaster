@@ -73,6 +73,32 @@ export function handleDeleteItem(
   return { ...state, categories: updated };
 }
 
+/** RENAME_ITEM */
+export function handleRenameItem(
+  state: StoreState,
+  itemID: string,
+  newName: string,
+): StoreState | null {
+  const trimmed = normalizedName(newName);
+  if (!trimmed) return null;
+  const catIdx = selectedCatIdx(state);
+  if (catIdx === -1) return null;
+  const cat = state.categories[catIdx];
+  const itemIdx = cat.items.findIndex((i) => i.id === itemID);
+  if (itemIdx === -1) return null;
+  const updatedCats = state.categories.map((c, i) =>
+    i === catIdx
+      ? {
+          ...c,
+          items: c.items.map((item, j) =>
+            j === itemIdx ? { ...item, name: trimmed } : item,
+          ),
+        }
+      : c,
+  );
+  return { ...state, categories: updatedCats };
+}
+
 /** CLEAR_CHECKED */
 export function handleClearChecked(state: StoreState): StoreState | null {
   const catIdx = selectedCatIdx(state);

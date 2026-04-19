@@ -20,6 +20,7 @@ import {
   handleAddItem,
   handleToggleItem,
   handleDeleteItem,
+  handleRenameItem,
   handleClearChecked,
   handleCheckAll,
   handleUncheckAll,
@@ -97,6 +98,9 @@ export function categoriesReducer(
       break;
     case "DELETE_ITEM":
       next = handleDeleteItem(state, action.itemID);
+      break;
+    case "RENAME_ITEM":
+      next = handleRenameItem(state, action.itemID, action.newName);
       break;
     case "CLEAR_CHECKED":
       next = handleClearChecked(state);

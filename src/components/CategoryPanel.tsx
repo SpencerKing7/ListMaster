@@ -6,11 +6,11 @@ import type { JSX } from "react";
 import type { Category } from "@/models/types";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
-import { SwipeableRow } from "./SwipeableRow";
 import { AddItemInput } from "./AddItemInput";
 import { ChecklistItemRow } from "./ChecklistItemRow";
 import { EmptyState } from "./EmptyState";
 import { ListMetaBar } from "./ListMetaBar";
+import { RenameItemDialog } from "./RenameItemDialog";
 
 interface CategoryPanelProps {
   category: Category | null;
@@ -43,10 +43,12 @@ const noItemsIcon = (
 // MARK: - Component
 
 /** Displays the selected category's items with add input, sort controls, and
- *  swipeable checklist rows. Shows contextual empty states when appropriate. */
+ *  checklist rows with inline edit/delete actions. Shows contextual empty states when appropriate. */
 export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | null {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<{ id: string; name: string } | null>(null);
+  const [editName, setEditName] = useState("");
 
   // ── Empty states ──
 
@@ -122,24 +124,46 @@ export function CategoryPanel({ category }: CategoryPanelProps): JSX.Element | n
       >
         <ul className="flex flex-col gap-2 pt-3 pb-10">
           {sortedItems.map((item) => (
-            <SwipeableRow
+            <ChecklistItemRow
               key={item.id}
-              onDelete={() => store.deleteItemFromSelectedCategory(item.id)}
-            >
-              <ChecklistItemRow
-                item={item}
-                isTapped={tappedId === item.id}
-                onTap={() => {
-                  setTappedId(item.id);
-                  setTimeout(() => setTappedId(null), 120);
-                  store.toggleItemInSelectedCategory(item.id);
-                  HapticService.light();
-                }}
-              />
-            </SwipeableRow>
+              item={item}
+              isTapped={tappedId === item.id}
+              onTap={() => {
+                setTappedId(item.id);
+                setTimeout(() => setTappedId(null), 120);
+                store.toggleItemInSelectedCategory(item.id);
+                HapticService.light();
+              }}
+              onEdit={() => {
+                setEditingItem({ id: item.id, name: item.name });
+                setEditName(item.name);
+              }}
+              onDelete={() => {
+                store.deleteItemFromSelectedCategory(item.id);
+                HapticService.medium();
+              }}
+            />
           ))}
         </ul>
       </div>
+
+      <RenameItemDialog
+        itemToRename={editingItem}
+        value={editName}
+        onValueChange={setEditName}
+        onSave={() => {
+          if (editingItem && editName.trim().length > 0) {
+            store.renameItemInSelectedCategory(editingItem.id, editName.trim());
+            HapticService.light();
+          }
+          setEditingItem(null);
+          setEditName("");
+        }}
+        onClose={() => {
+          setEditingItem(null);
+          setEditName("");
+        }}
+      />
     </div>
   );
 };
