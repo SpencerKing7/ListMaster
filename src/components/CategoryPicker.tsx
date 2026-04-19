@@ -79,7 +79,7 @@ export function CategoryPicker(): JSX.Element {
               top: isAllView ? 18 : 0,
               left: 0,
               right: 0,
-              bottom: 6,
+              bottom: 0,
             }}
           />
           <div
@@ -94,7 +94,7 @@ export function CategoryPicker(): JSX.Element {
           >
             <div
               className="px-1 py-1 flex items-center gap-1 min-w-max w-full"
-              style={{ position: "relative", paddingTop: isAllView ? 18 : 4 }}
+              style={{ position: "relative", paddingTop: isAllView ? 22 : 4 }}
             >
               {(() => {
                 const items: JSX.Element[] = [];
