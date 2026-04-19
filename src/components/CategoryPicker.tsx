@@ -1,5 +1,5 @@
 // src/components/CategoryPicker.tsx
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { usePickerScroll } from "@/store/usePickerScroll";
@@ -17,24 +17,11 @@ export function CategoryPicker(): JSX.Element {
     handlePointerUp,
   } = usePickerScroll();
 
-  /**
-   * When a pill is tapped, the resulting selectedCategoryID change should not
-   * trigger scrollIntoView — the pill is already visible and the smooth scroll
-   * fights the active touch momentum on iOS Safari. Set this ref true in the
-   * pill onClick and clear it in the effect.
-   */
-  const skipNextScrollRef = useRef(false);
-
-  // Scroll selected pill into view when selection changes programmatically
-  // (e.g. arrow nav, auto-select). Skip when the user tapped a pill directly.
+  // Scroll selected pill into center whenever selection changes (tap or programmatic).
   // Uses container.scroll() instead of scrollIntoView to guarantee only
   // horizontal scrolling — scrollIntoView can scroll the page vertically on
   // desktop, causing the sticky header height to shift.
   useEffect(() => {
-    if (skipNextScrollRef.current) {
-      skipNextScrollRef.current = false;
-      return;
-    }
     const container = scrollRef.current;
     if (!container) return;
     const selectedEl = container.querySelector(
@@ -128,7 +115,6 @@ export function CategoryPicker(): JSX.Element {
                       isSelected={isSelected}
                       hasDraggedRef={hasDraggedRef}
                       onSelect={(id) => {
-                        skipNextScrollRef.current = true;
                         selectCategory(id);
                       }}
                     />,
