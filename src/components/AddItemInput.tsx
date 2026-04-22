@@ -69,8 +69,6 @@ export function AddItemInput({ isVisible, onDismiss }: AddItemInputProps): JSX.E
           }}
           enterKeyHint="send"
           autoCapitalize="sentences"
-          autoComplete="off"
-          autoCorrect="off"
           spellCheck={false}
         />
         <button
