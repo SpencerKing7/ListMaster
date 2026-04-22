@@ -58,7 +58,6 @@ export function RenameGroupDialog({
           className={INPUT_CLASS}
           autoFocus
           autoCapitalize="words"
-          autoCorrect="off"
           spellCheck={false}
           enterKeyHint="done"
         />

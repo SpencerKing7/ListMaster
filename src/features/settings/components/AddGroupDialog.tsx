@@ -60,7 +60,6 @@ export function AddGroupDialog({
           className={INPUT_CLASS}
           autoFocus
           autoCapitalize="words"
-          autoCorrect="off"
           spellCheck={false}
           enterKeyHint="done"
         />

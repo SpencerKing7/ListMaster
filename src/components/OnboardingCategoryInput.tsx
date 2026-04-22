@@ -59,7 +59,6 @@ export function OnboardingCategoryInput({
             style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
             enterKeyHint="send"
             autoCapitalize="words"
-            autoCorrect="off"
             spellCheck={false}
           />
           <Button
