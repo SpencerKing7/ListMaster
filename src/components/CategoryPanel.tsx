@@ -99,7 +99,7 @@ export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelPro
   const allChecked = uncheckedItems.length === 0;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 px-3 pt-1">
+    <div className="flex-1 flex flex-col min-h-0 px-3 pt-0">
       {/* ── Sticky header: sort row + add input ── */}
       <div className="shrink-0 pb-1">
         <ListMetaBar
@@ -112,7 +112,9 @@ export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelPro
           onChangeSortOrder={(next) => store.setCategorySortOrder(category.id, next)}
           onChangeSortDirection={(next) => store.setCategorySortDirection(category.id, next)}
         />
-        <AddItemInput />
+        <div className="mt-2">
+          <AddItemInput />
+        </div>
       </div>
 
       {/* ── Scrollable list ── */}

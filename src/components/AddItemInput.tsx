@@ -22,6 +22,7 @@ export function AddItemInput(): JSX.Element {
     // Reset caret position so iOS recalculates shift state without keyboard dismissal
     requestAnimationFrame(() => {
       if (!inputRef.current) return;
+      inputRef.current.focus();
       inputRef.current.setSelectionRange(0, 0);
     });
   }
