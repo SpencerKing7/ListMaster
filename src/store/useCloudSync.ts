@@ -58,6 +58,8 @@ export function useCloudSync({
   });
   // Pending debounce timer for cloud saves.
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Unix ms of the last local user edit — 0 so first snapshot always wins initially.
+  const localEditedAtRef = useRef<number>(0);
 
   // Stable refs so the subscription setup closure doesn't go stale.
   const getUserNameRef = useRef(getUserName);
@@ -82,11 +84,19 @@ export function useCloudSync({
       if (!isSyncReadyRef.current) return;
       if (!isSyncEnabled || !syncCode) return;
 
+      // Stamp the local edit time only after all guards pass, so edits made
+      // before sync is ready don't interfere with the first conflict check.
+      localEditedAtRef.current = Date.now();
+
       if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
       cloudSaveTimer.current = setTimeout(async () => {
         cloudSaveTimer.current = null;
         try {
           const { saveState } = await import("@/services/syncService");
+          // Mark as loading-from-sync before the write so that when Firestore
+          // echoes our own snapshot back, the conflict check treats it as ours
+          // and the subsequent scheduleCloudSave call is swallowed.
+          isLoadingFromSync.current = true;
           await saveState(
             syncCode,
             categories,
@@ -95,6 +105,8 @@ export function useCloudSync({
             getUserNameRef.current(),
           );
         } catch (error) {
+          // Clear the flag on failure so future edits aren't silently dropped.
+          isLoadingFromSync.current = false;
           console.error("Failed to save to cloud:", error);
         }
       }, 1000);
@@ -103,6 +115,19 @@ export function useCloudSync({
   );
 
   // ── Cloud subscription ──
+
+  // Stable ref pointing to a save function — called by the subscription when
+  // local edits are newer than the incoming cloud snapshot (conflict resolution).
+  const triggerSaveRef = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    triggerSaveRef.current = () => {
+      scheduleCloudSave(
+        stateRef.current.categories,
+        stateRef.current.selectedCategoryID,
+        stateRef.current.groups,
+      );
+    };
+  }, [scheduleCloudSave]);
 
   useCloudSyncSubscription({
     isSyncEnabled,
@@ -115,6 +140,8 @@ export function useCloudSync({
     syncUserNameRef,
     cloudSaveTimerRef: cloudSaveTimer,
     onDeviceCountChange,
+    localEditedAtRef,
+    triggerSaveRef,
   });
 
   // Trigger debounced cloud save on data changes (categories and groups).

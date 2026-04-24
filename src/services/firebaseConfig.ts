@@ -1,6 +1,12 @@
 // src/services/firebaseConfig.ts
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -29,7 +35,23 @@ export function getFirebaseInstances(): FirebaseInstances {
   if (instances) return instances;
 
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const db = getFirestore(app);
+
+  // Use initializeFirestore with persistentLocalCache so the SDK queues writes
+  // while offline and replays them automatically when connectivity resumes.
+  // Falls back to getFirestore (which returns the already-initialized instance)
+  // when the app was previously initialised (e.g. React StrictMode double-render).
+  let db: Firestore;
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch {
+    // initializeFirestore throws if already initialized for this app.
+    db = getFirestore(app);
+  }
+
   const auth = getAuth(app);
 
   instances = { app, db, auth };

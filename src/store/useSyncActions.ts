@@ -56,7 +56,9 @@ export function useSyncActions(
 
       await registerDevice(newCode, user.uid);
       const result = await loadState(newCode);
-      setSyncedDeviceCount((result?.deviceIDs ?? []).length);
+      setSyncedDeviceCount(
+        result.status === "loaded" ? result.data.deviceIDs.length : 0,
+      );
 
       setSyncStatus("synced");
     } catch (error) {
@@ -118,7 +120,9 @@ export function useSyncActions(
 
         await registerDevice(trimmed, user.uid);
         const result = await loadState(trimmed);
-        setSyncedDeviceCount((result?.deviceIDs ?? []).length);
+        setSyncedDeviceCount(
+          result.status === "loaded" ? result.data.deviceIDs.length : 0,
+        );
 
         setSyncStatus("synced");
       } catch (error) {

@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import type { Dispatch, MutableRefObject } from "react";
 import type { StoreAction, StoreState } from "@/models/types";
+import { setupSubscription } from "@/store/syncSubscriptionSetup";
 
 // MARK: - Types
 
@@ -18,6 +19,10 @@ interface UseCloudSyncSubscriptionParams {
   cloudSaveTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>;
   /** Called on every snapshot with the current registered device count. */
   onDeviceCountChange: (count: number) => void;
+  /** Unix ms of the last local user edit — used for conflict resolution. */
+  localEditedAtRef: MutableRefObject<number>;
+  /** Schedules a cloud save of current local state — called when local wins conflict. */
+  triggerSaveRef: MutableRefObject<() => void>;
 }
 
 // MARK: - Hook
@@ -25,7 +30,7 @@ interface UseCloudSyncSubscriptionParams {
 /**
  * Manages the Firestore subscription lifecycle: initial load, real-time
  * onSnapshot, and cleanup on unmount / code change.
- * Extracted from useCloudSync to satisfy the 120-line hook ceiling.
+ * Delegates setup and conflict resolution to syncSubscriptionSetup.
  */
 export function useCloudSyncSubscription({
   isSyncEnabled,
@@ -38,6 +43,8 @@ export function useCloudSyncSubscription({
   syncUserNameRef,
   cloudSaveTimerRef,
   onDeviceCountChange,
+  localEditedAtRef,
+  triggerSaveRef,
 }: UseCloudSyncSubscriptionParams): void {
   // Stable ref so the snapshot closure always calls the latest setter.
   const onDeviceCountChangeRef = useRef(onDeviceCountChange);
@@ -45,82 +52,43 @@ export function useCloudSyncSubscription({
     onDeviceCountChangeRef.current = onDeviceCountChange;
   }, [onDeviceCountChange]);
 
+  // Stable ref so the async .then() and the synchronous cleanup
+  // share the same unsubscribe slot across the effect boundary.
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     if (!isSyncEnabled || !syncCode) return;
     isSyncReadyRef.current = false;
 
-    let unsubscribe: (() => void) | null = null;
+    // Guard against the component unmounting before setupSubscription resolves.
+    // Without this, the cleanup runs with unsubscribe === null and the .then()
+    // assigns a live listener after cleanup, leaking the subscription permanently.
+    let isCancelled = false;
 
-    const setupSubscription = async (): Promise<void> => {
-      try {
-        const { subscribeToState, loadState, saveState } =
-          await import("@/services/syncService");
-
-        const cloudState = await loadState(syncCode);
-        if (cloudState) {
-          if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
-          isLoadingFromSyncRef.current = true;
-          dispatch({
-            type: "SYNC_LOAD",
-            categories: cloudState.categories,
-            selectedCategoryID: cloudState.selectedCategoryID,
-            groups: cloudState.groups,
-          });
-        } else {
-          try {
-            const s = stateRef.current;
-            await saveState(
-              syncCode,
-              s.categories,
-              s.selectedCategoryID,
-              s.groups,
-              getUserNameRef.current(),
-            );
-          } catch (saveError) {
-            console.error("Failed to write initial sync state:", saveError);
-          }
-        }
-
-        isSyncReadyRef.current = true;
-
-        // Self-register this device on every app load so existing devices
-        // (that synced before deviceIDs was introduced) appear in the count.
-        try {
-          const { ensureAnonymousAuth, registerDevice } =
-            await import("@/services/syncService");
-          const user = await ensureAnonymousAuth();
-          await registerDevice(syncCode, user.uid);
-        } catch (regError) {
-          console.error("Failed to register device:", regError);
-        }
-
-        unsubscribe = subscribeToState(
-          syncCode,
-          (
-            categories,
-            _selectedCategoryID,
-            groups,
-            cloudUserName,
-            deviceCount,
-          ) => {
-            if (cloudUserName) syncUserNameRef.current(cloudUserName);
-            isLoadingFromSyncRef.current = true;
-            // Real-time updates intentionally omit selectedCategoryID.
-            // Each device keeps its own category selection — syncing it
-            // causes an infinite feedback loop between devices.
-            dispatch({ type: "SYNC_LOAD", categories, groups });
-            onDeviceCountChangeRef.current(deviceCount);
-          },
-        );
-      } catch (error) {
-        console.error("Failed to subscribe to cloud changes:", error);
+    setupSubscription({
+      syncCode,
+      dispatch,
+      stateRef,
+      isSyncReadyRef,
+      isLoadingFromSyncRef,
+      getUserNameRef,
+      syncUserNameRef,
+      onDeviceCountChangeRef,
+      localEditedAtRef,
+      triggerSaveRef,
+    }).then((unsub) => {
+      if (isCancelled) {
+        // Effect cleaned up while we were awaiting — immediately release the listener.
+        if (unsub) unsub();
+      } else {
+        unsubscribeRef.current = unsub;
       }
-    };
-
-    setupSubscription();
+    });
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      isCancelled = true;
+      if (unsubscribeRef.current) unsubscribeRef.current();
+      unsubscribeRef.current = null;
       isSyncReadyRef.current = false;
       if (cloudSaveTimerRef.current) {
         clearTimeout(cloudSaveTimerRef.current);
@@ -137,5 +105,7 @@ export function useCloudSyncSubscription({
     syncUserNameRef,
     stateRef,
     cloudSaveTimerRef,
+    localEditedAtRef,
+    triggerSaveRef,
   ]);
 }

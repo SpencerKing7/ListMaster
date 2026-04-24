@@ -6,7 +6,10 @@ import {
   onSnapshot,
   deleteDoc,
   arrayUnion,
+  serverTimestamp,
   type Unsubscribe,
+  type FieldValue,
+  type Timestamp,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
 import type { Category, CategoryGroup } from "@/models/types";
@@ -15,14 +18,55 @@ export { ensureAnonymousAuth } from "@/services/authService";
 
 // MARK: - Types
 
-interface SyncPayload {
+/**
+ * Shape used when writing to Firestore. `updatedAt` is a server-generated
+ * FieldValue so the timestamp is authoritative and immune to client clock skew.
+ */
+interface SyncPayloadWrite {
   lists: Category[];
   selectedCategoryID: string | null;
-  groups?: CategoryGroup[]; // optional for backwards compatibility with older clients
-  userName?: string; // optional for backwards compatibility with older documents
-  updatedAt: number; // Unix ms — used to detect stale writes
-  deviceIDs?: string[]; // anonymous Firebase UIDs of all registered devices
+  groups?: CategoryGroup[];
+  userName?: string;
+  updatedAt: FieldValue;
+  deviceIDs?: string[];
 }
+
+/**
+ * Shape returned when reading from Firestore. `updatedAt` has been resolved
+ * by the server to a Timestamp (or a number for legacy documents).
+ */
+interface SyncPayloadRead {
+  lists: Category[];
+  selectedCategoryID: string | null;
+  groups?: CategoryGroup[];
+  userName?: string;
+  updatedAt: Timestamp | number;
+  deviceIDs?: string[];
+}
+
+/** Converts a Firestore Timestamp or legacy number to Unix ms. */
+function toUnixMs(value: Timestamp | number | undefined): number {
+  if (value === undefined) return 0;
+  if (typeof value === "number") return value;
+  return value.toMillis();
+}
+
+/** Shape returned by loadState when the document exists. */
+export interface LoadedSyncState {
+  categories: Category[];
+  selectedCategoryID: string | null;
+  groups: CategoryGroup[];
+  userName?: string;
+  deviceIDs: string[];
+  /** Unix ms timestamp from the Firestore document — used for conflict resolution. */
+  updatedAt: number;
+}
+
+/** Discriminated result from loadState to distinguish timeout from not-found. */
+export type LoadStateResult =
+  | { status: "loaded"; data: LoadedSyncState }
+  | { status: "not-found" }
+  | { status: "timeout" };
 
 // MARK: - Firestore Helpers
 
@@ -44,12 +88,14 @@ export async function saveState(
   groups: CategoryGroup[],
   userName: string,
 ): Promise<void> {
-  const payload: SyncPayload = {
+  const payload: SyncPayloadWrite = {
     lists: categories,
     selectedCategoryID,
     groups,
     userName,
-    updatedAt: Date.now(),
+    // serverTimestamp() is resolved by Firestore on the server, making it
+    // immune to client clock skew across devices.
+    updatedAt: serverTimestamp(),
   };
   await setDoc(syncDocRef(syncCode), payload, { merge: true });
 }
@@ -71,28 +117,29 @@ export async function registerDevice(
 
 /**
  * Reads the list state once from Firestore.
- * Returns null if the document doesn't exist or times out.
+ * Returns a discriminated result:
+ * - `{ status: "loaded", data }` — document exists and was fetched successfully.
+ * - `{ status: "not-found" }` — document does not exist (safe to write initial state).
+ * - `{ status: "timeout" }` — fetch exceeded 5 seconds; state unknown, do NOT overwrite cloud.
  */
-export async function loadState(syncCode: string): Promise<{
-  categories: Category[];
-  selectedCategoryID: string | null;
-  groups: CategoryGroup[];
-  userName?: string;
-  deviceIDs: string[];
-} | null> {
-  const timeoutPromise = new Promise<null>((resolve) =>
-    setTimeout(() => resolve(null), 5000),
+export async function loadState(syncCode: string): Promise<LoadStateResult> {
+  const timeoutPromise = new Promise<{ status: "timeout" }>((resolve) =>
+    setTimeout(() => resolve({ status: "timeout" }), 5000),
   );
 
   const fetchPromise = getDoc(syncDocRef(syncCode)).then((snap) => {
-    if (!snap.exists()) return null;
-    const data = snap.data() as SyncPayload;
+    if (!snap.exists()) return { status: "not-found" as const };
+    const data = snap.data() as SyncPayloadRead;
     return {
-      categories: data.lists,
-      selectedCategoryID: data.selectedCategoryID,
-      groups: data.groups ?? [], // critical fallback here, not in the caller
-      userName: data.userName,
-      deviceIDs: data.deviceIDs ?? [],
+      status: "loaded" as const,
+      data: {
+        categories: data.lists,
+        selectedCategoryID: data.selectedCategoryID,
+        groups: data.groups ?? [],
+        userName: data.userName,
+        deviceIDs: data.deviceIDs ?? [],
+        updatedAt: toUnixMs(data.updatedAt),
+      },
     };
   });
 
@@ -109,6 +156,7 @@ export function subscribeToState(
     categories: Category[],
     selectedCategoryID: string | null,
     groups: CategoryGroup[],
+    updatedAt: number,
     userName: string | undefined,
     deviceCount: number,
   ) => void,
@@ -117,11 +165,12 @@ export function subscribeToState(
     syncDocRef(syncCode),
     (snap) => {
       if (!snap.exists()) return;
-      const data = snap.data() as SyncPayload;
+      const data = snap.data() as SyncPayloadRead;
       callback(
         data.lists,
         data.selectedCategoryID,
         data.groups ?? [],
+        toUnixMs(data.updatedAt),
         data.userName,
         (data.deviceIDs ?? []).length,
       );
