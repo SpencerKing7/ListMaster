@@ -67,7 +67,7 @@ export function AddItemInput(): JSX.Element {
           style={{
             color: "var(--color-text-primary)",
             caretColor: "var(--color-brand-green)",
-            fontSize: "14px",
+            fontSize: "var(--text-size-base)",
             fontWeight: 500,
           }}
           enterKeyHint="send"
