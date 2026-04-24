@@ -14,7 +14,6 @@ export function MainScreen(): JSX.Element {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isInstallSheetOpen, setIsInstallSheetOpen] = useState(false);
-  const [isAddingItem, setIsAddingItem] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Reset scroll position on mount — clears any residual scroll offset left
@@ -24,22 +23,6 @@ export function MainScreen(): JSX.Element {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, []);
-
-  // Reset isAddingItem when category changes
-  useEffect(() => {
-    setIsAddingItem(false);
-  }, [store.selectedCategory?.id]);
-
-  const handleToggleAddItem = useCallback(() => {
-    if (isAddingItem) {
-      // Dismissing - just close
-      setIsAddingItem(false);
-    } else {
-      // Opening - scroll to top first, then open
-      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-      setIsAddingItem(true);
-    }
-  }, [isAddingItem]);
 
   // Dismiss keyboard on scroll
   const handleScroll = useCallback(() => {
@@ -94,10 +77,7 @@ export function MainScreen(): JSX.Element {
         >
           <CategoryPanel
             category={store.selectedCategory}
-            isAddingItem={isAddingItem}
             scrollContainerRef={scrollContainerRef}
-            onDismissAddItem={() => setIsAddingItem(false)}
-            onToggleAddItem={handleToggleAddItem}
           />
         </div>
 

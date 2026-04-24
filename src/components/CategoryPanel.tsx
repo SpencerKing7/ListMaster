@@ -14,10 +14,7 @@ import { RenameItemDialog } from "./RenameItemDialog";
 
 interface CategoryPanelProps {
   category: Category | null;
-  isAddingItem: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-  onDismissAddItem: () => void;
-  onToggleAddItem: () => void;
 }
 
 // MARK: - Icons (used by EmptyState)
@@ -48,7 +45,7 @@ const noItemsIcon = (
 
 /** Displays the selected category's items with add input, sort controls, and
  *  checklist rows with inline edit/delete actions. Shows contextual empty states when appropriate. */
-export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDismissAddItem, onToggleAddItem }: CategoryPanelProps): JSX.Element | null {
+export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelProps): JSX.Element | null {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string; name: string } | null>(null);
@@ -72,7 +69,7 @@ export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDi
   if (category.items.length === 0) {
     return (
       <div className="flex-1 flex flex-col px-3 pt-2">
-        <AddItemInput isVisible={true} onDismiss={onDismissAddItem} />
+        <AddItemInput />
         <EmptyState
           icon={noItemsIcon}
           title="No items yet"
@@ -105,14 +102,12 @@ export function CategoryPanel({ category, isAddingItem, scrollContainerRef, onDi
     <div className="flex-1 flex flex-col min-h-0 px-3 pt-1">
       {/* ── Sticky header: input + sort row ── */}
       <div className="shrink-0 pb-1">
-        <AddItemInput isVisible={isAddingItem} onDismiss={onDismissAddItem} />
+        <AddItemInput />
         <ListMetaBar
           itemCount={sortedItems.length}
           allChecked={allChecked}
           sortOrder={sortOrder}
           sortDirection={sortDirection}
-          isAddingItem={isAddingItem}
-          onToggleAddItem={onToggleAddItem}
           onCheckAll={() => store.checkAllItemsInSelectedCategory()}
           onUncheckAll={() => store.uncheckAllItemsInSelectedCategory()}
           onChangeSortOrder={(next) => store.setCategorySortOrder(category.id, next)}
