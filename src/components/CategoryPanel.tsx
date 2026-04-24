@@ -100,9 +100,8 @@ export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelPro
 
   return (
     <div className="flex-1 flex flex-col min-h-0 px-3 pt-1">
-      {/* ── Sticky header: input + sort row ── */}
+      {/* ── Sticky header: sort row + add input ── */}
       <div className="shrink-0 pb-1">
-        <AddItemInput />
         <ListMetaBar
           itemCount={sortedItems.length}
           allChecked={allChecked}
@@ -113,6 +112,7 @@ export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelPro
           onChangeSortOrder={(next) => store.setCategorySortOrder(category.id, next)}
           onChangeSortDirection={(next) => store.setCategorySortDirection(category.id, next)}
         />
+        <AddItemInput />
       </div>
 
       {/* ── Scrollable list ── */}

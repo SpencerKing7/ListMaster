@@ -27,7 +27,7 @@ export function AddItemInput(): JSX.Element {
   }
 
   return (
-    <div className="px-1 mb-1">
+    <div className="px-1">
       <div
         className="flex items-center h-9 rounded-xl px-3 gap-1.5"
         style={{
