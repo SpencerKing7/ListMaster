@@ -1,16 +1,29 @@
 // src/components/AddItemInput.tsx
 // Minimal always-visible input row for adding new checklist items.
 
-import { useState, useRef, type JSX } from "react";
+import { useState, useRef, useEffect, type JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 
+interface AddItemInputProps {
+  /** When true, focuses the input on mount (e.g. after transitioning from empty state). */
+  focusOnMount?: boolean;
+}
+
 /** Compact, always-visible input row for adding new items. Sits above the list
  *  with a ghost style so it doesn't dominate the screen. */
-export function AddItemInput(): JSX.Element {
+export function AddItemInput({ focusOnMount = false }: AddItemInputProps): JSX.Element {
   const store = useCategoriesStore();
   const [newItemName, setNewItemName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!focusOnMount) return;
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const trimmedName = newItemName.trim();
 

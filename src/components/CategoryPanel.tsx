@@ -1,7 +1,7 @@
 // src/components/CategoryPanel.tsx
 // Main content panel showing the checklist items for the selected category.
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { JSX } from "react";
 import type { Category } from "@/models/types";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
@@ -50,6 +50,14 @@ export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelPro
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string; name: string } | null>(null);
   const [editName, setEditName] = useState("");
+  const prevItemsLengthRef = useRef<number>(category?.items.length ?? 0);
+
+  useEffect(() => {
+    prevItemsLengthRef.current = category?.items.length ?? 0;
+  });
+
+  const justAddedFirstItem =
+    prevItemsLengthRef.current === 0 && (category?.items.length ?? 0) > 0;
 
   // ── Empty states ──
 
@@ -113,7 +121,7 @@ export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelPro
           onChangeSortDirection={(next) => store.setCategorySortDirection(category.id, next)}
         />
         <div className="mt-2">
-          <AddItemInput />
+          <AddItemInput focusOnMount={justAddedFirstItem} />
         </div>
       </div>
 
