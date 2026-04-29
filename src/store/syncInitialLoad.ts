@@ -3,7 +3,7 @@
 // Extracted from syncSubscriptionSetup to keep that file under the line ceiling.
 
 import type { Dispatch, RefObject } from "react";
-import type { StoreAction, StoreState } from "@/models/types";
+import type { StoreAction, StoreState, ColorTheme } from "@/models/types";
 import type { Category, CategoryGroup } from "@/models/types";
 import type { LoadStateResult } from "@/services/syncService";
 import { PersistenceService } from "@/services/persistenceService";
@@ -18,6 +18,8 @@ interface ResolveInitialLoadParams {
   isLoadingFromSyncRef: RefObject<boolean>;
   getUserNameRef: RefObject<() => string>;
   syncUserNameRef: RefObject<(name: string) => void>;
+  getColorThemeRef: RefObject<() => ColorTheme>;
+  syncColorThemeRef: RefObject<(theme: ColorTheme) => void>;
   dispatch: Dispatch<StoreAction>;
   /** Pre-imported saveState function from syncService. */
   saveState: (
@@ -26,6 +28,7 @@ interface ResolveInitialLoadParams {
     selectedCategoryID: string | null,
     groups: CategoryGroup[],
     userName: string,
+    colorTheme: ColorTheme,
   ) => Promise<void>;
 }
 
@@ -46,6 +49,8 @@ export async function resolveInitialLoad({
   isLoadingFromSyncRef,
   getUserNameRef,
   syncUserNameRef,
+  getColorThemeRef,
+  syncColorThemeRef,
   dispatch,
   saveState,
 }: ResolveInitialLoadParams): Promise<void> {
@@ -63,6 +68,7 @@ export async function resolveInitialLoad({
           s.selectedCategoryID,
           s.groups,
           getUserNameRef.current(),
+          getColorThemeRef.current(),
         );
       } catch (e: unknown) {
         console.error("Failed to push local-wins state to cloud:", e);
@@ -70,6 +76,8 @@ export async function resolveInitialLoad({
     } else {
       // Cloud is newer — accept the remote state.
       if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
+      if (cloudState.colorTheme)
+        syncColorThemeRef.current(cloudState.colorTheme);
       isLoadingFromSyncRef.current = true;
       dispatch({
         type: "SYNC_LOAD",
@@ -89,6 +97,7 @@ export async function resolveInitialLoad({
         s.selectedCategoryID,
         s.groups,
         getUserNameRef.current(),
+        getColorThemeRef.current(),
       );
     } catch (e: unknown) {
       console.error("Failed to write initial sync state:", e);

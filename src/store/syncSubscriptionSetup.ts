@@ -4,7 +4,7 @@
 // Extracted from useCloudSyncSubscription to satisfy the 150-line store ceiling.
 
 import type { Dispatch, RefObject } from "react";
-import type { StoreAction, StoreState } from "@/models/types";
+import type { StoreAction, StoreState, ColorTheme } from "@/models/types";
 import { resolveInitialLoad } from "@/store/syncInitialLoad";
 
 // MARK: - Types
@@ -20,6 +20,8 @@ export interface SetupSubscriptionParams {
   isOwnEchoExpectedRef: RefObject<boolean>;
   getUserNameRef: RefObject<() => string>;
   syncUserNameRef: RefObject<(name: string) => void>;
+  getColorThemeRef: RefObject<() => ColorTheme>;
+  syncColorThemeRef: RefObject<(theme: ColorTheme) => void>;
   onDeviceCountChangeRef: RefObject<(count: number) => void>;
   /** Unix ms of the last local user edit — used for conflict resolution. */
   localEditedAtRef: RefObject<number>;
@@ -50,6 +52,8 @@ export async function setupSubscription(
     isOwnEchoExpectedRef,
     getUserNameRef,
     syncUserNameRef,
+    getColorThemeRef,
+    syncColorThemeRef,
     onDeviceCountChangeRef,
     localEditedAtRef,
     triggerSaveRef,
@@ -68,6 +72,8 @@ export async function setupSubscription(
       isLoadingFromSyncRef,
       getUserNameRef,
       syncUserNameRef,
+      getColorThemeRef,
+      syncColorThemeRef,
       dispatch,
       saveState,
     });
@@ -97,6 +103,7 @@ export async function setupSubscription(
         cloudUpdatedAt,
         cloudUserName,
         deviceCount,
+        cloudColorTheme,
       ) => {
         if (isFirstSnapshot) {
           isFirstSnapshot = false;
@@ -121,6 +128,7 @@ export async function setupSubscription(
         if (cloudUpdatedAt > localEditedAtRef.current) {
           // Cloud is the source of truth — accept remote changes.
           if (cloudUserName) syncUserNameRef.current(cloudUserName);
+          if (cloudColorTheme) syncColorThemeRef.current(cloudColorTheme);
           isLoadingFromSyncRef.current = true;
           dispatch({ type: "SYNC_LOAD", categories, groups });
         } else {

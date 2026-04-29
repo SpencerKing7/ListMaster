@@ -35,6 +35,8 @@ interface SettingsState {
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
   setColorTheme: (theme: ColorTheme) => void;
+  /** Applies a colorTheme from the cloud only if the local theme is the default "green". */
+  syncColorTheme: (theme: ColorTheme) => void;
   resetToNewUser: () => void;
 }
 
@@ -113,6 +115,18 @@ export function SettingsProvider({
     applyColorThemeToDOM(theme, appearanceMode);
   }
 
+  /**
+   * Applies a colorTheme received from the cloud.
+   * Only updates if the local theme is still the default "green" — preserves
+   * deliberate local customisation.
+   */
+  function syncColorTheme(theme: ColorTheme) {
+    if (!theme || SettingsService.getColorTheme() !== "green") return;
+    SettingsService.setColorTheme(theme);
+    setColorThemeState(theme);
+    applyColorThemeToDOM(theme, appearanceMode);
+  }
+
   function resetToNewUser() {
     PersistenceService.clear();
     SettingsService.clearAll();
@@ -142,6 +156,7 @@ export function SettingsProvider({
         setAppearanceMode,
         setTextSize,
         setColorTheme,
+        syncColorTheme,
         resetToNewUser,
       },
     },

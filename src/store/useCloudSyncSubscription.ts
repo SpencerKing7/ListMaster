@@ -1,7 +1,7 @@
 // src/store/useCloudSyncSubscription.ts
 import { useEffect, useRef } from "react";
 import type { Dispatch, RefObject } from "react";
-import type { StoreAction, StoreState } from "@/models/types";
+import type { StoreAction, StoreState, ColorTheme } from "@/models/types";
 import { setupSubscription } from "@/store/syncSubscriptionSetup";
 
 // MARK: - Types
@@ -18,6 +18,8 @@ interface UseCloudSyncSubscriptionParams {
   isOwnEchoExpectedRef: RefObject<boolean>;
   getUserNameRef: RefObject<() => string>;
   syncUserNameRef: RefObject<(name: string) => void>;
+  getColorThemeRef: RefObject<() => ColorTheme>;
+  syncColorThemeRef: RefObject<(theme: ColorTheme) => void>;
   cloudSaveTimerRef: RefObject<ReturnType<typeof setTimeout> | null>;
   /** Called on every snapshot with the current registered device count. */
   onDeviceCountChange: (count: number) => void;
@@ -44,6 +46,8 @@ export function useCloudSyncSubscription({
   isOwnEchoExpectedRef,
   getUserNameRef,
   syncUserNameRef,
+  getColorThemeRef,
+  syncColorThemeRef,
   cloudSaveTimerRef,
   onDeviceCountChange,
   localEditedAtRef,
@@ -77,6 +81,8 @@ export function useCloudSyncSubscription({
       isOwnEchoExpectedRef,
       getUserNameRef,
       syncUserNameRef,
+      getColorThemeRef,
+      syncColorThemeRef,
       onDeviceCountChangeRef,
       localEditedAtRef,
       triggerSaveRef,
@@ -108,6 +114,8 @@ export function useCloudSyncSubscription({
     isOwnEchoExpectedRef,
     getUserNameRef,
     syncUserNameRef,
+    getColorThemeRef,
+    syncColorThemeRef,
     stateRef,
     cloudSaveTimerRef,
     localEditedAtRef,

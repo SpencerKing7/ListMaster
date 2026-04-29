@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import type { Dispatch } from "react";
-import type { Category, CategoryGroup } from "@/models/types";
+import type { Category, CategoryGroup, ColorTheme } from "@/models/types";
 import type { StoreState, StoreAction } from "@/models/types";
 import { useCloudSyncSubscription } from "@/store/useCloudSyncSubscription";
 
@@ -24,6 +24,10 @@ interface UseCloudSyncParams {
   getUserName: () => string;
   /** Applies a cloud-provided user name to local settings. */
   syncUserName: (name: string) => void;
+  /** Returns the latest color theme for save payloads. */
+  getColorTheme: () => ColorTheme;
+  /** Applies a cloud-provided color theme to local settings. */
+  syncColorTheme: (theme: ColorTheme) => void;
   /** Called on every snapshot with the current registered device count. */
   onDeviceCountChange: (count: number) => void;
 }
@@ -45,8 +49,10 @@ export function useCloudSync({
   syncCode,
   getUserName,
   syncUserName,
+  getColorTheme,
+  syncColorTheme,
   onDeviceCountChange,
-}: UseCloudSyncParams): void {
+}: UseCloudSyncParams): { triggerSave: () => void } {
   // Tracks whether current state was just loaded from the cloud (remote SYNC_LOAD guard).
   // When true, scheduleCloudSave bails to avoid pushing remote data back to Firestore.
   const isLoadingFromSync = useRef(false);
@@ -69,10 +75,14 @@ export function useCloudSync({
   // Stable refs so the subscription setup closure doesn't go stale.
   const getUserNameRef = useRef(getUserName);
   const syncUserNameRef = useRef(syncUserName);
+  const getColorThemeRef = useRef(getColorTheme);
+  const syncColorThemeRef = useRef(syncColorTheme);
   useEffect(() => {
     getUserNameRef.current = getUserName;
     syncUserNameRef.current = syncUserName;
-  }, [getUserName, syncUserName]);
+    getColorThemeRef.current = getColorTheme;
+    syncColorThemeRef.current = syncColorTheme;
+  }, [getUserName, syncUserName, getColorTheme, syncColorTheme]);
 
   // ── Cloud save (debounced) ──
 
@@ -108,6 +118,7 @@ export function useCloudSync({
             selectedCategoryID,
             groups,
             getUserNameRef.current(),
+            getColorThemeRef.current(),
           );
         } catch (error) {
           // Clear the flag on failure — no echo will arrive, so no echo to skip.
@@ -144,6 +155,8 @@ export function useCloudSync({
     isOwnEchoExpectedRef: isOwnEchoExpected,
     getUserNameRef,
     syncUserNameRef,
+    getColorThemeRef,
+    syncColorThemeRef,
     cloudSaveTimerRef: cloudSaveTimer,
     onDeviceCountChange,
     localEditedAtRef,
@@ -159,4 +172,6 @@ export function useCloudSync({
     scheduleCloudSave(state.categories, state.selectedCategoryID, state.groups);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.categories, state.groups, scheduleCloudSave]);
+
+  return { triggerSave: useCallback(() => triggerSaveRef.current(), []) };
 }

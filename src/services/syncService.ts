@@ -12,7 +12,7 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
-import type { Category, CategoryGroup } from "@/models/types";
+import type { Category, CategoryGroup, ColorTheme } from "@/models/types";
 
 export { ensureAnonymousAuth } from "@/services/authService";
 
@@ -27,6 +27,7 @@ interface SyncPayloadWrite {
   selectedCategoryID: string | null;
   groups?: CategoryGroup[];
   userName?: string;
+  colorTheme?: ColorTheme;
   updatedAt: FieldValue;
   deviceIDs?: string[];
 }
@@ -40,6 +41,7 @@ interface SyncPayloadRead {
   selectedCategoryID: string | null;
   groups?: CategoryGroup[];
   userName?: string;
+  colorTheme?: ColorTheme;
   updatedAt: Timestamp | number;
   deviceIDs?: string[];
 }
@@ -57,6 +59,7 @@ export interface LoadedSyncState {
   selectedCategoryID: string | null;
   groups: CategoryGroup[];
   userName?: string;
+  colorTheme?: ColorTheme;
   deviceIDs: string[];
   /** Unix ms timestamp from the Firestore document — used for conflict resolution. */
   updatedAt: number;
@@ -87,12 +90,14 @@ export async function saveState(
   selectedCategoryID: string | null,
   groups: CategoryGroup[],
   userName: string,
+  colorTheme: ColorTheme,
 ): Promise<void> {
   const payload: SyncPayloadWrite = {
     lists: categories,
     selectedCategoryID,
     groups,
     userName,
+    colorTheme,
     // serverTimestamp() is resolved by Firestore on the server, making it
     // immune to client clock skew across devices.
     updatedAt: serverTimestamp(),
@@ -137,6 +142,7 @@ export async function loadState(syncCode: string): Promise<LoadStateResult> {
         selectedCategoryID: data.selectedCategoryID,
         groups: data.groups ?? [],
         userName: data.userName,
+        colorTheme: data.colorTheme,
         deviceIDs: data.deviceIDs ?? [],
         updatedAt: toUnixMs(data.updatedAt),
       },
@@ -159,6 +165,7 @@ export function subscribeToState(
     updatedAt: number,
     userName: string | undefined,
     deviceCount: number,
+    colorTheme: ColorTheme | undefined,
   ) => void,
 ): Unsubscribe {
   return onSnapshot(
@@ -173,6 +180,7 @@ export function subscribeToState(
         toUnixMs(data.updatedAt),
         data.userName,
         (data.deviceIDs ?? []).length,
+        data.colorTheme,
       );
     },
     (error) => {
