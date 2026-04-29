@@ -117,11 +117,11 @@ export function SettingsProvider({
 
   /**
    * Applies a colorTheme received from the cloud.
-   * Only updates if the local theme is still the default "green" — preserves
-   * deliberate local customisation.
+   * Always overwrites local — color theme is a shared preference, not
+   * device-local data. Last write from any synced device wins.
    */
   function syncColorTheme(theme: ColorTheme) {
-    if (!theme || SettingsService.getColorTheme() !== "green") return;
+    if (!theme) return;
     SettingsService.setColorTheme(theme);
     setColorThemeState(theme);
     applyColorThemeToDOM(theme, appearanceMode);

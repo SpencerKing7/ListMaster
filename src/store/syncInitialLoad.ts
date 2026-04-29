@@ -59,7 +59,12 @@ export async function resolveInitialLoad({
     const localLastEditedAt = PersistenceService.loadLastEditedAt();
 
     if (localLastEditedAt > cloudState.updatedAt) {
-      // Local data is newer — push it to Firestore so cloud catches up.
+      // Local list data is newer — push it to Firestore so cloud catches up.
+      // Color theme is a shared preference, so we always defer to the cloud
+      // value even when local list data wins. Apply it to the DOM and use it
+      // in the save payload so the cloud is not overwritten with a stale theme.
+      if (cloudState.colorTheme)
+        syncColorThemeRef.current(cloudState.colorTheme);
       try {
         const s = stateRef.current;
         await saveState(
@@ -68,7 +73,10 @@ export async function resolveInitialLoad({
           s.selectedCategoryID,
           s.groups,
           getUserNameRef.current(),
-          getColorThemeRef.current(),
+          // Use cloud theme directly — syncColorThemeRef set React state but the
+          // colorThemeRef won't update until the next render (async), so we read
+          // cloudState.colorTheme here rather than getColorThemeRef.current().
+          cloudState.colorTheme ?? getColorThemeRef.current(),
         );
       } catch (e: unknown) {
         console.error("Failed to push local-wins state to cloud:", e);

@@ -132,7 +132,11 @@ export async function setupSubscription(
           isLoadingFromSyncRef.current = true;
           dispatch({ type: "SYNC_LOAD", categories, groups });
         } else {
-          // Local edits are newer — push them to Firestore to win the conflict.
+          // Local list edits are newer — push them to Firestore to win the conflict.
+          // Apply cloud theme first so that by the time the 1 s debounce fires the
+          // colorThemeRef has been updated via React's re-render cycle and the save
+          // payload will carry the correct theme instead of the stale local one.
+          if (cloudColorTheme) syncColorThemeRef.current(cloudColorTheme);
           triggerSaveRef.current();
         }
       },
