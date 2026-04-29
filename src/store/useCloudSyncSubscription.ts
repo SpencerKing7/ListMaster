@@ -1,6 +1,6 @@
 // src/store/useCloudSyncSubscription.ts
 import { useEffect, useRef } from "react";
-import type { Dispatch, MutableRefObject } from "react";
+import type { Dispatch, RefObject } from "react";
 import type { StoreAction, StoreState } from "@/models/types";
 import { setupSubscription } from "@/store/syncSubscriptionSetup";
 
@@ -11,18 +11,20 @@ interface UseCloudSyncSubscriptionParams {
   isSyncEnabled: boolean;
   syncCode: string;
   dispatch: Dispatch<StoreAction>;
-  stateRef: MutableRefObject<StoreState>;
-  isSyncReadyRef: MutableRefObject<boolean>;
-  isLoadingFromSyncRef: MutableRefObject<boolean>;
-  getUserNameRef: MutableRefObject<() => string>;
-  syncUserNameRef: MutableRefObject<(name: string) => void>;
-  cloudSaveTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  stateRef: RefObject<StoreState>;
+  isSyncReadyRef: RefObject<boolean>;
+  isLoadingFromSyncRef: RefObject<boolean>;
+  /** Tracks whether we are waiting for Firestore to echo back our own write. */
+  isOwnEchoExpectedRef: RefObject<boolean>;
+  getUserNameRef: RefObject<() => string>;
+  syncUserNameRef: RefObject<(name: string) => void>;
+  cloudSaveTimerRef: RefObject<ReturnType<typeof setTimeout> | null>;
   /** Called on every snapshot with the current registered device count. */
   onDeviceCountChange: (count: number) => void;
   /** Unix ms of the last local user edit — used for conflict resolution. */
-  localEditedAtRef: MutableRefObject<number>;
+  localEditedAtRef: RefObject<number>;
   /** Schedules a cloud save of current local state — called when local wins conflict. */
-  triggerSaveRef: MutableRefObject<() => void>;
+  triggerSaveRef: RefObject<() => void>;
 }
 
 // MARK: - Hook
@@ -39,6 +41,7 @@ export function useCloudSyncSubscription({
   stateRef,
   isSyncReadyRef,
   isLoadingFromSyncRef,
+  isOwnEchoExpectedRef,
   getUserNameRef,
   syncUserNameRef,
   cloudSaveTimerRef,
@@ -71,6 +74,7 @@ export function useCloudSyncSubscription({
       stateRef,
       isSyncReadyRef,
       isLoadingFromSyncRef,
+      isOwnEchoExpectedRef,
       getUserNameRef,
       syncUserNameRef,
       onDeviceCountChangeRef,
@@ -101,6 +105,7 @@ export function useCloudSyncSubscription({
     dispatch,
     isSyncReadyRef,
     isLoadingFromSyncRef,
+    isOwnEchoExpectedRef,
     getUserNameRef,
     syncUserNameRef,
     stateRef,

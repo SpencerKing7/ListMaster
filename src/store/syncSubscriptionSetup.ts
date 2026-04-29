@@ -3,8 +3,9 @@
 // and real-time subscription setup for a given sync code.
 // Extracted from useCloudSyncSubscription to satisfy the 150-line store ceiling.
 
-import type { Dispatch, MutableRefObject } from "react";
+import type { Dispatch, RefObject } from "react";
 import type { StoreAction, StoreState } from "@/models/types";
+import { resolveInitialLoad } from "@/store/syncInitialLoad";
 
 // MARK: - Types
 
@@ -12,16 +13,18 @@ import type { StoreAction, StoreState } from "@/models/types";
 export interface SetupSubscriptionParams {
   syncCode: string;
   dispatch: Dispatch<StoreAction>;
-  stateRef: MutableRefObject<StoreState>;
-  isSyncReadyRef: MutableRefObject<boolean>;
-  isLoadingFromSyncRef: MutableRefObject<boolean>;
-  getUserNameRef: MutableRefObject<() => string>;
-  syncUserNameRef: MutableRefObject<(name: string) => void>;
-  onDeviceCountChangeRef: MutableRefObject<(count: number) => void>;
+  stateRef: RefObject<StoreState>;
+  isSyncReadyRef: RefObject<boolean>;
+  isLoadingFromSyncRef: RefObject<boolean>;
+  /** Tracks whether we are waiting for Firestore to echo back our own write. */
+  isOwnEchoExpectedRef: RefObject<boolean>;
+  getUserNameRef: RefObject<() => string>;
+  syncUserNameRef: RefObject<(name: string) => void>;
+  onDeviceCountChangeRef: RefObject<(count: number) => void>;
   /** Unix ms of the last local user edit — used for conflict resolution. */
-  localEditedAtRef: MutableRefObject<number>;
+  localEditedAtRef: RefObject<number>;
   /** Schedules a cloud save of the current local state — called when local wins conflict. */
-  triggerSaveRef: MutableRefObject<() => void>;
+  triggerSaveRef: RefObject<() => void>;
 }
 
 // MARK: - Setup
@@ -44,6 +47,7 @@ export async function setupSubscription(
     stateRef,
     isSyncReadyRef,
     isLoadingFromSyncRef,
+    isOwnEchoExpectedRef,
     getUserNameRef,
     syncUserNameRef,
     onDeviceCountChangeRef,
@@ -57,34 +61,16 @@ export async function setupSubscription(
 
     const loadResult = await loadState(syncCode);
 
-    if (loadResult.status === "loaded") {
-      const cloudState = loadResult.data;
-      if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
-      isLoadingFromSyncRef.current = true;
-      dispatch({
-        type: "SYNC_LOAD",
-        categories: cloudState.categories,
-        selectedCategoryID: cloudState.selectedCategoryID,
-        groups: cloudState.groups,
-      });
-    } else if (loadResult.status === "not-found") {
-      // Document genuinely does not exist — write local state to initialise cloud.
-      // Skipped on "timeout" to avoid overwriting cloud with stale local data.
-      try {
-        const s = stateRef.current;
-        await saveState(
-          syncCode,
-          s.categories,
-          s.selectedCategoryID,
-          s.groups,
-          getUserNameRef.current(),
-        );
-      } catch (saveError) {
-        console.error("Failed to write initial sync state:", saveError);
-      }
-    }
-    // status === "timeout": cloud state unknown — just subscribe; listener will deliver
-    // current state once connectivity resumes.
+    await resolveInitialLoad({
+      loadResult,
+      syncCode,
+      stateRef,
+      isLoadingFromSyncRef,
+      getUserNameRef,
+      syncUserNameRef,
+      dispatch,
+      saveState,
+    });
 
     isSyncReadyRef.current = true;
 
@@ -119,6 +105,15 @@ export async function setupSubscription(
         }
 
         onDeviceCountChangeRef.current(deviceCount);
+
+        // If we just fired a saveState and this snapshot is Firestore echoing
+        // our own write back, skip the dispatch entirely. This prevents the echo
+        // from triggering a SYNC_LOAD that could revert any edits the user made
+        // during the in-flight save window (~200–500 ms after the debounce fired).
+        if (isOwnEchoExpectedRef.current) {
+          isOwnEchoExpectedRef.current = false;
+          return;
+        }
 
         // Conflict resolution: compare cloud timestamp against last local edit.
         // If the user made edits while offline their localEditedAt will be newer

@@ -2,6 +2,7 @@
 import type { Category, CategoryGroup } from "@/models/types";
 
 const STORAGE_KEY = "grocery-lists-state";
+const LAST_EDITED_AT_KEY = "grocery-lists-last-edited-at";
 
 interface PersistedState {
   lists: Category[]; // mirrors CodingKeys alias in Swift
@@ -24,6 +25,7 @@ export const PersistenceService = {
       selectedGroupID,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(LAST_EDITED_AT_KEY, String(Date.now()));
   },
 
   load(): {
@@ -47,7 +49,19 @@ export const PersistenceService = {
     }
   },
 
+  /**
+   * Returns the Unix ms timestamp of the last local save, or 0 if never saved.
+   * Used for conflict resolution when connecting to cloud sync.
+   */
+  loadLastEditedAt(): number {
+    const raw = localStorage.getItem(LAST_EDITED_AT_KEY);
+    if (!raw) return 0;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : 0;
+  },
+
   clear(): void {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LAST_EDITED_AT_KEY);
   },
 };

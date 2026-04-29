@@ -47,8 +47,13 @@ export function useCloudSync({
   syncUserName,
   onDeviceCountChange,
 }: UseCloudSyncParams): void {
-  // Tracks whether current state was just loaded from the cloud.
+  // Tracks whether current state was just loaded from the cloud (remote SYNC_LOAD guard).
+  // When true, scheduleCloudSave bails to avoid pushing remote data back to Firestore.
   const isLoadingFromSync = useRef(false);
+  // Tracks whether we are waiting for Firestore to echo back our own write.
+  // Kept separate from isLoadingFromSync so that user edits made during the
+  // in-flight saveState window are not silently dropped.
+  const isOwnEchoExpected = useRef(false);
   // Guards against "adopt code" data-wipe race.
   const isSyncReadyRef = useRef(false);
   // Mirrors latest reducer state for async callbacks.
@@ -93,10 +98,10 @@ export function useCloudSync({
         cloudSaveTimer.current = null;
         try {
           const { saveState } = await import("@/services/syncService");
-          // Mark as loading-from-sync before the write so that when Firestore
-          // echoes our own snapshot back, the conflict check treats it as ours
-          // and the subsequent scheduleCloudSave call is swallowed.
-          isLoadingFromSync.current = true;
+          // Flag that we are expecting Firestore to echo back our own write.
+          // The snapshot callback will check this flag and skip the dispatch,
+          // preventing a SYNC_LOAD from reverting any edits made mid-flight.
+          isOwnEchoExpected.current = true;
           await saveState(
             syncCode,
             categories,
@@ -105,8 +110,8 @@ export function useCloudSync({
             getUserNameRef.current(),
           );
         } catch (error) {
-          // Clear the flag on failure so future edits aren't silently dropped.
-          isLoadingFromSync.current = false;
+          // Clear the flag on failure — no echo will arrive, so no echo to skip.
+          isOwnEchoExpected.current = false;
           console.error("Failed to save to cloud:", error);
         }
       }, 1000);
@@ -136,6 +141,7 @@ export function useCloudSync({
     stateRef,
     isSyncReadyRef,
     isLoadingFromSyncRef: isLoadingFromSync,
+    isOwnEchoExpectedRef: isOwnEchoExpected,
     getUserNameRef,
     syncUserNameRef,
     cloudSaveTimerRef: cloudSaveTimer,
