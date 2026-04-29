@@ -88,8 +88,6 @@ export function AddItemInput({ focusOnMount = false }: AddItemInputProps): JSX.E
           }}
           enterKeyHint="send"
           autoCapitalize="sentences"
-          autoCorrect="off"
-          spellCheck={false}
         />
 
         {/* Submit button — only appears when there is text */}

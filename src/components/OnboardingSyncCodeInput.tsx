@@ -43,8 +43,6 @@ export function OnboardingSyncCodeInput({
         className="h-12 rounded-[14px] border-transparent px-4 font-mono text-sm focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
         style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
         autoCapitalize="characters"
-        spellCheck={false}
-        autoCorrect="off"
         enterKeyHint="done"
         inputMode="text"
       />

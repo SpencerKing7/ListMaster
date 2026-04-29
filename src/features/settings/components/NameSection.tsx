@@ -33,7 +33,6 @@ export function NameSection({ userName, onChangeName }: NameSectionProps): JSX.E
         className={INPUT_CLASS}
         style={{ color: "var(--color-text-primary)" }}
         autoCapitalize="words"
-        spellCheck={false}
         enterKeyHint="done"
       />
     </SettingsCard>

@@ -68,7 +68,6 @@ export function RenameCategoryDialog({
           className={INPUT_CLASS}
           autoFocus
           autoCapitalize="words"
-          spellCheck={false}
           enterKeyHint="done"
         />
         {isRenameDuplicate && (

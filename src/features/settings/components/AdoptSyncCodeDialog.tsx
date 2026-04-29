@@ -55,8 +55,6 @@ export function AdoptSyncCodeDialog({
           className={INPUT_CLASS}
           autoFocus
           autoCapitalize="characters"
-          autoCorrect="off"
-          spellCheck={false}
           enterKeyHint="done"
           inputMode="text"
         />

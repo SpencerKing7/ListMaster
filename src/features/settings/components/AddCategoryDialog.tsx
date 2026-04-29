@@ -77,7 +77,6 @@ export function AddCategoryDialog({
           className={INPUT_CLASS}
           autoFocus
           autoCapitalize="words"
-          spellCheck={false}
           enterKeyHint="done"
         />
         {isDuplicate && (

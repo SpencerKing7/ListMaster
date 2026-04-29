@@ -111,8 +111,6 @@ export function OnboardingSetupScreen(): JSX.Element {
             className="h-12 rounded-[14px] border-transparent px-4 text-text-primary placeholder:text-[color:var(--color-text-secondary)] focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
             style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
             autoCapitalize="words"
-            autoCorrect="off"
-            spellCheck={false}
             enterKeyHint="done"
           />
         </div>
