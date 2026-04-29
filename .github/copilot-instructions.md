@@ -241,11 +241,21 @@ Target: mobile-first, iOS-feel PWA on iPhone Safari.
 
 ## THEMING RULES
 
-1. Theme applied by `data-theme` attribute on `document.documentElement` via `applyThemeToDOM()`.
-2. `applyThemeToDOM()` called synchronously in `SettingsProvider`'s `useState` initializer. Do not move it.
-3. `"system"` → remove `data-theme` entirely (CSS media query controls theme).
-4. `"light"` / `"dark"` → set `data-theme="light"` / `data-theme="dark"`.
-5. **Do NOT use Tailwind's `dark:` variant** for themed colors. Use CSS custom properties from `tokens.css`.
+Two orthogonal DOM attributes control visual appearance — both set synchronously inside `SettingsProvider`'s `useState` initializer:
+
+### Appearance mode (`applyThemeToDOM`)
+
+1. `"system"` → remove `data-theme` entirely (CSS media query controls theme).
+2. `"light"` / `"dark"` → set `data-theme="light"` / `data-theme="dark"`.
+3. **Do NOT use Tailwind's `dark:` variant** for themed colors. Use CSS custom properties from `tokens.css`.
+
+### Color theme (`applyColorThemeToDOM`)
+
+4. `ColorTheme = "green" | "blue" | "orange"` drives the `data-color-theme` attribute on `document.documentElement`.
+5. `"green"` → **remove** `data-color-theme` entirely (`:root` defaults apply).
+6. `"blue"` / `"orange"` → set `data-color-theme="blue"` / `data-color-theme="orange"`.
+7. Each color theme block in `tokens.css` redefines the `--color-brand-*` tokens. Brand token names (`green`, `teal`, `blue`, `deep-green`) are fixed — they do NOT map 1:1 to `ColorTheme` values.
+8. Do not call `applyThemeToDOM()` or `applyColorThemeToDOM()` outside of `SettingsProvider`. Both functions live in `src/store/useTheme.ts`.
 
 ---
 
@@ -258,9 +268,11 @@ All colors live in `src/styles/tokens.css`, defined in four CSS rule blocks:
 - `:root[data-theme="light"]` (explicit light override)
 - `:root[data-theme="dark"]` (explicit dark override)
 
+Each of those blocks is also overridden by `[data-color-theme="blue"]` and `[data-color-theme="orange"]` blocks that redefine brand tokens for alternate palettes.
+
 Token categories:
 
-- `--color-brand-*` — green, teal, blue, deep-green
+- `--color-brand-*` — `green`, `teal`, `blue`, `deep-green` (+ `-rgb` variants for alpha use)
 - `--color-surface-*` — background, card, input, tint, overlay
 - `--color-text-*` — primary, secondary
 - `--color-border-*` — subtle, dialog
@@ -268,12 +280,59 @@ Token categories:
 
 ### Adding a new color (two mandatory steps):
 
-1. Add the custom property to ALL FOUR rule blocks in `tokens.css`.
+1. Add the custom property to **all four** appearance blocks in `tokens.css`, plus the two `data-color-theme` override blocks if the color should vary by palette.
 2. Add a `@theme inline` alias in `index.css`.
 
 ---
 
-## VALIDATION
+## STORE & SYNC ARCHITECTURE
+
+### Reducer handler split
+
+`categoriesReducer.ts` is a pure orchestrator — it delegates each action type to a domain-specific handler module. **Do not add logic directly to the reducer:**
+
+| Handler file                   | Owns                                                |
+| ------------------------------ | --------------------------------------------------- |
+| `categoryHandlers.ts`          | Category CRUD, selection, reorder, group assignment |
+| `categoryAttributeHandlers.ts` | Sort order / sort direction mutations               |
+| `itemHandlers.ts`              | Item add/toggle/delete/rename/clear/check-all       |
+| `groupHandlers.ts`             | Group CRUD, reorder, move categories between groups |
+| `metaHandlers.ts`              | Bulk load (`LOAD_FROM_CLOUD`, `SET_CATEGORIES`)     |
+| `reducerHelpers.ts`            | Pure shared helpers (no React, no I/O)              |
+
+When adding a new `StoreAction` type: add the discriminant to `StoreAction` in `models/types.ts`, implement in the correct handler file, and wire it in `categoriesReducer.ts`.
+
+### Context hook split
+
+`useCategoriesStore.ts` only provides the context. Consumers use three focused hooks:
+
+- `useCategoryActions()` — mutation callbacks (add, delete, rename, reorder, etc.)
+- `useCategoryDerived()` — computed values; exposes `selectedCategory`, `pickerCategories` (`CategoryPickerItem[]`), `categoriesInSelectedGroup`, `canSelectNextCategory`, `canSelectPreviousCategory`, `nextCategory`, `previousCategory`, `hasGroups`, `selectNextCategory()`, `selectPreviousCategory()`, `canDeleteCategories`
+- `useCloudSync()` / `useCloudSyncSubscription()` — Firebase sync orchestration (called internally by the provider, not by components)
+
+### Firebase sync
+
+- Anonymous auth via `authService.ts` (`firebaseConfig.ts` holds project config)
+- `syncService.ts` reads/writes a Firestore document. **Firestore document shape:** `{ lists: Category[], selectedCategoryID, groups?, userName?, colorTheme?, updatedAt: ServerTimestamp, deviceIDs?: string[] }` — note `lists` not `categories`, matching the iOS Swift model.
+- `useSyncStore.tsx` holds `{ isSyncEnabled, syncCode, syncedDeviceCount }` state
+- `PersistenceService.loadLastEditedAt()` returns the local-edit timestamp for conflict resolution on first sync
+
+### Persistence key compatibility
+
+`PersistenceService` uses `localStorage` key `"grocery-lists-state"`. The JSON uses `lists` (not `categories`) and `selectedListID` (not `selectedCategoryID`) to stay compatible with the iOS Swift data model.
+
+---
+
+## ROUTING & APP SHELL
+
+- `App.tsx` gates all routes on `hasCompletedOnboarding` (from `useSettingsStore`).
+- **Post-onboarding:** only `"/"` → `<MainScreen />` is registered; all other paths redirect to `"/"`.
+- **Pre-onboarding (new user):** `"/"` → `<OnboardingInstallScreen />`, then `/welcome` → `/setup` → `/sync` in order. All other paths redirect to `"/"`.
+- A `<SplashScreen>` renders before any route while `isSplashVisible` is true.
+- On tab focus (`visibilitychange`), `reload()` is called to re-read `localStorage` — mirrors iOS `scenePhase == .active`.
+- Desktop gets a phone-frame shell (`md:max-w-lg`, `md:rounded-3xl`) via `md:` Tailwind prefixes — these classes are inert on real mobile viewports.
+
+---
 
 After every edit session, run:
 

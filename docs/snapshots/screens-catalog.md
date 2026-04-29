@@ -247,10 +247,10 @@ If `sync.isSyncEnabled` is `true` on mount (user joined sync via a code on `/set
 
 ### `navigateForward` targets
 
-| Mode       | Action                                |
-| ---------- | ------------------------------------- |
-| Standalone | `settings.completeOnboarding()`       |
-| Browser    | `navigate("/")` (install screen)      |
+| Mode       | Action                           |
+| ---------- | -------------------------------- |
+| Standalone | `settings.completeOnboarding()`  |
+| Browser    | `navigate("/")` (install screen) |
 
 ### Navigation targets
 
@@ -318,14 +318,14 @@ On mount, `window.scrollTo(0, 0)`, `document.documentElement.scrollTop = 0`, and
 
 ### Child components
 
-| Component       | Purpose                                                                             |
-| --------------- | ----------------------------------------------------------------------------------- |
+| Component       | Purpose                                                                            |
+| --------------- | ---------------------------------------------------------------------------------- |
 | `HeaderBar`     | Greeting title, refresh button, settings button, `GroupTabBar`, `CategoryPicker`   |
 | `CategoryPanel` | Full content area for the selected category (adds `AddItemInput`, items, meta bar) |
-| `BottomBar`     | Navigation chevrons and "Clear Checked" action                                      |
+| `BottomBar`     | Navigation chevrons and "Clear Checked" action                                     |
 | `SettingsSheet` | Slide-up settings drawer (composed from `features/settings/` section components)   |
-| `InstallToast`  | Non-intrusive install nudge banner                                                  |
-| `InstallSheet`  | Full-screen bottom sheet with platform-specific install instructions                |
+| `InstallToast`  | Non-intrusive install nudge banner                                                 |
+| `InstallSheet`  | Full-screen bottom sheet with platform-specific install instructions               |
 
 ---
 
@@ -349,15 +349,16 @@ On mount, `window.scrollTo(0, 0)`, `document.documentElement.scrollTop = 0`, and
 
 #### Section components (from `@/features/settings`)
 
-| Component                | Purpose                                                                     |
-| ------------------------ | --------------------------------------------------------------------------- |
-| `CategoriesGroupsSection`| Category/group management with drag-to-reorder                              |
-| `AppearanceSection`      | Light / System / Dark toggle group                                          |
-| `TextSizeSection`        | Text size selector (xs / s / m / l / xl)                                    |
-| `NameSection`            | User name display and edit                                                  |
-| `SyncSection`            | Cloud sync enable/disable, sync code display, adopt code                    |
-| `DataSection`            | Reset to factory settings                                                   |
-| `SettingsDialogPortal`   | All confirmation dialogs (rename, delete, reset, add, assign group)         |
+| Component                 | Purpose                                                             |
+| ------------------------- | ------------------------------------------------------------------- |
+| `CategoriesGroupsSection` | Category/group management with drag-to-reorder                      |
+| `AppearanceSection`       | Light / System / Dark toggle group                                  |
+| `ColorThemeSection`       | Green / Blue / Orange color theme picker                            |
+| `TextSizeSection`         | Text size selector (xs / s / m / l / xl)                            |
+| `NameSection`             | User name display and edit                                          |
+| `SyncSection`             | Cloud sync enable/disable, sync code display, adopt code            |
+| `DataSection`             | Reset to factory settings                                           |
+| `SettingsDialogPortal`    | All confirmation dialogs (rename, delete, reset, add, assign group) |
 
 #### Hooks (from `@/features/settings`)
 
@@ -376,10 +377,6 @@ Reads from `useCategoriesStore()` (categories, groups, reorder), `useSettingsSto
 #### Focus sentinel
 
 `sheetFocusSentinelRef` — a visually hidden `<div tabIndex={-1}>` at the top of the sheet panel, passed to `SheetContent` as `initialFocus`. This prevents the first interactive element from receiving focus and triggering the iOS keyboard on open.
-
-#### Gradient fade
-
-A `pointer-events-none` absolute div at `top: 60px` provides a `28px` gradient from `var(--color-surface-background)` to transparent, blending content that scrolls under the sticky header.
 
 #### Sheet chrome
 

@@ -14,11 +14,9 @@ import {
   applyTextSizeToDOM,
   applyColorThemeToDOM,
 } from "./useTheme";
-import type { TextSize, ColorTheme } from "@/models/types";
+import type { TextSize, ColorTheme, AppearanceMode } from "@/models/types";
 
 // MARK: - Types
-
-type AppearanceMode = "system" | "light" | "dark";
 
 export type { TextSize };
 

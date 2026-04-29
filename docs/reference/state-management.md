@@ -170,23 +170,27 @@ Manages user preferences. Uses `useState` instead of `useReducer` because each s
 | `hasCompletedOnboarding` | `boolean`                       | `SettingsService.setHasCompletedOnboarding()` |
 | `appearanceMode`         | `"system" \| "light" \| "dark"` | `SettingsService.setAppearanceMode()`         |
 | `textSize`               | `TextSize`                      | `SettingsService.setTextSize()`               |
+| `colorTheme`             | `ColorTheme`                    | `SettingsService.setColorTheme()`             |
 
 Each exported setter (e.g. `setAppearanceMode(mode)`) calls the corresponding `SettingsService` method to persist the value, then updates React state, then applies the DOM side-effect (via `applyThemeToDOM()` or `applyTextSizeToDOM()`).
 
 ### Exposed Store Interface
 
-| Name                      | Type                             | Notes                                                         |
-| ------------------------- | -------------------------------- | ------------------------------------------------------------- |
-| `userName`                | `string`                         | User's display name from setup                                |
-| `hasCompletedOnboarding`  | `boolean`                        | Controls routing in `App.tsx`                                 |
-| `appearanceMode`          | `"system" \| "light" \| "dark"`  | Controls `data-theme` on `<html>`                             |
-| `textSize`                | `TextSize`                       | Controls `--text-size-base` and `--row-padding-y` on `:root`  |
-| `setUserName(name)`       | `(name: string) => void`         | Used inline by `SettingsSheet`                                |
-| `syncUserName(name)`      | `(name: string) => void`         | Cloud-provided name; only applies if local name is empty      |
-| `completeOnboarding()`    | `() => void`                     | Called at the end of `OnboardingSetupScreen`                  |
-| `setAppearanceMode(mode)` | `(mode: AppearanceMode) => void` | —                                                             |
-| `setTextSize(size)`       | `(size: TextSize) => void`       | —                                                             |
-| `resetToNewUser()`        | `() => void`                     | Clears all settings and checklist data; resets DOM theme/size |
+| Name                      | Type                             | Notes                                                           |
+| ------------------------- | -------------------------------- | --------------------------------------------------------------- |
+| `userName`                | `string`                         | User's display name from setup                                  |
+| `hasCompletedOnboarding`  | `boolean`                        | Controls routing in `App.tsx`                                   |
+| `appearanceMode`          | `"system" \| "light" \| "dark"`  | Controls `data-theme` on `<html>`                               |
+| `textSize`                | `TextSize`                       | Controls `--text-size-base` and `--row-padding-y` on `:root`    |
+| `colorTheme`              | `ColorTheme`                     | Controls `data-color-theme` on `<html>`                         |
+| `setUserName(name)`       | `(name: string) => void`         | Used inline by `SettingsSheet`                                  |
+| `syncUserName(name)`      | `(name: string) => void`         | Cloud-provided name; only applies if local name is empty        |
+| `completeOnboarding()`    | `() => void`                     | Called at the end of `OnboardingSetupScreen`                    |
+| `setAppearanceMode(mode)` | `(mode: AppearanceMode) => void` | —                                                               |
+| `setTextSize(size)`       | `(size: TextSize) => void`       | —                                                               |
+| `setColorTheme(theme)`    | `(theme: ColorTheme) => void`    | Persists, updates React state, applies `data-color-theme`       |
+| `syncColorTheme(theme)`   | `(theme: ColorTheme) => void`    | Cloud-provided theme; always overwrites local (last-write-wins) |
+| `resetToNewUser()`        | `() => void`                     | Clears all settings and checklist data; resets DOM theme/size   |
 
 ### `resetToNewUser()`
 
@@ -194,8 +198,9 @@ Called by `SettingsSheet` when the user confirms "Reset to New User". It:
 
 1. Calls `PersistenceService.clear()` to erase checklist data.
 2. Calls `SettingsService.clearAll()` to erase all settings keys.
-3. Resets all `useState` values to their defaults.
-4. Calls `applyThemeToDOM("system")` and `applyTextSizeToDOM("m")` to restore the DOM to default state.
+3. Calls `InstallPromptService.clearAll()` to reset install-toast state.
+4. Resets all `useState` values to their defaults (including `colorTheme → "green"`).
+5. Calls `applyThemeToDOM("system")`, `applyTextSizeToDOM("m")`, and `applyColorThemeToDOM("green", "system")` to restore the DOM to default state.
 
 Because `hasCompletedOnboarding` becomes `false`, `App.tsx` re-renders and routes the user back to the onboarding flow.
 
@@ -216,6 +221,32 @@ const [appearanceMode, setAppearanceModeState] = useState<AppearanceMode>(
 `applyTextSizeToDOM()` follows the same pattern for text size. This ensures the correct `data-theme` attribute and `--text-size-base` custom property are on `document.documentElement` before React renders anything, preventing a flash of the wrong theme or a layout shift from the wrong font size.
 
 **Do not move these calls out of the initializers.**
+
+The same pattern applies to `applyColorThemeToDOM()` for the color theme initializer.
+
+---
+
+## `useSyncStore` (`src/store/useSyncStore.tsx`)
+
+Manages cloud sync state. Uses `useState` because sync state changes are infrequent and independent.
+
+### Exposed Store Interface
+
+| Name                       | Type                                         | Notes                                                                         |
+| -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------- |
+| `syncCode`                 | `string`                                     | Active sync code; empty string if sync has never been enabled                 |
+| `isSyncEnabled`            | `boolean`                                    | Whether cloud sync is currently active                                        |
+| `syncStatus`               | `"idle" \| "syncing" \| "synced" \| "error"` | Current sync indicator state                                                  |
+| `syncedDeviceCount`        | `number`                                     | Number of devices registered to the current sync code (0 when unknown)        |
+| `setSyncedDeviceCount(n)`  | `(count: number) => void`                    | Called by `useCloudSync` on each Firestore snapshot; not called by components |
+| `enableSync()`             | `() => Promise<void>`                        | Generates a new sync code, writes to Firestore, starts subscription           |
+| `disableSync(deleteCloud)` | `(deleteCloud: boolean) => Promise<void>`    | Stops sync; pass `true` to permanently delete the Firestore document          |
+| `adoptSyncCode(code)`      | `(code: string) => Promise<void>`            | Replaces local data with cloud data from an existing sync code                |
+| `resetSync()`              | `() => void`                                 | Generates a new sync code without deleting the old one                        |
+
+### Action delegation
+
+The `SyncProvider` delegates all async action logic to `useSyncActions()` (see `docs/snapshots/store-catalog.md`). The provider itself only manages state — `isSyncEnabled`, `syncCode`, `syncStatus`, `syncedDeviceCount`.
 
 ---
 

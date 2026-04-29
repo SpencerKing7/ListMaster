@@ -118,7 +118,21 @@ type AppearanceMode = "system" | "light" | "dark";
 | `"light"`  | Sets `data-theme="light"` on `<html>` — forces light mode regardless of OS setting            |
 | `"dark"`   | Sets `data-theme="dark"` on `<html>` — forces dark mode regardless of OS setting              |
 
-> **Note:** `AppearanceMode` is declared locally inside `src/store/useSettingsStore.ts` (not in `types.ts`) and is not exported from models. `SettingsService` declares its own matching local type. This is intentional: `AppearanceMode` is a UI concern owned by the settings layer. If it needs to be shared more widely, it should be moved to `types.ts`.
+---
+
+## `ColorTheme`
+
+```ts
+type ColorTheme = "green" | "blue" | "orange";
+```
+
+| Value      | DOM effect                                    | CSS token block overridden                          |
+| ---------- | --------------------------------------------- | --------------------------------------------------- |
+| `"green"`  | Removes `data-color-theme` attribute entirely | `:root` defaults apply (green brand palette)        |
+| `"blue"`   | Sets `data-color-theme="blue"`                | `[data-color-theme="blue"]` block in `tokens.css`   |
+| `"orange"` | Sets `data-color-theme="orange"`              | `[data-color-theme="orange"]` block in `tokens.css` |
+
+Applied by `applyColorThemeToDOM()` in `src/store/useTheme.ts`. Persisted via `SettingsService.setColorTheme()` (key `"colorTheme"`). Synced to/from Firestore so all devices on the same sync code share the color theme.
 
 ---
 

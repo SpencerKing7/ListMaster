@@ -19,13 +19,15 @@
 
 All services in `src/services/` are **stateless I/O singletons**. They encapsulate `localStorage` access, browser APIs, and Firebase interactions. No service holds React state or renders JSX.
 
-| File                    | Concern                                        | Accessed by                                            |
-| ----------------------- | ---------------------------------------------- | ------------------------------------------------------ |
-| `persistenceService.ts` | Categories/groups persistence (`localStorage`) | `categoriesReducer.ts`, `useSettingsStore.ts`          |
-| `settingsService.ts`    | User preferences persistence (`localStorage`)  | `useSettingsStore.ts`, `useSyncStore.tsx`              |
-| `hapticService.ts`      | Haptic feedback via Vibration API              | Components throughout the app                          |
-| `syncService.ts`        | Firestore read/write/subscribe                 | `useCloudSync.ts`, `useSyncStore.tsx` (dynamic import) |
-| `firebaseConfig.ts`     | Firebase SDK initialization                    | `syncService.ts`                                       |
+| File                      | Concern                                        | Accessed by                                                       |
+| ------------------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
+| `persistenceService.ts`   | Categories/groups persistence (`localStorage`) | `categoriesReducer.ts`, `useSettingsStore.ts`                     |
+| `settingsService.ts`      | User preferences persistence (`localStorage`)  | `useSettingsStore.ts`, `useSyncStore.tsx`                         |
+| `hapticService.ts`        | Haptic feedback via Vibration API              | Components throughout the app                                     |
+| `syncService.ts`          | Firestore read/write/subscribe                 | `useCloudSync.ts`, `useSyncStore.tsx` (dynamic import)            |
+| `authService.ts`          | Firebase anonymous authentication              | `useSyncActions.ts` (via dynamic import of `syncService`)         |
+| `installPromptService.ts` | Install-toast persistence (`localStorage`)     | `InstallToast`, `InstallSheet`, `useSettingsStore.resetToNewUser` |
+| `firebaseConfig.ts`       | Firebase SDK initialization                    | `syncService.ts`, `authService.ts`                                |
 
 ### Persistence contract
 
@@ -183,6 +185,61 @@ The `groups` field falls back to `[]` before being passed to the callback. Error
 
 - `useCloudSync.ts` — `loadState`, `saveState`, `subscribeToState` (all via dynamic `import()`).
 - `useSyncStore.tsx` — `ensureAnonymousAuth`, `deleteSyncData` (all via dynamic `import()`).
+
+---
+
+## `authService.ts`
+
+**File:** `src/services/authService.ts`
+
+Extracted module for Firebase anonymous authentication. Provides the single exported function `ensureAnonymousAuth()`.
+
+### API
+
+| Function              | Signature             | Description                                                                                    |
+| --------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `ensureAnonymousAuth` | `() => Promise<User>` | Checks `onAuthStateChanged` for an existing session; signs in anonymously only if none exists. |
+
+### Relationship to `syncService.ts`
+
+`authService.ts` was extracted from `syncService.ts` to keep that file under the 150-line service ceiling. `syncService.ts` no longer contains auth logic — it imports `getFirebaseInstances` directly from `firebaseConfig.ts`. Auth is called by `useSyncActions.ts` (which dynamic-imports `syncService`) as part of the `enableSync` and `adoptSyncCode` flows.
+
+---
+
+## `InstallPromptService`
+
+**File:** `src/services/installPromptService.ts`
+
+Manages install-toast persistence as a stateless I/O singleton. Tracks whether, when, and how many times the toast has been shown, so it can enforce throttling and permanent dismissal.
+
+### Storage keys
+
+| Key                                  | Type     | Default | Purpose                                         |
+| ------------------------------------ | -------- | ------- | ----------------------------------------------- |
+| `"installToastDismissedAt"`          | ISO date | `""`    | ISO timestamp of the most recent dismissal      |
+| `"installToastShowCount"`            | number   | `0`     | How many times the toast has been shown         |
+| `"installToastPermanentlyDismissed"` | boolean  | `false` | User chose "Don't remind me" — never show again |
+
+### API
+
+| Method                       | Description                                                                                                                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getDismissedAt()`           | Returns the stored dismissal timestamp string, or `""` if never dismissed                                                                                                                            |
+| `setDismissedAt(ts)`         | Saves an ISO timestamp                                                                                                                                                                               |
+| `getShowCount()`             | Returns the integer show count                                                                                                                                                                       |
+| `setShowCount(n)`            | Saves the show count                                                                                                                                                                                 |
+| `getPermanentlyDismissed()`  | Returns `true` if the user has permanently dismissed                                                                                                                                                 |
+| `setPermanentlyDismissed(v)` | Saves the permanent-dismissal flag                                                                                                                                                                   |
+| `shouldShow()`               | Convenience: returns `true` only if not permanently dismissed, show count < 3, and the 7-day cooldown has elapsed. Does **not** check standalone mode or keyboard state — those are caller concerns. |
+| `recordDismissal()`          | Saves current timestamp as `dismissedAt` and increments `showCount`                                                                                                                                  |
+| `clearAll()`                 | Removes all three keys. Called by `useSettingsStore.resetToNewUser()`                                                                                                                                |
+
+### Callers
+
+- `InstallToast` — calls `shouldShow()` on mount, `recordDismissal()` on dismiss.
+- `InstallSheet` — calls `recordDismissal()` when the sheet closes via `handleOpenChange`.
+- `InstallSheet` — calls `setPermanentlyDismissed(true)` when the user taps "Don't Remind Me".
+- `useSettingsStore.resetToNewUser()` — calls `clearAll()`.
 
 ---
 

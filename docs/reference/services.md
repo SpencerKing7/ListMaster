@@ -53,6 +53,7 @@ Each setting is stored as a separate `localStorage` key (using camelCase key str
 | `"sortOrder"`              | `sortOrder` (legacy global default, no longer written by the store but still readable for backward compatibility) |
 | `"syncCode"`               | The user's sync code. Empty string until sync is enabled for the first time.                                      |
 | `"isSyncEnabled"`          | `"true"` or `"false"` string. Whether cloud sync is currently active.                                             |
+| `"colorTheme"`             | `"green"` / `"blue"` / `"orange"`. The active color theme. Defaults to `"green"`.                                 |
 
 ### Validation
 
@@ -60,30 +61,33 @@ All getters validate the stored value against an allowed-values list. If the sto
 
 ### Full API
 
-| Method                             | Description                                                                |
-| ---------------------------------- | -------------------------------------------------------------------------- |
-| `getUserName()`                    | Returns stored name string, or `""` if not set                             |
-| `setUserName(name)`                | Persists the name string                                                   |
-| `clearUserName()`                  | Removes `"userName"` from `localStorage`                                   |
-| `getHasCompletedOnboarding()`      | Returns `true` if stored value is `"true"`, otherwise `false`              |
-| `setHasCompletedOnboarding(value)` | Persists `"true"` or `"false"` as a string                                 |
-| `clearHasCompletedOnboarding()`    | Removes `"hasCompletedOnboarding"` from `localStorage`                     |
-| `getAppearanceMode()`              | Returns `"system"` / `"light"` / `"dark"`, defaults to `"system"`          |
-| `setAppearanceMode(mode)`          | Persists the mode; throws if mode is not a valid value                     |
-| `clearAppearanceMode()`            | Removes `"appearanceMode"` from `localStorage`                             |
-| `getTextSize()`                    | Returns a `TextSize` value, defaults to `"m"`                              |
-| `setTextSize(size)`                | Persists the size; throws if size is not a valid value                     |
-| `clearTextSize()`                  | Removes `"textSize"` from `localStorage`                                   |
-| `getSortOrder()`                   | Returns a `SortOrder` value, defaults to `"date"` (legacy)                 |
-| `setSortOrder(order)`              | Persists the order; throws if order is not a valid value                   |
-| `clearSortOrder()`                 | Removes `"sortOrder"` from `localStorage`                                  |
-| `getSyncCode()`                    | Returns the stored sync code string, or `""` if not set                    |
-| `setSyncCode(code)`                | Persists the sync code string                                              |
-| `clearSyncCode()`                  | Removes `"syncCode"` from `localStorage`                                   |
-| `getIsSyncEnabled()`               | Returns `true` if stored value is `"true"`, otherwise `false`              |
-| `setIsSyncEnabled(value)`          | Persists `"true"` or `"false"` as a string                                 |
-| `clearIsSyncEnabled()`             | Removes `"isSyncEnabled"` from `localStorage`                              |
-| `clearAll()`                       | Calls all `clear*` methods including sync keys; used by `resetToNewUser()` |
+| Method                             | Description                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------- |
+| `getUserName()`                    | Returns stored name string, or `""` if not set                                          |
+| `setUserName(name)`                | Persists the name string                                                                |
+| `clearUserName()`                  | Removes `"userName"` from `localStorage`                                                |
+| `getHasCompletedOnboarding()`      | Returns `true` if stored value is `"true"`, otherwise `false`                           |
+| `setHasCompletedOnboarding(value)` | Persists `"true"` or `"false"` as a string                                              |
+| `clearHasCompletedOnboarding()`    | Removes `"hasCompletedOnboarding"` from `localStorage`                                  |
+| `getAppearanceMode()`              | Returns `"system"` / `"light"` / `"dark"`, defaults to `"system"`                       |
+| `setAppearanceMode(mode)`          | Persists the mode; throws if mode is not a valid value                                  |
+| `clearAppearanceMode()`            | Removes `"appearanceMode"` from `localStorage`                                          |
+| `getTextSize()`                    | Returns a `TextSize` value, defaults to `"m"`                                           |
+| `setTextSize(size)`                | Persists the size; throws if size is not a valid value                                  |
+| `clearTextSize()`                  | Removes `"textSize"` from `localStorage`                                                |
+| `getSortOrder()`                   | Returns a `SortOrder` value, defaults to `"date"` (legacy)                              |
+| `setSortOrder(order)`              | Persists the order; throws if order is not a valid value                                |
+| `clearSortOrder()`                 | Removes `"sortOrder"` from `localStorage`                                               |
+| `getSyncCode()`                    | Returns the stored sync code string, or `""` if not set                                 |
+| `setSyncCode(code)`                | Persists the sync code string                                                           |
+| `clearSyncCode()`                  | Removes `"syncCode"` from `localStorage`                                                |
+| `getIsSyncEnabled()`               | Returns `true` if stored value is `"true"`, otherwise `false`                           |
+| `setIsSyncEnabled(value)`          | Persists `"true"` or `"false"` as a string                                              |
+| `clearIsSyncEnabled()`             | Removes `"isSyncEnabled"` from `localStorage`                                           |
+| `getColorTheme()`                  | Returns a `ColorTheme` value (`"green"` / `"blue"` / `"orange"`), defaults to `"green"` |
+| `setColorTheme(theme)`             | Persists the color theme; validates against allowed values                              |
+| `clearColorTheme()`                | Removes `"colorTheme"` from `localStorage`                                              |
+| `clearAll()`                       | Calls all `clear*` methods including sync keys; used by `resetToNewUser()`              |
 
 ### Usage Rule
 

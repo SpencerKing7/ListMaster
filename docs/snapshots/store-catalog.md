@@ -13,12 +13,19 @@
 - [useCategoryDerived.ts](#usecategoryderivedts)
 - [useCloudSync.ts](#usecloudsyncts)
 - [categoryHandlers.ts](#categoryhandlersts)
+- [categoryAttributeHandlers.ts](#categoryattributehandlersts)
 - [itemHandlers.ts](#itemhandlersts)
 - [groupHandlers.ts](#grouphandlersts)
+- [metaHandlers.ts](#metahandlersts)
 - [reducerHelpers.ts](#reducerhelpersts)
+- [syncInitialLoad.ts](#syncinitialoloadts)
+- [syncSubscriptionSetup.ts](#syncsubscriptionsetupts)
 - [useSettingsStore.ts](#usesettingsstorets)
 - [useSyncStore.tsx](#usesyncstoretsx)
+- [useSyncActions.ts](#usesyncactionsts)
 - [useTheme.ts](#usethemets)
+- [useCloudSyncSubscription.ts](#usecloudsyncsubscriptionts)
+- [usePickerScroll.ts](#usepickerscrollts)
 
 ---
 
@@ -41,16 +48,20 @@ The store layer uses **React Context + `useReducer`** for global state. There ar
 ```
 useCategoriesStore.ts  (provider + context)
 ├── categoriesReducer.ts  (pure reducer + StoreAction union)
-│   ├── categoryHandlers.ts       (category domain handlers)
-│   ├── itemHandlers.ts           (item domain handlers)
-│   └── groupHandlers.ts          (group domain handlers)
-├── useCategoryActions.ts         (stable dispatch wrappers)
-├── useCategoryDerived.ts         (computed values + auto-select)
-├── useCloudSync.ts               (Firestore debounced save + orchestration)
-└── useCloudSyncSubscription.ts   (real-time Firestore onSnapshot listener)
+│   ├── categoryHandlers.ts            (category CRUD handlers)
+│   ├── categoryAttributeHandlers.ts   (sort order/direction + group assignment)
+│   ├── itemHandlers.ts                (item domain handlers)
+│   ├── groupHandlers.ts               (group domain handlers)
+│   └── metaHandlers.ts                (RELOAD, RESET_CATEGORIES, SYNC_LOAD)
+├── useCategoryActions.ts              (stable dispatch wrappers)
+├── useCategoryDerived.ts              (computed values + auto-select)
+├── useCloudSync.ts                    (Firestore debounced save + orchestration)
+└── useCloudSyncSubscription.ts        (real-time Firestore onSnapshot listener)
+      ├── syncSubscriptionSetup.ts     (initial load + subscription wiring)
+      └── syncInitialLoad.ts           (conflict resolution for initial Firestore load)
 
 useSyncStore.tsx  (sync code + status context)
-└── useSyncActions.ts             (enable/disable/adopt/reset logic)
+└── useSyncActions.ts                  (enable/disable/adopt/reset logic)
 
 usePickerScroll.ts  (CategoryPicker scroll-into-view side effect)
 ```
@@ -81,7 +92,7 @@ The context value assembles fields from three composed hooks:
 
 ### Cloud sync integration
 
-`StoreProvider` reads `isSyncEnabled` and `syncCode` from `useSyncStore()` and `userName` / `syncUserName` from `useSettingsStore()`. These are passed to `useCloudSync` via stable refs (`userNameRef`, `syncUserNameRef`) to avoid stale closures.
+`StoreProvider` reads `isSyncEnabled` and `syncCode` from `useSyncStore()`, `userName` / `syncUserName` from `useSettingsStore()`, and `colorTheme` / `syncColorTheme` from `useSettingsStore()`. These are passed to `useCloudSync` via stable refs (`getUserNameRef`, `syncUserNameRef`, `getColorThemeRef`, `syncColorThemeRef`) to avoid stale closures.
 
 ---
 
@@ -143,7 +154,7 @@ Reads from `PersistenceService.load()`. If saved data exists with ≥1 category,
 | `MOVE_GROUPS`  | `from: number, to: number`    | `handleMoveGroups`  |
 | `SELECT_GROUP` | `id: string \| null`          | `handleSelectGroup` |
 
-#### Meta actions (handled inline in reducer)
+#### Meta actions (delegated to `metaHandlers.ts`)
 
 | Action type        | Payload                                    | Behavior                                                                       |
 | ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------ |
@@ -205,20 +216,23 @@ A `useEffect` watches `categoriesInSelectedGroup` and `selectedCategoryID`. If t
 
 ### Export
 
-| Export         | Kind | Return type |
-| -------------- | ---- | ----------- |
-| `useCloudSync` | Hook | `void`      |
+| Export         | Kind | Return type                   |
+| -------------- | ---- | ----------------------------- |
+| `useCloudSync` | Hook | `{ triggerSave: () => void }` |
 
 ### Parameters (`UseCloudSyncParams`)
 
-| Param           | Type                     | Description                                   |
-| --------------- | ------------------------ | --------------------------------------------- |
-| `state`         | `StoreState`             | Latest reducer state                          |
-| `dispatch`      | `Dispatch<StoreAction>`  | Reducer dispatch for `SYNC_LOAD` actions      |
-| `isSyncEnabled` | `boolean`                | Whether cloud sync is enabled                 |
-| `syncCode`      | `string`                 | Active sync code (empty when disabled)        |
-| `getUserName`   | `() => string`           | Returns latest user name for save payloads    |
-| `syncUserName`  | `(name: string) => void` | Applies cloud-provided name to local settings |
+| Param                 | Type                          | Description                                              |
+| --------------------- | ----------------------------- | -------------------------------------------------------- |
+| `state`               | `StoreState`                  | Latest reducer state                                     |
+| `dispatch`            | `Dispatch<StoreAction>`       | Reducer dispatch for `SYNC_LOAD` actions                 |
+| `isSyncEnabled`       | `boolean`                     | Whether cloud sync is enabled                            |
+| `syncCode`            | `string`                      | Active sync code (empty when disabled)                   |
+| `getUserName`         | `() => string`                | Returns latest user name for save payloads               |
+| `syncUserName`        | `(name: string) => void`      | Applies cloud-provided name to local settings            |
+| `getColorTheme`       | `() => ColorTheme`            | Returns latest local color theme for save payloads       |
+| `syncColorTheme`      | `(theme: ColorTheme) => void` | Applies cloud-provided color theme to local settings     |
+| `onDeviceCountChange` | `(count: number) => void`     | Called on each snapshot with the registered device count |
 
 ### Lifecycle
 
@@ -256,6 +270,39 @@ A `useEffect` watches `categoriesInSelectedGroup` and `selectedCategoryID`. If t
 | `handleSetCategorySortDirection` | `SET_CATEGORY_SORT_DIRECTION` | Updates `sortDirection` on the target category                       |
 | `handleSetCategoryGroup`         | `SET_CATEGORY_GROUP`          | Assigns or removes a category from a group                           |
 | `handleAddCategoryWithGroup`     | `ADD_CATEGORY_WITH_GROUP`     | Atomically creates a category and assigns it to a group              |
+
+---
+
+## `categoryAttributeHandlers.ts`
+
+**Role:** Pure handler functions for category attribute mutations: sort order, sort direction, and group assignment. Extracted from `categoryHandlers.ts` to keep that file under the 180-line ceiling.
+
+### Handlers
+
+| Function                         | Action                        | Key behavior                                                                                         |
+| -------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `handleSetCategorySortOrder`     | `SET_CATEGORY_SORT_ORDER`     | Updates `sortOrder` on the target category                                                           |
+| `handleSetCategorySortDirection` | `SET_CATEGORY_SORT_DIRECTION` | Updates `sortDirection` on the target category                                                       |
+| `handleSetCategoryGroup`         | `SET_CATEGORY_GROUP`          | Reassigns a category to a group; returns `null` if the destination already has a same-named category |
+| `handleAddCategoryWithGroup`     | `ADD_CATEGORY_WITH_GROUP`     | Creates a new category pre-assigned to the given group ID                                            |
+
+---
+
+## `metaHandlers.ts`
+
+**Role:** Pure handler functions for the three meta actions: `RELOAD`, `RESET_CATEGORIES`, and `SYNC_LOAD`. These handlers own their own `PersistenceService` calls and are kept separate because they bypass the reducer's auto-save path.
+
+### Handlers
+
+| Function                | Action             | Key behavior                                                                                                                                                  |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handleReload`          | `RELOAD`           | Re-reads `PersistenceService.load()`; preserves `selectedGroupID` if still valid. Returns current state unchanged if nothing is saved.                        |
+| `handleResetCategories` | `RESET_CATEGORIES` | Resets state to empty and calls `PersistenceService.save()` directly                                                                                          |
+| `handleSyncLoad`        | `SYNC_LOAD`        | Replaces state with cloud data; preserves local `selectedGroupID` if the group still exists in the cloud payload. Calls `PersistenceService.save()` directly. |
+
+### Auto-save bypass
+
+Because meta handlers call `PersistenceService.save()` themselves (or intentionally skip persistence for `RELOAD`), the reducer must return their result early — bypassing the generic `PersistenceService.save(next)` call that runs after all other action types.
 
 ---
 
@@ -444,3 +491,72 @@ The hook opens an `onSnapshot` listener when `isSyncEnabled` is `true` and `sync
 **Role:** Encapsulates the `CategoryPicker` scroll-into-view side effect. Accepts `selectedCategoryID` and the picker scroll container ref. Uses `useEffect` watching `selectedCategoryID` to call `scrollIntoView({ behavior: "smooth", inline: "center" })` on the selected pill element whenever the selection changes.
 
 This hook exists to keep `CategoryPicker.tsx` under its line-count ceiling.
+
+---
+
+## `syncSubscriptionSetup.ts`
+
+**File:** `src/store/syncSubscriptionSetup.ts`
+
+**Role:** Async function that performs the one-time Firestore initial load, device registration, and real-time subscription setup for a given sync code. Extracted from `useCloudSyncSubscription.ts` to keep that file under the 150-line store ceiling.
+
+### Export
+
+| Export                    | Kind      | Description                                                     |
+| ------------------------- | --------- | --------------------------------------------------------------- |
+| `setupSubscription`       | Function  | Async function; returns `(() => void) \| null` (unsubscribe fn) |
+| `SetupSubscriptionParams` | Interface | All refs and callbacks required to set up the subscription      |
+
+### `SetupSubscriptionParams`
+
+| Param                    | Type                                 | Purpose                                                           |
+| ------------------------ | ------------------------------------ | ----------------------------------------------------------------- |
+| `syncCode`               | `string`                             | Active sync code                                                  |
+| `dispatch`               | `Dispatch<StoreAction>`              | Reducer dispatch                                                  |
+| `stateRef`               | `RefObject<StoreState>`              | Latest reducer state (for conflict resolution)                    |
+| `isSyncReadyRef`         | `RefObject<boolean>`                 | Gate: `true` once the subscription is established                 |
+| `isLoadingFromSyncRef`   | `RefObject<boolean>`                 | Prevents echo saves during incoming cloud data                    |
+| `isOwnEchoExpectedRef`   | `RefObject<boolean>`                 | Tracks whether we are waiting for Firestore to echo our own write |
+| `getUserNameRef`         | `RefObject<() => string>`            | Returns latest local user name                                    |
+| `syncUserNameRef`        | `RefObject<(name: string) => void>`  | Applies cloud-provided name to local settings                     |
+| `getColorThemeRef`       | `RefObject<() => ColorTheme>`        | Returns latest local color theme                                  |
+| `syncColorThemeRef`      | `RefObject<(t: ColorTheme) => void>` | Applies cloud-provided color theme                                |
+| `onDeviceCountChangeRef` | `RefObject<(count: number) => void>` | Updates device count in `useSyncStore`                            |
+| `localEditedAtRef`       | `RefObject<number>`                  | Unix ms of the last local user edit                               |
+| `triggerSaveRef`         | `RefObject<() => void>`              | Schedules a cloud save when local state wins conflict             |
+
+### Conflict resolution (real-time listener)
+
+On each `onSnapshot` event the cloud `updatedAt` is compared to `localEditedAtRef.current`:
+
+- **Cloud newer** → dispatch `SYNC_LOAD` to accept remote changes.
+- **Local newer** → call `triggerSaveRef.current()` to push offline edits to Firestore.
+- **Own echo** (`isOwnEchoExpectedRef === true`) → skip processing; clear the flag.
+
+---
+
+## `syncInitialLoad.ts`
+
+**File:** `src/store/syncInitialLoad.ts`
+
+**Role:** Resolves what to do after the one-time Firestore `loadState` call. Extracted from `syncSubscriptionSetup.ts` to keep that file under the ceiling.
+
+### Export
+
+| Export                     | Kind      | Description                                                      |
+| -------------------------- | --------- | ---------------------------------------------------------------- |
+| `resolveInitialLoad`       | Function  | Async function that dispatches or saves based on the load result |
+| `ResolveInitialLoadParams` | Interface | Input parameters for the function                                |
+
+### Decision matrix
+
+| `loadResult.status` | Cloud vs. local?      | Action                                                                     |
+| ------------------- | --------------------- | -------------------------------------------------------------------------- |
+| `"loaded"`          | Cloud timestamp newer | Dispatch `SYNC_LOAD` to replace local state with cloud data                |
+| `"loaded"`          | Local timestamp newer | Push local state to Firestore (cloud catches up). Apply cloud color theme. |
+| `"not-found"`       | No cloud document     | Push local state to create the Firestore document                          |
+| `"timeout"`         | Request timed out     | No-op — the real-time listener will deliver current cloud state            |
+
+### Color theme conflict resolution
+
+When local list data wins the conflict, `colorTheme` is still deferred to the cloud value. This is because color theme is a shared preference (affects all devices), not per-device list state. `syncColorThemeRef.current(cloudState.colorTheme)` is called before the save, but because React state may not flush synchronously, `cloudState.colorTheme` is passed directly to `saveState` rather than re-reading via `getColorThemeRef`.

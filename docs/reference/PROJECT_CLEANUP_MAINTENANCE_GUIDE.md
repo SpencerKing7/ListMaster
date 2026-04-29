@@ -231,6 +231,36 @@ After every extraction:
 
 ---
 
+## Phase 2.5 — DRY Audit
+
+Run this pass **after** identifying oversized files but **before** writing any extraction code. DRY violations are first-class defects — fix them in the same pass, not later.
+
+### What counts as a DRY violation
+
+| Pattern                                                  | Action                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| Identical or near-identical JSX block in 2+ files        | Extract to a shared component in `components/`                     |
+| Same `useState` + handler pattern in 2+ hooks/components | Extract to a shared hook in `store/` or `features/settings/hooks/` |
+| Duplicate pure helper function in 2+ files               | Consolidate into `lib/utils.ts`                                    |
+| Same `interface`/`type` defined in 2+ files              | Move single source of truth to `src/models/types.ts`               |
+| Repeated inline style objects or Tailwind class strings  | Extract to a named constant                                        |
+
+### DRY audit procedure
+
+1. For every function, hook, or JSX block you plan to extract, run a `grep` for the core identifier or shape across all of `src/`.
+2. If 2+ matches exist in different files, that is a duplication — extract to the canonical location first.
+3. Update **all** callers to import from the new single location.
+4. Run `npm run build`. Fix all errors before continuing.
+5. Only after deduplication is complete, proceed with the size-reduction extraction in Phase 2.
+
+### Rules
+
+- Never create a new utility or component if an equivalent already exists — find it first.
+- An extraction that creates a second copy of logic is worse than the original oversized file. Always search before you create.
+- Do not inline-expand duplicated code to "simplify" — consolidate instead.
+
+---
+
 ## Phase 3 — TypeScript Quality Pass
 
 Apply these rules across all edited files.
@@ -434,6 +464,14 @@ Run `npm run build` after every file edit. Do not batch-verify at the end. A fai
 - [ ] No `onMouseDown` or mouse-specific event handlers
 - [ ] No commented-out code blocks
 - [ ] No unexplained `console.log` statements
+
+**DRY**
+
+- [ ] No identical or near-identical JSX blocks exist in 2+ files
+- [ ] No duplicate hook/handler logic across files
+- [ ] No duplicate pure helper functions — all consolidated in `lib/utils.ts`
+- [ ] No duplicate `interface`/`type` definitions — single source of truth in `src/models/types.ts`
+- [ ] No repeated inline style objects or Tailwind class strings that could be a named constant
 
 **Structure**
 

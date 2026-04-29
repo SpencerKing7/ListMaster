@@ -20,6 +20,16 @@
 - [PageTransitionWrapper](#pagetransitionwrapper)
 - [OnboardingCategoryInput](#onboardingcategoryinput)
 - [OnboardingSyncCodeInput](#onboardingsynccodedinput)
+- [InstallToast](#installtoast)
+- [InstallSheet](#installsheet)
+- [InstallStepper](#installstepper)
+- [InstallInstructions](#installinstructions)
+- [InstallIcons](#installicons)
+- [SyncFeatureRow](#syncfeaturerow)
+- [SyncBenefitsCard](#syncbenefitscard)
+- [InstallSyncCodeCard](#installsynccodecard)
+- [InstallDeviceToggle](#installdevicetoggle)
+- [CategoryPickerPill](#categorypickerpill)
 - [UI Primitives (shadcn/ui)](#ui-primitives-shadcnui)
 
 ---
@@ -140,6 +150,7 @@ Same Pointer Events pattern as `GroupTabBar`.
 ## `CategoryPanel`
 
 **File:** `src/components/CategoryPanel.tsx`
+**Icons:** `src/components/CategoryPanelIcons.tsx` (extracted — `noGroupIcon`, `noItemsIcon`)
 **Used by:** `MainScreen` (single instance, passed `store.selectedCategory`)
 
 ### Props
@@ -434,6 +445,153 @@ Sync code input with label ("Enter a Sync Code"), description text, and an `<Inp
 
 ---
 
+## `InstallToast`
+
+**File:** `src/components/InstallToast.tsx`
+**Used by:** `MainScreen`
+
+### Props
+
+| Prop                 | Type         | Required | Description                                                    |
+| -------------------- | ------------ | -------- | -------------------------------------------------------------- |
+| `onOpenInstallSheet` | `() => void` | Yes      | Called when the user taps the toast body (not the ×)           |
+| `isSuppressed`       | `boolean`    | Yes      | When `true`, the toast must not show (a sheet is already open) |
+
+### Behavior
+
+A dismissible bottom-of-screen banner that nudges existing browser-mode users to install the PWA. All show/hide logic reads from `InstallPromptService` — see `docs/snapshots/services-catalog.md`.
+
+#### Visibility conditions (all must pass)
+
+1. `InstallPromptService.shouldShow()` returns `true` (not permanently dismissed, show count < 3, 7-day cooldown elapsed).
+2. `window.matchMedia("(display-mode: standalone)").matches` is `false` (not already installed).
+3. `isSuppressed` is `false` (no sheet currently open).
+
+#### Appearance sequence
+
+1. On mount: starts a 2000ms delay timer. If the active element is an `INPUT` or `TEXTAREA` when the timer fires, defers until `focusout`.
+2. After the delay: `isVisible = true`, then `isEntered = true` on the next animation frame (triggers slide-up transition).
+3. After 20 seconds: `isExiting = true` triggers slide-down dismiss.
+4. On tap (×): `isExiting = true` + `InstallPromptService.recordDismissal()`.
+5. On body tap: calls `onOpenInstallSheet()` + `InstallPromptService.recordDismissal()`.
+6. After exit transition completes (400ms): `isVisible = false`, component returns `null`.
+
+---
+
+## `InstallSheet`
+
+**File:** `src/components/InstallSheet.tsx`
+**Used by:** `MainScreen`
+
+### Props
+
+| Prop           | Type                      | Required | Description                             |
+| -------------- | ------------------------- | -------- | --------------------------------------- |
+| `isOpen`       | `boolean`                 | Yes      | Controls the shadcn `Sheet` open state  |
+| `onOpenChange` | `(open: boolean) => void` | Yes      | Called when the sheet should open/close |
+
+### Behavior
+
+A bottom sheet (`Sheet side="bottom"`, `max-h-[90dvh]`, `rounded-t-3xl`) with complete install instructions for existing users who haven't yet installed the PWA.
+
+#### Sections
+
+1. **Header** — "Add to Home Screen" title + "Done" button.
+2. **`InstallDeviceToggle`** — segmented Mobile/Desktop toggle, pre-populated by `detectPlatform()`.
+3. **`InstallSyncCodeCard`** — shows or enables sync + displays/copies the sync code.
+4. **`InstallInstructions`** — step-by-step browser-specific instructions.
+5. **"Don't Remind Me" link** — calls `InstallPromptService.setPermanentlyDismissed(true)` and closes the sheet.
+
+#### `handleOpenChange`
+
+When the sheet closes (`open === false`), `InstallPromptService.recordDismissal()` is called. This means closing the sheet (by any mechanism) counts as a dismissal and increments the show count.
+
+#### Sync code flow
+
+`handleGetAndCopyCode` — if sync is not yet enabled, calls `enableSync()` first. Then reads the code directly from `SettingsService.getSyncCode()` (bypasses the store, which may not have flushed yet) and copies to clipboard. Sets `isCopied = true` for 2 seconds for the "Copied!" feedback. Clipboard failures are swallowed — the code is visible for manual copy.
+
+#### Focus sentinel
+
+`sheetFocusSentinelRef` — a visually hidden `<div tabIndex={-1}>` passed as `initialFocus` to prevent the first interactive element from receiving focus and triggering the iOS keyboard on open.
+
+---
+
+## `InstallStepper`
+
+**File:** `src/components/InstallStepper.tsx`
+**Used by:** `InstallInstructions`
+
+Renders a vertical numbered stepper for install instruction steps. Each step shows a numbered badge, a connector line (except the last step), a reference icon in a dashed non-interactive container, and instruction text.
+
+### Props
+
+| Prop    | Type            | Required | Description               |
+| ------- | --------------- | -------- | ------------------------- |
+| `steps` | `InstallStep[]` | Yes      | Array of step definitions |
+
+### `StepCard` (internal)
+
+Each step renders via an internal `StepCard` function component:
+
+- **Number badge**: `w-7 h-7 rounded-full`, `backgroundColor: var(--color-brand-green)`, white text.
+- **Connector line**: `w-px flex-1 my-1` in `var(--color-border-subtle)` — omitted on the last step.
+- **Reference icon container**: `w-11 h-11 rounded-lg` with `border: 1.5px dashed var(--color-brand-teal)` and `var(--color-surface-green-tint)` background. Styled to look clearly non-interactive (dashed border, no hover/press feedback).
+- **Icon label**: `10px` text in `var(--color-text-secondary)` below the icon.
+- **Instruction text**: `text-sm` in `var(--color-text-primary)`.
+
+---
+
+## `InstallInstructions`
+
+**File:** `src/components/InstallInstructions.tsx`
+**Used by:** `InstallSheet`
+
+Platform-specific add-to-home-screen / install instructions. Renders a `PlatformToggle` (segmented browser selector) followed by an `InstallStepper` with steps for the selected browser.
+
+### Props
+
+| Prop                    | Type                    | Required | Description                                         |
+| ----------------------- | ----------------------- | -------- | --------------------------------------------------- |
+| `deviceMode`            | `"mobile" \| "desktop"` | Yes      | Current device mode (drives browser options)        |
+| `initialMobileBrowser`  | `MobileBrowser`         | No       | Pre-selected mobile browser. Default: `"safari"`    |
+| `initialDesktopBrowser` | `DesktopBrowser`        | No       | Pre-selected desktop browser. Default: `"chrome"`   |
+| `isIos`                 | `boolean`               | No       | Whether the device is iOS — adapts Chrome icon/copy |
+
+### Browser sets
+
+- **Mobile:** `safari` / `chrome` / `firefox`
+- **Desktop:** `chrome` / `edge` / `safari`
+
+Step data comes from `@/lib/installSteps` (mobile) and `@/lib/installStepsDesktop` (desktop).
+
+### `PlatformToggle` (internal)
+
+A generic segmented control. Options: `{ value: T; label: string }[]`. Selected option has `var(--color-surface-card)` background + `var(--color-brand-teal)` text. Unselected: transparent background + `var(--color-text-secondary)` text.
+
+---
+
+## `InstallIcons`
+
+**File:** `src/components/InstallIcons.tsx`
+**Used by:** `InstallStepper`
+
+SVG icon components used in install instruction step reference containers. Exports `InstallStepIcon` — a dispatch component that renders the correct SVG based on an `iconKey` string from `InstallStep`.
+
+### Available icons
+
+| Icon function    | `iconKey`       | Visual                                    |
+| ---------------- | --------------- | ----------------------------------------- |
+| `ShareIcon`      | `"share"`       | Square with up-arrow (iOS share button)   |
+| `PlusSquareIcon` | `"plus-square"` | Plus inside a rounded rectangle           |
+| `MenuDotsIcon`   | `"menu-dots"`   | Three vertical dots (Android/Chrome)      |
+| `MenuDotsHIcon`  | `"menu-dots-h"` | Three horizontal dots (Chrome iOS / Edge) |
+| `DownloadIcon`   | `"download"`    | Arrow pointing down to a line (desktop)   |
+| `AppIconIcon`    | `"app-icon"`    | Rounded-square app icon placeholder       |
+
+All icons are `24×24` SVG, stroked with `var(--color-brand-teal)`, `strokeWidth="2"`, `strokeLinecap="round"`, `strokeLinejoin="round"`.
+
+---
+
 ## `SyncFeatureRow`
 
 **File:** `src/components/SyncFeatureRow.tsx`
@@ -519,3 +677,27 @@ Standard shadcn `Sheet`. Used by `SettingsSheet` with `side="bottom"`.
 **Files:** `src/components/ui/toggle.tsx`, `src/components/ui/toggle-group.tsx`
 
 Standard shadcn primitives. Used in `SettingsSheet` for Appearance mode and Text Size selectors.
+
+---
+
+## `AddCategoryGroupButton`
+
+**File:** `src/features/settings/components/AddCategoryGroupButton.tsx`
+**Used by:** `CategoriesGroupsSection`
+
+### Props
+
+| Prop      | Type         | Required | Description                      |
+| --------- | ------------ | -------- | -------------------------------- |
+| `onClick` | `() => void` | Yes      | Called when the button is tapped |
+
+Full-width branded button (brand-green background tint) with a `+` icon. Extracted from `CategoriesGroupsSection` to keep that component under the 180-line ceiling.
+
+---
+
+## `CategoryPanelIcons`
+
+**File:** `src/components/CategoryPanelIcons.tsx`
+**Used by:** `CategoryPanel`
+
+Exports two module-level JSX constants — `noGroupIcon` and `noItemsIcon` — used by `CategoryPanel`'s empty-state render paths. Extracted to keep `CategoryPanel` under the 180-line ceiling.

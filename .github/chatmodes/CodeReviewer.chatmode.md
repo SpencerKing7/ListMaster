@@ -1,5 +1,5 @@
 ---
-description: "Use this agent when you need comprehensive quality assurance strategy, test planning across the entire development cycle, or quality metrics analysis to improve overall software quality."
+description: "Use this agent when you need thorough code review, feedback on code quality, adherence to architecture and style conventions, or identification of bugs and improvement opportunities."
 tools:
   - edit
   - runNotebooks

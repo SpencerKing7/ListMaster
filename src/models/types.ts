@@ -1,5 +1,12 @@
 // src/models/types.ts
 
+// MARK: - Appearance
+
+/** Appearance mode preference: follows system, or forced light/dark. */
+export type AppearanceMode = "system" | "light" | "dark";
+
+// MARK: - Data
+
 export interface ChecklistItem {
   id: string; // UUID string — matches Swift UUID.uuidString
   name: string;
@@ -206,3 +213,67 @@ export interface StoreContextValue {
   setCategoryGroup: (categoryID: string, groupID: string | undefined) => void;
   addCategoryWithGroup: (name: string, groupID: string) => void;
 }
+
+// MARK: - Drag types
+
+/** State shape for an in-progress group drag gesture. */
+export interface GroupDragState {
+  /** Index of the group being dragged within the groups array. */
+  idx: number;
+  /** Live translateY offset for the dragged row (pointer delta from start). */
+  translateY: number;
+  /** Live order of group IDs, updated each frame. */
+  liveOrder: string[];
+  /** Original order of group IDs at drag start. */
+  originalOrder: string[];
+  /** Height of the dragged row in px. */
+  rowHeight: number;
+  /** Per-original-index cumulative Y offsets (top of each slot in original layout). */
+  originalOffsets: number[];
+  /** Gap in px between group rows. */
+  gap: number;
+  /** Row heights snapshot in original order. */
+  heights: number[];
+}
+
+/** State shape for an in-progress category drag gesture. */
+export interface CatDragState {
+  /** Flat index into the store's categories array of the row being dragged. */
+  flatIdx: number;
+  /** Scope: which group (or null for ungrouped / flat layout). */
+  groupID: string | null;
+  /** Live translateY offset for the dragged row (pointer delta from start). */
+  translateY: number;
+  /** Live order of scoped category IDs, updated each frame. */
+  liveOrder: string[];
+  /** Original scoped order at drag start — used to compute sibling offsets. */
+  originalOrder: string[];
+  /** Height of the dragged row in px. */
+  rowHeight: number;
+  /** Per-original-index cumulative Y offsets (top of each slot in original layout). */
+  originalOffsets: number[];
+  /** Gap in px between rows in this scope. */
+  gap: number;
+  /** Row heights snapshot in original order. */
+  heights: number[];
+}
+
+// MARK: - Sync types
+
+/** Shape returned by loadState when the document exists. */
+export interface LoadedSyncState {
+  categories: Category[];
+  selectedCategoryID: string | null;
+  groups: CategoryGroup[];
+  userName?: string;
+  colorTheme?: ColorTheme;
+  deviceIDs: string[];
+  /** Unix ms timestamp from the Firestore document — used for conflict resolution. */
+  updatedAt: number;
+}
+
+/** Discriminated result from loadState to distinguish timeout from not-found. */
+export type LoadStateResult =
+  | { status: "loaded"; data: LoadedSyncState }
+  | { status: "not-found" }
+  | { status: "timeout" };

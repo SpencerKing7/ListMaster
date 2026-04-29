@@ -1,37 +1,15 @@
 // src/features/settings/hooks/useCategoryDrag.ts
 // Custom hook encapsulating category drag-to-reorder logic for SettingsSheet.
-// NOTE: 207 lines — exceeds the 120-line hook target because pointer-event drag
+// NOTE: Exceeds the 120-line hook ceiling because pointer-event drag
 // logic (down/move/up/cancel), placeholder tracking, and commit-on-drop are a single
 // cohesive interaction that cannot be split without breaking the drag state machine.
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import type { Category } from "@/models/types";
+import type { Category, CatDragState } from "@/models/types";
+
+export type { CatDragState } from "@/models/types";
 
 // MARK: - Types
-
-/** State shape for an in-progress category drag gesture. */
-export interface CatDragState {
-  /** Flat index into the store's categories array of the row being dragged. */
-  flatIdx: number;
-  /** Scope: which group (or null for ungrouped / flat layout). */
-  groupID: string | null;
-  /** Live translateY offset for the dragged row (pointer delta from start). */
-  translateY: number;
-  /** Live order of scoped category IDs, updated each frame. */
-  liveOrder: string[];
-  /** Original scoped order at drag start — used to compute sibling offsets. */
-  originalOrder: string[];
-  /** Height of the dragged row in px. */
-  rowHeight: number;
-  /** Per-original-index cumulative Y offsets (top of each slot in original layout). */
-  originalOffsets: number[];
-  /** Gap in px between rows in this scope. */
-  gap: number;
-  /** Row heights snapshot in original order. */
-  heights: number[];
-}
-
-/** Return shape for the {@link useCategoryDrag} hook. */
 export interface UseCategoryDragReturn {
   catDragState: CatDragState | null;
   catContainerRef: React.RefObject<HTMLDivElement | null>;

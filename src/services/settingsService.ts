@@ -1,5 +1,10 @@
 // src/services/settingsService.ts
-import type { TextSize, SortOrder, ColorTheme } from "@/models/types";
+import type {
+  TextSize,
+  SortOrder,
+  ColorTheme,
+  AppearanceMode,
+} from "@/models/types";
 
 const USER_NAME_KEY = "userName";
 const HAS_COMPLETED_ONBOARDING_KEY = "hasCompletedOnboarding";
@@ -9,8 +14,6 @@ const SORT_ORDER_KEY = "sortOrder";
 const SYNC_CODE_KEY = "syncCode";
 const IS_SYNC_ENABLED_KEY = "isSyncEnabled";
 const COLOR_THEME_KEY = "colorTheme";
-
-type AppearanceMode = "system" | "light" | "dark";
 
 const VALID_TEXT_SIZES: readonly TextSize[] = ["xs", "s", "m", "l", "xl"];
 const VALID_SORT_ORDERS: readonly SortOrder[] = ["date", "alpha"];

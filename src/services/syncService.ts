@@ -12,8 +12,15 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
-import type { Category, CategoryGroup, ColorTheme } from "@/models/types";
+import type {
+  Category,
+  CategoryGroup,
+  ColorTheme,
+  LoadedSyncState,
+  LoadStateResult,
+} from "@/models/types";
 
+export type { LoadedSyncState, LoadStateResult };
 export { ensureAnonymousAuth } from "@/services/authService";
 
 // MARK: - Types
@@ -52,24 +59,6 @@ function toUnixMs(value: Timestamp | number | undefined): number {
   if (typeof value === "number") return value;
   return value.toMillis();
 }
-
-/** Shape returned by loadState when the document exists. */
-export interface LoadedSyncState {
-  categories: Category[];
-  selectedCategoryID: string | null;
-  groups: CategoryGroup[];
-  userName?: string;
-  colorTheme?: ColorTheme;
-  deviceIDs: string[];
-  /** Unix ms timestamp from the Firestore document — used for conflict resolution. */
-  updatedAt: number;
-}
-
-/** Discriminated result from loadState to distinguish timeout from not-found. */
-export type LoadStateResult =
-  | { status: "loaded"; data: LoadedSyncState }
-  | { status: "not-found" }
-  | { status: "timeout" };
 
 // MARK: - Firestore Helpers
 

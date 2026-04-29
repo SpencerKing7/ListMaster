@@ -1,34 +1,18 @@
 // src/features/settings/hooks/useGroupDrag.ts
 // Custom hook encapsulating group drag-to-reorder logic for SettingsSheet.
 // Composes useExpandedGroups for expand/collapse state.
+// NOTE: Exceeds the 120-line hook ceiling because the pointer-event drag
+// logic (down/move/up/cancel), collapse-animation timing, and commit-on-drop
+// form a single cohesive interaction state machine that cannot be split
+// without breaking gesture correctness.
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import type { CategoryGroup } from "@/models/types";
+import type { CategoryGroup, GroupDragState } from "@/models/types";
 import { useExpandedGroups } from "./useExpandedGroups";
 
+export type { GroupDragState } from "@/models/types";
+
 // MARK: - Types
-
-/** State shape for an in-progress group drag gesture. */
-export interface GroupDragState {
-  /** Index of the group being dragged within the groups array. */
-  idx: number;
-  /** Live translateY offset for the dragged row (pointer delta from start). */
-  translateY: number;
-  /** Live order of group IDs, updated each frame. */
-  liveOrder: string[];
-  /** Original order of group IDs at drag start. */
-  originalOrder: string[];
-  /** Height of the dragged row in px. */
-  rowHeight: number;
-  /** Per-original-index cumulative Y offsets (top of each slot in original layout). */
-  originalOffsets: number[];
-  /** Gap in px between group rows. */
-  gap: number;
-  /** Row heights snapshot in original order. */
-  heights: number[];
-}
-
-/** Return shape for the {@link useGroupDrag} hook. */
 export interface UseGroupDragReturn {
   groupDragState: GroupDragState | null;
   groupsContainerRef: React.RefObject<HTMLDivElement | null>;

@@ -71,6 +71,26 @@ Both `applyThemeToDOM()` and `applyTextSizeToDOM()` also update the `<meta name=
 
 ---
 
+## Color Themes (`data-color-theme`)
+
+In addition to appearance mode, the app supports three **brand color palettes** controlled by `data-color-theme` on `<html>`. This is a separate orthogonal axis from light/dark.
+
+| `ColorTheme` | DOM attribute set           | CSS block that activates                      |
+| ------------ | --------------------------- | --------------------------------------------- |
+| `"green"`    | attribute **removed**       | `:root` defaults (green palette)              |
+| `"blue"`     | `data-color-theme="blue"`   | `[data-color-theme="blue"]` in `tokens.css`   |
+| `"orange"`   | `data-color-theme="orange"` | `[data-color-theme="orange"]` in `tokens.css` |
+
+Applied by `applyColorThemeToDOM(theme, appearanceMode)` in `src/store/useTheme.ts`. Called synchronously inside the `useState` initializer in `SettingsProvider` (flash-free, same pattern as `applyThemeToDOM`).
+
+Each color theme block in `tokens.css` redefines the `--color-brand-*` tokens. The **brand token names are fixed** (`green`, `teal`, `blue`, `deep-green`) and do **not** map 1:1 to `ColorTheme` values — they describe specific hues within the palette, not user-facing theme names.
+
+### Synced across devices
+
+`colorTheme` is included in the Firestore sync document. On each snapshot, the receiving device calls `syncColorTheme(theme)` from `useSettingsStore`, which always overwrites the local value (last-write-wins). This is intentional — color theme is treated as a shared aesthetic preference, not a per-device setting.
+
+---
+
 ## Color Token System (`src/styles/tokens.css`)
 
 All brand colors are defined as CSS custom properties in `tokens.css`. There are four rule blocks, and **every token must appear in all four**:
