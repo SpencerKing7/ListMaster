@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect, type JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
+import { capitalizeFirst } from "@/lib/utils";
 
 interface AddItemInputProps {
   /** When true, focuses the input on mount (e.g. after transitioning from empty state). */
@@ -32,11 +33,13 @@ export function AddItemInput({ focusOnMount = false }: AddItemInputProps): JSX.E
     store.addItemToSelectedCategory(trimmedName);
     setNewItemName("");
     HapticService.light();
-    // Reset caret position so iOS recalculates shift state without keyboard dismissal
+    // Blur then re-focus so iOS resets the shift key to capitalise the next entry.
     requestAnimationFrame(() => {
       if (!inputRef.current) return;
-      inputRef.current.focus();
-      inputRef.current.setSelectionRange(0, 0);
+      inputRef.current.blur();
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     });
   }
 
@@ -69,7 +72,7 @@ export function AddItemInput({ focusOnMount = false }: AddItemInputProps): JSX.E
           ref={inputRef}
           placeholder="Add an item…"
           value={newItemName}
-          onChange={(e) => setNewItemName(e.target.value)}
+          onChange={(e) => setNewItemName(capitalizeFirst(e.target.value))}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -85,6 +88,7 @@ export function AddItemInput({ focusOnMount = false }: AddItemInputProps): JSX.E
           }}
           enterKeyHint="send"
           autoCapitalize="sentences"
+          autoCorrect="off"
           spellCheck={false}
         />
 

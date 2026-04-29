@@ -42,6 +42,9 @@ export interface CategoryPickerItem {
 /** Five-step text size scale for checklist item text. */
 export type TextSize = "xs" | "s" | "m" | "l" | "xl";
 
+/** Color theme selection for the app's brand palette. */
+export type ColorTheme = "green" | "blue" | "orange";
+
 /** Sort order for checklist items within a category. */
 export type SortOrder = "date" | "alpha";
 

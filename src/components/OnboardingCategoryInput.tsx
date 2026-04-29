@@ -4,6 +4,7 @@
 import { useState, useRef, type JSX } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { capitalizeWords } from "@/lib/utils";
 
 /** Props for the onboarding category input section. */
 interface OnboardingCategoryInputProps {
@@ -48,7 +49,7 @@ export function OnboardingCategoryInput({
             ref={inputRef}
             placeholder="e.g., Groceries, Tasks…"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => setText(capitalizeWords(e.target.value))}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -59,6 +60,7 @@ export function OnboardingCategoryInput({
             style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
             enterKeyHint="send"
             autoCapitalize="words"
+            autoCorrect="off"
             spellCheck={false}
           />
           <Button

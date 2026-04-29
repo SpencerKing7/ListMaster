@@ -64,24 +64,31 @@ export function App(): JSX.Element {
 
   return (
     <HashRouter>
-      <PageTransitionWrapper>
-        <Routes>
-          {hasCompletedOnboarding ? (
-            <>
-              <Route path="/" element={<MainScreen />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          ) : (
-            <>
-              <Route path="/" element={<OnboardingInstallScreen />} />
-              <Route path="/welcome" element={<OnboardingWelcomeScreen />} />
-              <Route path="/setup" element={<OnboardingSetupScreen />} />
-              <Route path="/sync" element={<OnboardingSyncScreen />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          )}
-        </Routes>
-      </PageTransitionWrapper>
+      {/* Desktop phone-frame shell — all classes are md: prefixed so they
+          are completely inert on real mobile viewports (< 768 px). */}
+      <div
+        className="md:max-w-lg md:mx-auto md:my-8 md:rounded-3xl md:overflow-hidden md:shadow-2xl md:border md:h-[calc(100dvh-4rem)]"
+        style={{ borderColor: "var(--color-border-subtle)" }}
+      >
+        <PageTransitionWrapper>
+          <Routes>
+            {hasCompletedOnboarding ? (
+              <>
+                <Route path="/" element={<MainScreen />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            ) : (
+              <>
+                <Route path="/" element={<OnboardingInstallScreen />} />
+                <Route path="/welcome" element={<OnboardingWelcomeScreen />} />
+                <Route path="/setup" element={<OnboardingSetupScreen />} />
+                <Route path="/sync" element={<OnboardingSyncScreen />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
+          </Routes>
+        </PageTransitionWrapper>
+      </div>
     </HashRouter>
   );
 }

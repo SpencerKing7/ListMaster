@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { capitalizeFirst } from "@/lib/utils";
 
 /** Standard input class for dialogs (mirrors settings feature). */
 const INPUT_CLASS =
@@ -58,7 +59,7 @@ export function RenameItemDialog({
         </p>
         <Input
           value={value}
-          onChange={(e) => onValueChange(e.target.value)}
+          onChange={(e) => onValueChange(capitalizeFirst(e.target.value))}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();

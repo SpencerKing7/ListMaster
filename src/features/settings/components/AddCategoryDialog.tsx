@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CategoryGroup } from "@/models/types";
 import { INPUT_CLASS } from "@/features/settings/constants";
+import { capitalizeWords } from "@/lib/utils";
 
 // MARK: - Props
 
@@ -65,7 +66,7 @@ export function AddCategoryDialog({
         </DialogHeader>
         <Input
           value={categoryName}
-          onChange={(e) => onNameChange(e.target.value)}
+          onChange={(e) => onNameChange(capitalizeWords(e.target.value))}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();

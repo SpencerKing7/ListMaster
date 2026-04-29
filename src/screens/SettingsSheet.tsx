@@ -16,6 +16,7 @@ import { useSyncStore } from "@/store/useSyncStore";
 import {
   CategoriesGroupsSection,
   AppearanceSection,
+  ColorThemeSection,
   TextSizeSection,
   NameSection,
   SyncSection,
@@ -71,25 +72,27 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
           <div className="flex flex-col overflow-hidden max-h-[90dvh] relative">
             <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
 
-            <SheetHeader className="flex flex-row items-center justify-between px-5 pb-3 pt-4">
-              <SheetTitle
-                className="text-2xl font-bold"
-                style={{ color: "var(--color-brand-green)" }}
-              >
-                Settings
-              </SheetTitle>
-              <Button
-                variant="ghost"
-                className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)] focus-visible:!border-[color:var(--color-brand-green)] focus-visible:!ring-[color:var(--color-brand-green)]/30"
-                style={{
-                  color: "var(--color-brand-green)",
-                  backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)",
-                  touchAction: "manipulation",
-                }}
-                onClick={() => onOpenChange(false)}
-              >
-                Done
-              </Button>
+            <SheetHeader className="px-5 pb-3 pt-4">
+              <div className="flex flex-row items-center justify-between">
+                <SheetTitle
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--color-brand-green)" }}
+                >
+                  Settings
+                </SheetTitle>
+                <Button
+                  variant="ghost"
+                  className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)] focus-visible:!border-[color:var(--color-brand-green)] focus-visible:!ring-[color:var(--color-brand-green)]/30"
+                  style={{
+                    color: "var(--color-brand-green)",
+                    backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)",
+                    touchAction: "manipulation",
+                  }}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Done
+                </Button>
+              </div>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto">
@@ -117,6 +120,10 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
                 <AppearanceSection
                   appearanceMode={settings.appearanceMode}
                   onChangeMode={settings.setAppearanceMode}
+                />
+                <ColorThemeSection
+                  colorTheme={settings.colorTheme}
+                  onChangeTheme={settings.setColorTheme}
                 />
                 <TextSizeSection
                   textSize={settings.textSize}

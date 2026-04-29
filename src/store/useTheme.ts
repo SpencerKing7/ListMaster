@@ -1,10 +1,14 @@
 // src/store/useTheme.ts
-import type { TextSize } from "@/models/types";
+import type { TextSize, ColorTheme } from "@/models/types";
 
-/** Surface-background hex values matching tokens.css — used to keep the
- *  `<meta name="theme-color">` in sync so the iOS status bar area matches. */
-const SURFACE_BG_LIGHT = "#edf3f0";
-const SURFACE_BG_DARK = "#080f0c";
+// MARK: - Surface background lookup
+
+/** Surface-background hex values for light and dark — neutral across all color themes.
+ *  Used to keep `<meta name="theme-color">` and the immediate DOM repaint in sync. */
+const SURFACE_BG = {
+  light: "#f2f2f7",
+  dark: "#0a0a0a",
+};
 
 /** Maps TextSize tokens to their rem values, matching the 5-step scale. */
 const TEXT_SIZE_VALUES: Record<TextSize, string> = {
@@ -25,6 +29,8 @@ const ROW_PADDING_VALUES: Record<TextSize, string> = {
   xl: "1.25rem",
 };
 
+// MARK: - DOM application functions
+
 /** Applies the user's appearance choice to the DOM.
  *  - 'light' / 'dark' → sets data-theme attribute, overriding the system media query.
  *  - 'system' → removes data-theme, letting @media (prefers-color-scheme) take over.
@@ -38,35 +44,61 @@ const ROW_PADDING_VALUES: Record<TextSize, string> = {
  */
 export function applyThemeToDOM(mode: "system" | "light" | "dark"): void {
   const root = document.documentElement;
+
   if (mode === "system") {
     root.removeAttribute("data-theme");
-    // Restore both media-conditional meta tags so the browser picks the right one
-    setThemeColor(SURFACE_BG_LIGHT, "light");
-    setThemeColor(SURFACE_BG_DARK, "dark");
+    setThemeColor(SURFACE_BG.light, "light");
+    setThemeColor(SURFACE_BG.dark, "dark");
   } else {
     root.setAttribute("data-theme", mode);
-    const bg = mode === "dark" ? SURFACE_BG_DARK : SURFACE_BG_LIGHT;
-    // Set both meta tags to the forced value so there is no mismatch
+    const bg = mode === "dark" ? SURFACE_BG.dark : SURFACE_BG.light;
     setThemeColor(bg, "light");
     setThemeColor(bg, "dark");
   }
 
   // Force immediate background repaint to prevent flash between old and new theme
-  const bg =
+  const isDark =
     mode === "dark" ||
     (mode === "system" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches)
-      ? SURFACE_BG_DARK
-      : SURFACE_BG_LIGHT;
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const bg = isDark ? SURFACE_BG.dark : SURFACE_BG.light;
+  root.style.backgroundColor = bg;
+  document.body.style.backgroundColor = bg;
+}
+
+/** Applies the user's color theme choice to the DOM by setting the
+ *  `data-color-theme` attribute on the root element.
+ *  - 'green' → removes the attribute (CSS :root defaults apply).
+ *  - 'blue' | 'orange' → sets data-color-theme to the theme name.
+ *  Also updates the immediate background repaint and meta theme-color.
+ *
+ *  Called synchronously inside the SettingsProvider useState initializer. */
+export function applyColorThemeToDOM(
+  theme: ColorTheme,
+  appearanceMode: "system" | "light" | "dark" = "system",
+): void {
+  const root = document.documentElement;
+  if (theme === "green") {
+    root.removeAttribute("data-color-theme");
+  } else {
+    root.setAttribute("data-color-theme", theme);
+  }
+
+  // Re-paint background with neutral surface color
+  const isDark =
+    appearanceMode === "dark" ||
+    (appearanceMode === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const bg = isDark ? SURFACE_BG.dark : SURFACE_BG.light;
   root.style.backgroundColor = bg;
   document.body.style.backgroundColor = bg;
 
-  // Also set the gradient to ensure full coverage behind safe areas
-  const gradient = getComputedStyle(root)
-    .getPropertyValue("--gradient-brand-wide")
-    .trim();
-  if (gradient) {
-    root.style.backgroundImage = gradient;
+  if (appearanceMode === "system") {
+    setThemeColor(SURFACE_BG.light, "light");
+    setThemeColor(SURFACE_BG.dark, "dark");
+  } else {
+    setThemeColor(bg, "light");
+    setThemeColor(bg, "dark");
   }
 }
 

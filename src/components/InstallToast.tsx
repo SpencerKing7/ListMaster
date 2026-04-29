@@ -102,7 +102,7 @@ export function InstallToast({ onOpenInstallSheet, isSuppressed }: InstallToastP
   return (
     <div
       ref={toastRef}
-      className={`fixed left-4 right-4 z-40 flex items-center gap-3 p-4 rounded-2xl ${isExiting ? "pointer-events-none" : ""
+      className={`fixed left-4 right-4 md:left-1/2 md:right-auto md:w-[calc(512px-2rem)] md:-translate-x-1/2 z-40 flex items-center gap-3 p-4 rounded-2xl ${isExiting ? "pointer-events-none" : ""
         }`}
       style={{
         bottom: "calc(env(safe-area-inset-bottom) + 92px)",

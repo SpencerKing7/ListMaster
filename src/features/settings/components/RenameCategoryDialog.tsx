@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { INPUT_CLASS } from "@/features/settings/constants";
+import { capitalizeWords } from "@/lib/utils";
 
 // MARK: - Props
 
@@ -62,7 +63,7 @@ export function RenameCategoryDialog({
         <Input
           ref={renameInputRef}
           value={renameCategoryName}
-          onChange={(e) => onNameChange(e.target.value)}
+          onChange={(e) => onNameChange(capitalizeWords(e.target.value))}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSave(); } }}
           className={INPUT_CLASS}
           autoFocus

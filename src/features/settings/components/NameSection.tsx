@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { INPUT_CLASS } from "@/features/settings/constants";
 import { SettingsCard } from "./SettingsCard";
 import { SectionLabel } from "./SectionLabel";
+import { capitalizeWords } from "@/lib/utils";
 
 // MARK: - Props
 
@@ -27,7 +28,7 @@ export function NameSection({ userName, onChangeName }: NameSectionProps): JSX.E
       <SectionLabel>Name</SectionLabel>
       <Input
         value={userName}
-        onChange={(e) => onChangeName(e.target.value)}
+        onChange={(e) => onChangeName(capitalizeWords(e.target.value))}
         placeholder="Your name"
         className={INPUT_CLASS}
         style={{ color: "var(--color-text-primary)" }}

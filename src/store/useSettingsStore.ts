@@ -9,8 +9,12 @@ import {
 import { PersistenceService } from "@/services/persistenceService";
 import { SettingsService } from "@/services/settingsService";
 import { InstallPromptService } from "@/services/installPromptService";
-import { applyThemeToDOM, applyTextSizeToDOM } from "./useTheme";
-import type { TextSize } from "@/models/types";
+import {
+  applyThemeToDOM,
+  applyTextSizeToDOM,
+  applyColorThemeToDOM,
+} from "./useTheme";
+import type { TextSize, ColorTheme } from "@/models/types";
 
 // MARK: - Types
 
@@ -23,12 +27,14 @@ interface SettingsState {
   hasCompletedOnboarding: boolean;
   appearanceMode: AppearanceMode;
   textSize: TextSize;
+  colorTheme: ColorTheme;
   setUserName: (name: string) => void;
   /** Applies a userName from the cloud only if the local name is empty. */
   syncUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
+  setColorTheme: (theme: ColorTheme) => void;
   resetToNewUser: () => void;
 }
 
@@ -60,6 +66,12 @@ export function SettingsProvider({
     const saved = SettingsService.getTextSize();
     // Apply synchronously during state initialization to prevent layout shift.
     applyTextSizeToDOM(saved);
+    return saved;
+  });
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>(() => {
+    const saved = SettingsService.getColorTheme();
+    // Apply synchronously to avoid a flash of wrong color theme on load.
+    applyColorThemeToDOM(saved, SettingsService.getAppearanceMode());
     return saved;
   });
 
@@ -95,6 +107,12 @@ export function SettingsProvider({
     applyTextSizeToDOM(size);
   }
 
+  function setColorTheme(theme: ColorTheme) {
+    SettingsService.setColorTheme(theme);
+    setColorThemeState(theme);
+    applyColorThemeToDOM(theme, appearanceMode);
+  }
+
   function resetToNewUser() {
     PersistenceService.clear();
     SettingsService.clearAll();
@@ -105,6 +123,8 @@ export function SettingsProvider({
     applyThemeToDOM("system");
     setTextSizeState("m");
     applyTextSizeToDOM("m");
+    setColorThemeState("green");
+    applyColorThemeToDOM("green", "system");
   }
 
   return createElement(
@@ -115,11 +135,13 @@ export function SettingsProvider({
         hasCompletedOnboarding,
         appearanceMode,
         textSize,
+        colorTheme,
         setUserName,
         syncUserName,
         completeOnboarding,
         setAppearanceMode,
         setTextSize,
+        setColorTheme,
         resetToNewUser,
       },
     },

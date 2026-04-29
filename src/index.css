@@ -278,3 +278,18 @@
     transform: rotate(360deg);
   }
 }
+
+/* ── Desktop phone-frame: constrain bottom sheets to the frame width ── */
+/* The sheet portal renders to document.body (outside the frame div),    */
+/* so we target the base-ui data-slot attribute directly.                */
+@media (min-width: 768px) {
+  [data-slot="sheet-content"][data-side="bottom"] {
+    left: calc(50vw - 16rem) !important;
+    right: auto !important;
+    width: 32rem !important;
+    bottom: 2rem !important;
+    max-height: calc(100dvh - 4rem) !important;
+    border-bottom-left-radius: 1.5rem !important;
+    border-bottom-right-radius: 1.5rem !important;
+  }
+}

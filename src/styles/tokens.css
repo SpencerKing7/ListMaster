@@ -7,10 +7,10 @@
   --color-brand-blue: #3275b5;
   --color-brand-deep-green: #1a5e4b;
 
-  --color-surface-background: #edf3f0;
-  --color-surface-card: #f8fcf9;
-  --color-surface-input: #e5ede9;
-  --color-surface-chrome: #edf3f0;
+  --color-surface-background: #f2f2f7;
+  --color-surface-card: #ffffff;
+  --color-surface-input: #e9e9ef;
+  --color-surface-chrome: #f2f2f7;
   --color-surface-green-tint: rgba(57, 179, 133, 0.06);
 
   --color-danger: #d44b4a;
@@ -38,12 +38,7 @@
   --elevation-sheet:
     0 -4px 24px rgba(0, 0, 0, 0.1), 0 -1px 4px rgba(0, 0, 0, 0.06);
 
-  --gradient-brand-wide: linear-gradient(
-    135deg,
-    rgba(26, 94, 75, 0.18) 0%,
-    rgba(44, 144, 150, 0.12) 50%,
-    rgba(50, 117, 181, 0.08) 100%
-  );
+  --gradient-brand-wide: none;
 
   /* iOS spring — used for page swipe commits */
   --spring-page: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -77,10 +72,10 @@
     --color-brand-blue: #4c8dcb;
     --color-brand-deep-green: #277862;
 
-    --color-surface-background: #080f0c;
-    --color-surface-card: #1a2924;
-    --color-surface-input: #111b17;
-    --color-surface-chrome: #141f1b;
+    --color-surface-background: #0a0a0a;
+    --color-surface-card: #1a1a1a;
+    --color-surface-input: #252525;
+    --color-surface-chrome: #111111;
     --color-surface-green-tint: rgba(73, 203, 154, 0.1);
 
     --color-danger: #e76560;
@@ -106,12 +101,7 @@
     --elevation-sheet:
       0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 4px rgba(0, 0, 0, 0.3);
 
-    --gradient-brand-wide: linear-gradient(
-      135deg,
-      rgba(39, 120, 98, 0.22) 0%,
-      rgba(61, 170, 176, 0.14) 50%,
-      rgba(76, 141, 203, 0.1) 100%
-    ); /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+    --gradient-brand-wide: none; /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
     --text-size-base: 1rem;
 
     /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
@@ -126,10 +116,10 @@
   --color-brand-blue: #3275b5;
   --color-brand-deep-green: #1a5e4b;
 
-  --color-surface-background: #edf3f0;
-  --color-surface-card: #f8fcf9;
-  --color-surface-input: #e5ede9;
-  --color-surface-chrome: #edf3f0;
+  --color-surface-background: #f2f2f7;
+  --color-surface-card: #ffffff;
+  --color-surface-input: #e9e9ef;
+  --color-surface-chrome: #f2f2f7;
   --color-surface-green-tint: rgba(57, 179, 133, 0.06);
 
   --color-danger: #d44b4a;
@@ -164,10 +154,10 @@
   --color-brand-blue: #4c8dcb;
   --color-brand-deep-green: #277862;
 
-  --color-surface-background: #080f0c;
-  --color-surface-card: #1a2924;
-  --color-surface-input: #111b17;
-  --color-surface-chrome: #141f1b;
+  --color-surface-background: #0a0a0a;
+  --color-surface-card: #1a1a1a;
+  --color-surface-input: #252525;
+  --color-surface-chrome: #111111;
   --color-surface-green-tint: rgba(73, 203, 154, 0.1);
 
   --color-danger: #e76560;
@@ -187,16 +177,145 @@
   --elevation-sheet:
     0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 4px rgba(0, 0, 0, 0.3);
 
-  --gradient-brand-wide: linear-gradient(
-    135deg,
-    rgba(39, 120, 98, 0.22) 0%,
-    rgba(61, 170, 176, 0.14) 50%,
-    rgba(76, 141, 203, 0.1) 100%
-  );
+  --gradient-brand-wide: none;
 
   /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
   --text-size-base: 1rem;
 
   /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
   --row-padding-y: 0.875rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   COLOR THEME PICKER SWATCHES  (used by ColorThemeSection preview dots)
+   Static values — intentionally not themed, always the light-mode brand color.
+   ══════════════════════════════════════════════════════════ */
+:root {
+  --color-theme-swatch-green: #39b385;
+  --color-theme-swatch-blue: #3b82f6;
+  --color-theme-swatch-orange: #f97316;
+}
+
+/* ══════════════════════════════════════════════════════════
+   BLUE COLOR THEME  (data-color-theme="blue")
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Blue — light default ───────────────────────────────── */
+:root[data-color-theme="blue"] {
+  --color-brand-green: #3b82f6;
+  --color-brand-teal: #2563eb;
+  --color-brand-blue: #1d4ed8;
+  --color-brand-deep-green: #1e3a8a;
+
+  --color-surface-green-tint: rgba(59, 130, 246, 0.06);
+
+  --color-brand-green-rgb: 59, 130, 246;
+  --color-brand-deep-green-rgb: 30, 58, 138;
+  --color-brand-teal-rgb: 37, 99, 235;
+}
+
+/* ── Blue — system dark ─────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root[data-color-theme="blue"] {
+    --color-brand-green: #60a5fa;
+    --color-brand-teal: #4b8ef5;
+    --color-brand-blue: #3b82f6;
+    --color-brand-deep-green: #1e40af;
+
+    --color-surface-green-tint: rgba(96, 165, 250, 0.1);
+
+    --color-brand-green-rgb: 96, 165, 250;
+    --color-brand-deep-green-rgb: 30, 64, 175;
+    --color-brand-teal-rgb: 75, 142, 245;
+  }
+}
+
+/* ── Blue — forced light ────────────────────────────────── */
+:root[data-theme="light"][data-color-theme="blue"] {
+  --color-brand-green: #3b82f6;
+  --color-brand-teal: #2563eb;
+  --color-brand-blue: #1d4ed8;
+  --color-brand-deep-green: #1e3a8a;
+
+  --color-surface-green-tint: rgba(59, 130, 246, 0.06);
+
+  --color-brand-green-rgb: 59, 130, 246;
+  --color-brand-deep-green-rgb: 30, 58, 138;
+  --color-brand-teal-rgb: 37, 99, 235;
+}
+
+/* ── Blue — forced dark ─────────────────────────────────── */
+:root[data-theme="dark"][data-color-theme="blue"] {
+  --color-brand-green: #60a5fa;
+  --color-brand-teal: #4b8ef5;
+  --color-brand-blue: #3b82f6;
+  --color-brand-deep-green: #1e40af;
+
+  --color-surface-green-tint: rgba(96, 165, 250, 0.1);
+
+  --color-brand-green-rgb: 96, 165, 250;
+  --color-brand-deep-green-rgb: 30, 64, 175;
+  --color-brand-teal-rgb: 75, 142, 245;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ORANGE COLOR THEME  (data-color-theme="orange")
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Orange — light default ─────────────────────────────── */
+:root[data-color-theme="orange"] {
+  --color-brand-green: #f97316;
+  --color-brand-teal: #ea6c0a;
+  --color-brand-blue: #c2510a;
+  --color-brand-deep-green: #7c2d12;
+
+  --color-surface-green-tint: rgba(249, 115, 22, 0.06);
+
+  --color-brand-green-rgb: 249, 115, 22;
+  --color-brand-deep-green-rgb: 124, 45, 18;
+  --color-brand-teal-rgb: 234, 108, 10;
+}
+
+/* ── Orange — system dark ───────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root[data-color-theme="orange"] {
+    --color-brand-green: #fb923c;
+    --color-brand-teal: #f0821c;
+    --color-brand-blue: #e07318;
+    --color-brand-deep-green: #9a3412;
+
+    --color-surface-green-tint: rgba(251, 146, 60, 0.1);
+
+    --color-brand-green-rgb: 251, 146, 60;
+    --color-brand-deep-green-rgb: 154, 52, 18;
+    --color-brand-teal-rgb: 240, 130, 28;
+  }
+}
+
+/* ── Orange — forced light ──────────────────────────────── */
+:root[data-theme="light"][data-color-theme="orange"] {
+  --color-brand-green: #f97316;
+  --color-brand-teal: #ea6c0a;
+  --color-brand-blue: #c2510a;
+  --color-brand-deep-green: #7c2d12;
+
+  --color-surface-green-tint: rgba(249, 115, 22, 0.06);
+
+  --color-brand-green-rgb: 249, 115, 22;
+  --color-brand-deep-green-rgb: 124, 45, 18;
+  --color-brand-teal-rgb: 234, 108, 10;
+}
+
+/* ── Orange — forced dark ───────────────────────────────── */
+:root[data-theme="dark"][data-color-theme="orange"] {
+  --color-brand-green: #fb923c;
+  --color-brand-teal: #f0821c;
+  --color-brand-blue: #e07318;
+  --color-brand-deep-green: #9a3412;
+
+  --color-surface-green-tint: rgba(251, 146, 60, 0.1);
+
+  --color-brand-green-rgb: 251, 146, 60;
+  --color-brand-deep-green-rgb: 154, 52, 18;
+  --color-brand-teal-rgb: 240, 130, 28;
 }

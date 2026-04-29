@@ -1,5 +1,5 @@
 // src/services/settingsService.ts
-import type { TextSize, SortOrder } from "@/models/types";
+import type { TextSize, SortOrder, ColorTheme } from "@/models/types";
 
 const USER_NAME_KEY = "userName";
 const HAS_COMPLETED_ONBOARDING_KEY = "hasCompletedOnboarding";
@@ -8,6 +8,7 @@ const TEXT_SIZE_KEY = "textSize";
 const SORT_ORDER_KEY = "sortOrder";
 const SYNC_CODE_KEY = "syncCode";
 const IS_SYNC_ENABLED_KEY = "isSyncEnabled";
+const COLOR_THEME_KEY = "colorTheme";
 
 type AppearanceMode = "system" | "light" | "dark";
 
@@ -18,6 +19,7 @@ const VALID_APPEARANCE_MODES: readonly AppearanceMode[] = [
   "light",
   "dark",
 ];
+const VALID_COLOR_THEMES: readonly ColorTheme[] = ["green", "blue", "orange"];
 
 export const SettingsService = {
   // User Name
@@ -126,6 +128,23 @@ export const SettingsService = {
     localStorage.removeItem(IS_SYNC_ENABLED_KEY);
   },
 
+  // Color Theme
+  getColorTheme(): ColorTheme {
+    const saved = localStorage.getItem(COLOR_THEME_KEY) as ColorTheme;
+    return VALID_COLOR_THEMES.includes(saved) ? saved : "green";
+  },
+
+  setColorTheme(theme: ColorTheme): void {
+    if (!VALID_COLOR_THEMES.includes(theme)) {
+      throw new Error(`Invalid color theme: ${theme}`);
+    }
+    localStorage.setItem(COLOR_THEME_KEY, theme);
+  },
+
+  clearColorTheme(): void {
+    localStorage.removeItem(COLOR_THEME_KEY);
+  },
+
   // Clear all settings
   clearAll(): void {
     this.clearUserName();
@@ -135,5 +154,6 @@ export const SettingsService = {
     this.clearSortOrder();
     this.clearSyncCode();
     this.clearIsSyncEnabled();
+    this.clearColorTheme();
   },
 };
