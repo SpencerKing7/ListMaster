@@ -115,7 +115,8 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
                   onRenameGroup={d.openRenameGroup}
                   onDeleteGroup={d.openDeleteGroup}
                   onAssignGroup={d.openGroupAssignment}
-                  onOpenAddSheet={d.openAddActionSheet}
+                  onAddCategory={d.openAddCategoryDialog}
+                  onAddGroup={d.openAddGroupDialog}
                 />
                 <AppearanceSection
                   appearanceMode={settings.appearanceMode}

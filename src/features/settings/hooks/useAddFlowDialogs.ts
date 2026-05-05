@@ -1,7 +1,7 @@
 // src/features/settings/hooks/useAddFlowDialogs.ts
-// State and handlers for the "Add Category or Group" flow (action sheet + dialogs).
+// State and handlers for the "Add Category" and "Add Group" flows.
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { isCategoryNameAvailable } from "@/store/reducerHelpers";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 
@@ -9,17 +9,10 @@ import { useCategoriesStore } from "@/store/useCategoriesStore";
 
 /** Return type for {@link useAddFlowDialogs}. */
 export interface UseAddFlowDialogsReturn {
-  /** Whether the add-mode ActionSheet is open. */
-  isAddActionSheetOpen: boolean;
-  /** Opens the add ActionSheet. */
-  openAddActionSheet: () => void;
-  /** Closes the add ActionSheet. */
-  closeAddActionSheet: () => void;
-  /**
-   * Opens the Add Category dialog, pre-populating the group picker with the
-   * currently selected group so the category lands in the right place.
-   */
+  /** Opens the Add Category dialog pre-populated with the current group. */
   openAddCategoryDialog: () => void;
+  /** Opens the Add Group dialog. */
+  openAddGroupDialog: () => void;
   /** Which add dialog is active: `"category"`, `"group"`, or `null`. */
   addMode: "category" | "group" | null;
   /** Sets the active add mode. */
@@ -50,7 +43,6 @@ export interface UseAddFlowDialogsReturn {
 export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
   const store = useCategoriesStore();
 
-  const [isAddActionSheetOpen, setIsAddActionSheetOpen] = useState(false);
   const [addMode, setAddMode] = useState<"category" | "group" | null>(null);
   const [addCategoryName, setAddCategoryName] = useState("");
   const [addCategoryGroupID, setAddCategoryGroupID] = useState<string | null>(
@@ -58,31 +50,18 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
   );
   const [addGroupDialogName, setAddGroupDialogName] = useState("");
 
-  // Refs mirror the latest state to prevent stale closures in callbacks
-  // that fire during @base-ui dialog open/close transitions.
-  const categoryNameRef = useRef(addCategoryName);
-  const categoryGroupIDRef = useRef(addCategoryGroupID);
-  const groupDialogNameRef = useRef(addGroupDialogName);
-
-  useEffect(() => {
-    categoryNameRef.current = addCategoryName;
-    categoryGroupIDRef.current = addCategoryGroupID;
-    groupDialogNameRef.current = addGroupDialogName;
-  }, [addCategoryName, addCategoryGroupID, addGroupDialogName]);
-
   const confirmAddCategory = useCallback(() => {
-    const trimmed = categoryNameRef.current.trim();
+    const trimmed = addCategoryName.trim();
     if (!trimmed) return;
-    const groupID = categoryGroupIDRef.current;
-    if (groupID) {
-      store.addCategoryWithGroup(trimmed, groupID);
+    if (addCategoryGroupID) {
+      store.addCategoryWithGroup(trimmed, addCategoryGroupID);
     } else {
       store.addCategory(trimmed);
     }
     setAddMode(null);
     setAddCategoryName("");
     setAddCategoryGroupID(null);
-  }, [store]);
+  }, [addCategoryName, addCategoryGroupID, store]);
 
   // Convert null (hook convention) → undefined (model convention) for group scoping
   const isDuplicate = useMemo(() => {
@@ -96,31 +75,29 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     );
   }, [addCategoryName, addCategoryGroupID, store.categories]);
 
-  /**
-   * Opens the Add Category dialog pre-populated with the currently selected
-   * group. This ensures the new category lands in the group the user is
-   * already viewing rather than silently going into an invisible "No Group"
-   * bucket when a group is active.
-   */
+  /** Opens the Add Category dialog pre-populated with the current group. */
   const openAddCategoryDialog = useCallback(() => {
     setAddCategoryGroupID(store.selectedGroupID);
     setAddCategoryName("");
     setAddMode("category");
   }, [store.selectedGroupID]);
 
+  const openAddGroupDialog = useCallback(() => {
+    setAddGroupDialogName("");
+    setAddMode("group");
+  }, []);
+
   const confirmAddGroup = useCallback(() => {
-    const trimmed = groupDialogNameRef.current.trim();
+    const trimmed = addGroupDialogName.trim();
     if (!trimmed) return;
     store.addGroup(trimmed);
     setAddMode(null);
     setAddGroupDialogName("");
-  }, [store]);
+  }, [addGroupDialogName, store]);
 
   return {
-    isAddActionSheetOpen,
-    openAddActionSheet: () => setIsAddActionSheetOpen(true),
-    closeAddActionSheet: () => setIsAddActionSheetOpen(false),
     openAddCategoryDialog,
+    openAddGroupDialog,
     addMode,
     setAddMode,
     addCategoryName,

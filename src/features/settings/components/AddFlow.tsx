@@ -1,9 +1,7 @@
 // src/features/settings/components/AddFlow.tsx
-// ActionSheet orchestrator for the unified "Add Category or Group" flow.
-// Composes AddCategoryDialog and AddGroupDialog for the two add modes.
+// Dialog pair for the "Add Category" and "Add Group" flows.
 
 import type { JSX } from "react";
-import { ActionSheet } from "@/components/ui/action-sheet";
 import type { CategoryGroup } from "@/models/types";
 import { AddCategoryDialog } from "./AddCategoryDialog";
 import { AddGroupDialog } from "./AddGroupDialog";
@@ -12,12 +10,6 @@ import { AddGroupDialog } from "./AddGroupDialog";
 
 /** Props for the {@link AddFlow} component. */
 interface AddFlowProps {
-  /** Whether the ActionSheet chooser is open. */
-  isAddActionSheetOpen: boolean;
-  /** Closes the ActionSheet chooser. */
-  onCloseAddActionSheet: () => void;
-  /** Opens the Add Category dialog pre-populated with the current group. */
-  onOpenAddCategoryDialog: () => void;
   /** Which add dialog is active: `"category"`, `"group"`, or `null`. */
   addMode: "category" | "group" | null;
   /** Sets the active add mode (opens the corresponding dialog). */
@@ -46,11 +38,8 @@ interface AddFlowProps {
 
 // MARK: - Component
 
-/** ActionSheet + Dialog pair for the unified "Add Category or Group" flow. */
+/** Dialog pair for the "Add Category" and "Add Group" flows. */
 export function AddFlow({
-  isAddActionSheetOpen,
-  onCloseAddActionSheet,
-  onOpenAddCategoryDialog,
   addMode,
   onSetAddMode,
   addCategoryName,
@@ -66,29 +55,6 @@ export function AddFlow({
 }: AddFlowProps): JSX.Element {
   return (
     <>
-      <ActionSheet
-        isOpen={isAddActionSheetOpen}
-        onClose={onCloseAddActionSheet}
-        title="Add"
-        actions={[
-          {
-            label: "Add a Category",
-            onClick: () => {
-              onCloseAddActionSheet();
-              onOpenAddCategoryDialog();
-            },
-          },
-          {
-            label: "Add a Group",
-            onClick: () => {
-              onCloseAddActionSheet();
-              onSetAddGroupDialogName("");
-              onSetAddMode("group");
-            },
-          },
-        ]}
-      />
-
       <AddCategoryDialog
         isOpen={addMode === "category"}
         isDuplicate={isDuplicate}

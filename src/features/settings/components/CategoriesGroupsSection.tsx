@@ -6,13 +6,12 @@ import type { JSX } from "react";
 import type { Category, CategoryGroup } from "@/models/types";
 import type { CatDragState } from "@/features/settings/hooks/useCategoryDrag";
 import type { GroupDragState } from "@/features/settings/hooks/useGroupDrag";
-import { computeGroupLiveOffset } from "@/features/settings/utils/dragUtils";
 import { SettingsCard } from "./SettingsCard";
 import { SectionLabel } from "./SectionLabel";
-import { GroupRow } from "./GroupRow";
+import { GroupsMapSection } from "./GroupsMapSection";
 import { UngroupedSection } from "./UngroupedSection";
 import { FlatLayout } from "./FlatLayout";
-import { AddCategoryGroupButton } from "./AddCategoryGroupButton";
+import { AddButtons } from "./AddButtons";
 
 // MARK: - Props
 
@@ -43,7 +42,8 @@ interface CategoriesGroupsSectionProps {
   onRenameGroup: (id: string, name: string) => void;
   onDeleteGroup: (id: string, name: string) => void;
   onAssignGroup: (categoryId: string, categoryName: string) => void;
-  onOpenAddSheet: () => void;
+  onAddCategory: () => void;
+  onAddGroup: () => void;
 }
 
 // MARK: - Component
@@ -67,7 +67,8 @@ export function CategoriesGroupsSection({
   onRenameGroup,
   onDeleteGroup,
   onAssignGroup,
-  onOpenAddSheet,
+  onAddCategory,
+  onAddGroup,
 }: CategoriesGroupsSectionProps): JSX.Element {
   return (
     <SettingsCard>
@@ -82,74 +83,33 @@ export function CategoriesGroupsSection({
 
       {/* ── Grouped layout (groups exist) ── */}
       {groups.length > 0 && (
-        <>
-          <div ref={catContainerRef}>
-            {/* Group sections */}
-            <div ref={groupsContainerRef} className="flex flex-col gap-2">
-              {(() => {
-                // Always render in original DOM order; visual reorder is
-                // driven entirely by translateY for smooth animation.
-                const draggingGroupID = groupDragState
-                  ? groups[groupDragState.idx]?.id
-                  : null;
-
-                return groups.map((group, groupVisualIdx) => {
-                  const isExpanded = expandedGroupIDs.has(group.id);
-                  const groupCategories = categories.filter(c => c.groupID === group.id);
-                  const isGroupDragging = group.id === draggingGroupID;
-
-                  let groupTranslateY = 0;
-                  if (groupDragState) {
-                    if (isGroupDragging) {
-                      groupTranslateY = groupDragState.translateY;
-                    } else {
-                      const origIdx = groupDragState.originalOrder.indexOf(group.id);
-                      const liveIdx = groupDragState.liveOrder.indexOf(group.id);
-                      if (origIdx !== -1 && liveIdx !== -1 && origIdx !== liveIdx) {
-                        const liveOffset = computeGroupLiveOffset(groupDragState, liveIdx);
-                        const origOffset = groupDragState.originalOffsets[origIdx] ?? 0;
-                        groupTranslateY = liveOffset - origOffset;
-                      }
-                    }
-                  }
-
-                  return (
-                    <GroupRow
-                      key={group.id}
-                      group={group}
-                      groupVisualIdx={groupVisualIdx}
-                      isExpanded={isExpanded}
-                      isGroupDragging={isGroupDragging}
-                      groupTranslateY={groupTranslateY}
-                      groupCategories={groupCategories}
-                      categories={categories}
-                      catDragState={catDragState}
-                      canDeleteCategories={canDeleteCategories}
-                      handleGroupDragPointerDown={handleGroupDragPointerDown}
-                      handleDragPointerDown={handleDragPointerDown}
-                      toggleGroup={toggleGroup}
-                      onRenameCategory={onRenameCategory}
-                      onDeleteCategory={onDeleteCategory}
-                      onRenameGroup={onRenameGroup}
-                      onDeleteGroup={onDeleteGroup}
-                    />
-                  );
-                });
-              })()}
-            </div>
-
-            {/* No Group section */}
-            <UngroupedSection
-              categories={categories}
-              catDragState={catDragState}
-              canDeleteCategories={canDeleteCategories}
-              handleDragPointerDown={handleDragPointerDown}
-              onRenameCategory={onRenameCategory}
-              onDeleteCategory={onDeleteCategory}
-              onAssignGroup={onAssignGroup}
-            />
-          </div>
-        </>
+        <div ref={catContainerRef}>
+          <GroupsMapSection
+            groups={groups}
+            categories={categories}
+            canDeleteCategories={canDeleteCategories}
+            groupDragState={groupDragState}
+            groupsContainerRef={groupsContainerRef}
+            catDragState={catDragState}
+            handleGroupDragPointerDown={handleGroupDragPointerDown}
+            handleDragPointerDown={handleDragPointerDown}
+            expandedGroupIDs={expandedGroupIDs}
+            toggleGroup={toggleGroup}
+            onRenameCategory={onRenameCategory}
+            onDeleteCategory={onDeleteCategory}
+            onRenameGroup={onRenameGroup}
+            onDeleteGroup={onDeleteGroup}
+          />
+          <UngroupedSection
+            categories={categories}
+            catDragState={catDragState}
+            canDeleteCategories={canDeleteCategories}
+            handleDragPointerDown={handleDragPointerDown}
+            onRenameCategory={onRenameCategory}
+            onDeleteCategory={onDeleteCategory}
+            onAssignGroup={onAssignGroup}
+          />
+        </div>
       )}
 
       {/* ── Flat layout (no groups) ── */}
@@ -172,7 +132,7 @@ export function CategoriesGroupsSection({
       )}
 
       {/* ── Add controls ── */}
-      <AddCategoryGroupButton onClick={onOpenAddSheet} />
+      <AddButtons onAddCategory={onAddCategory} onAddGroup={onAddGroup} />
     </SettingsCard>
   );
 }

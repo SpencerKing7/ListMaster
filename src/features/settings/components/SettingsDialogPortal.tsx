@@ -66,9 +66,6 @@ export function SettingsDialogPortal({ d, groups }: SettingsDialogPortalProps): 
         onClose={d.closeGroupAssignment}
       />
       <AddFlow
-        isAddActionSheetOpen={d.isAddActionSheetOpen}
-        onCloseAddActionSheet={d.closeAddActionSheet}
-        onOpenAddCategoryDialog={d.openAddCategoryDialog}
         addMode={d.addMode}
         onSetAddMode={d.setAddMode}
         addCategoryName={d.addCategoryName}

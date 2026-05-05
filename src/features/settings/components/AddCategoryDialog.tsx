@@ -70,7 +70,7 @@ export function AddCategoryDialog({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              if (groups.length === 0) onConfirm();
+              if (!isDuplicate) onConfirm();
             }
           }}
           placeholder="Category name"
