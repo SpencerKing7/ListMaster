@@ -23,6 +23,8 @@ export interface CategoryRowProps {
   onRenameCategoryNameChange: (v: string) => void;
   saveRenameCategory: () => void;
   onDelete: (id: string, name: string) => void;
+  /** When provided, renders an "Assign" chip that calls this on tap. */
+  onAssignGroup?: () => void;
 }
 
 // MARK: - Component
@@ -44,6 +46,7 @@ export function CategoryRow({
   onRenameCategoryNameChange,
   saveRenameCategory,
   onDelete,
+  onAssignGroup,
 }: CategoryRowProps): JSX.Element {
   const isFlat = variant === "flat";
   const Tag = isFlat ? "li" : "div";
@@ -51,6 +54,7 @@ export function CategoryRow({
   const iconSize = isFlat ? "14" : "13";
   const isEditing = inlineEditingCategoryID === category.id;
   const inputRef = useRef<HTMLInputElement>(null);
+  const isCancelingRef = useRef(false);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -100,17 +104,18 @@ export function CategoryRow({
           value={renameCategoryName}
           onChange={(e) => onRenameCategoryNameChange(e.target.value)}
           onBlur={() => {
-            saveRenameCategory();
+            if (!isCancelingRef.current) saveRenameCategory();
+            isCancelingRef.current = false;
             setInlineEditingCategoryID(null);
           }}
           onKeyDown={(e) => {
             e.stopPropagation();
             if (e.key === "Enter") {
               e.preventDefault();
-              saveRenameCategory();
               setInlineEditingCategoryID(null);
             } else if (e.key === "Escape") {
               e.preventDefault();
+              isCancelingRef.current = true;
               setInlineEditingCategoryID(null);
             }
           }}
@@ -126,8 +131,19 @@ export function CategoryRow({
           {category.name}
         </span>
       )}
-
-      {/* Rename */}
+      {onAssignGroup && !isEditing && (
+        <button
+          className="flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all active:scale-[0.94]"
+          style={{
+            backgroundColor: "rgba(var(--color-brand-teal-rgb), 0.12)",
+            color: "var(--color-brand-teal)",
+            touchAction: "manipulation",
+          }}
+          onClick={onAssignGroup}
+        >
+          + Assign
+        </button>
+      )}
       <button
         className={`${isFlat ? "p-1.5 rounded-lg" : "p-1.5 rounded-md"} transition-all active:scale-[0.9]`}
         style={{ opacity: isFlat ? 0.55 : 0.5 }}
@@ -142,8 +158,6 @@ export function CategoryRow({
           <path d="m15 5 4 4" />
         </svg>
       </button>
-
-      {/* Delete */}
       <button
         className={`${isFlat ? "p-1.5 rounded-lg" : "p-1.5 rounded-md"} transition-all active:scale-[0.9] disabled:opacity-20`}
         style={{ opacity: isFlat ? 0.55 : 0.5 }}

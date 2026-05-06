@@ -49,12 +49,9 @@ export function GroupRowHeader({
 }: GroupRowHeaderProps): JSX.Element {
   const isEditing = inlineEditingGroupID === group.id;
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const isCancelingRef = useRef(false);
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
+    if (isEditing && inputRef.current) { inputRef.current.focus(); inputRef.current.select(); }
   }, [isEditing]);
 
   return (
@@ -62,7 +59,6 @@ export function GroupRowHeader({
       className="flex items-center gap-2.5 px-3 py-2.5 select-none"
       style={{ backgroundColor: "rgba(var(--color-brand-deep-green-rgb), 0.12)" }}
     >
-      {/* Drag handle */}
       <div
         className="touch-none cursor-grab active:cursor-grabbing p-1 -m-1 shrink-0"
         onClick={(e) => e.stopPropagation()}
@@ -80,7 +76,6 @@ export function GroupRowHeader({
         </svg>
       </div>
 
-      {/* Group name */}
       {isEditing ? (
         <input
           ref={inputRef}
@@ -88,17 +83,18 @@ export function GroupRowHeader({
           value={renameGroupName}
           onChange={(e) => onRenameGroupNameChange(e.target.value)}
           onBlur={() => {
-            saveRenameGroup();
+            if (!isCancelingRef.current) saveRenameGroup();
+            isCancelingRef.current = false;
             setInlineEditingGroupID(null);
           }}
           onKeyDown={(e) => {
             e.stopPropagation();
             if (e.key === "Enter") {
               e.preventDefault();
-              saveRenameGroup();
               setInlineEditingGroupID(null);
             } else if (e.key === "Escape") {
               e.preventDefault();
+              isCancelingRef.current = true;
               setInlineEditingGroupID(null);
             }
           }}
@@ -119,7 +115,6 @@ export function GroupRowHeader({
         </button>
       )}
 
-      {/* Category count badge */}
       {categoryCount > 0 && (
         <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full"
           style={{
@@ -130,7 +125,6 @@ export function GroupRowHeader({
         </span>
       )}
 
-      {/* Rename */}
       <button
         className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
         style={{ opacity: 0.55 }}
@@ -146,7 +140,6 @@ export function GroupRowHeader({
         </svg>
       </button>
 
-      {/* Delete */}
       <button
         className="p-1.5 rounded-lg transition-all active:scale-[0.9]"
         style={{ opacity: 0.55 }}
@@ -162,7 +155,6 @@ export function GroupRowHeader({
         </svg>
       </button>
 
-      {/* Chevron */}
       <button
         className="flex items-center justify-center p-2 -m-2 shrink-0 rounded-md transition-all active:opacity-50 ml-1"
         style={{ touchAction: "manipulation" }}

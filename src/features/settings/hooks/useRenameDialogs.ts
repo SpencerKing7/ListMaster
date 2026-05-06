@@ -1,7 +1,7 @@
 // src/features/settings/hooks/useRenameDialogs.ts
 // State and handlers for inline rename editing.
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { isCategoryNameAvailable } from "@/store/reducerHelpers";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useRenameGroup } from "./useRenameGroup";
@@ -38,7 +38,6 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
   const store = useCategoriesStore();
   const group = useRenameGroup();
 
-  // ── Inline rename category ──
   const [inlineEditingCategoryID, setInlineEditingCategoryID] = useState<string | null>(null);
   const [renameCategoryName, setRenameCategoryName] = useState("");
 
@@ -57,7 +56,6 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
     setInlineEditingCategoryID(id);
   }, [store.categories]);
 
-  // Derive the groupID of the category being edited
   const editGroupID = useMemo(() => {
     if (!inlineEditingCategoryID) return undefined;
     return store.categories.find((c) => c.id === inlineEditingCategoryID)?.groupID;
@@ -84,7 +82,6 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
     setRenameCategoryName("");
   }, [inlineEditingCategoryID, renameCategoryName, isRenameDuplicate, store]);
 
-  // ── Inline rename group ──
   const [inlineEditingGroupID, setInlineEditingGroupID] = useState<string | null>(null);
 
   const setInlineEditingGroupIDWithPreFill = useCallback((id: string | null) => {
@@ -97,6 +94,16 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
     setInlineEditingGroupID(id);
   }, [store.groups, group]);
 
+  // Override: useRenameGroup.saveRenameGroup guards on groupToRename (dialog-based); use inlineEditingGroupID instead.
+  const saveRenameGroup = useCallback(() => {
+    if (!inlineEditingGroupID) return;
+    const trimmed = group.renameGroupName.trim();
+    if (!trimmed) return;
+    store.renameGroup(inlineEditingGroupID, trimmed);
+    setInlineEditingGroupID(null);
+    group.onRenameGroupNameChange("");
+  }, [inlineEditingGroupID, group, store]);
+
   return {
     inlineEditingCategoryID,
     renameCategoryName,
@@ -108,5 +115,6 @@ export function useRenameDialogs(): UseRenameDialogsReturn {
     inlineEditingGroupID,
     setInlineEditingGroupID: setInlineEditingGroupIDWithPreFill,
     ...group,
+    saveRenameGroup,
   };
 }

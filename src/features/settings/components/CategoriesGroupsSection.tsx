@@ -134,7 +134,11 @@ export function CategoriesGroupsSection({
             catDragState={catDragState}
             canDeleteCategories={canDeleteCategories}
             handleDragPointerDown={handleDragPointerDown}
-            onRenameCategory={onRenameCategory}
+            inlineEditingCategoryID={inlineEditingCategoryID}
+            setInlineEditingCategoryID={setInlineEditingCategoryID}
+            renameCategoryName={renameCategoryName}
+            onRenameCategoryNameChange={onRenameCategoryNameChange}
+            saveRenameCategory={saveRenameCategory}
             onDeleteCategory={onDeleteCategory}
             onAssignGroup={onAssignGroup}
           />
