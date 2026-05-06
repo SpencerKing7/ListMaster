@@ -21,9 +21,17 @@ interface GroupsMapSectionProps {
   handleDragPointerDown: (e: React.PointerEvent, visualIdx: number, groupID?: string | null) => void;
   expandedGroupIDs: Set<string>;
   toggleGroup: (groupID: string) => void;
-  onRenameCategory: (id: string, name: string) => void;
+  inlineEditingCategoryID: string | null;
+  setInlineEditingCategoryID: (id: string | null) => void;
+  renameCategoryName: string;
+  onRenameCategoryNameChange: (v: string) => void;
+  saveRenameCategory: () => void;
   onDeleteCategory: (id: string, name: string) => void;
-  onRenameGroup: (id: string, name: string) => void;
+  inlineEditingGroupID: string | null;
+  setInlineEditingGroupID: (id: string | null) => void;
+  renameGroupName: string;
+  onRenameGroupNameChange: (v: string) => void;
+  saveRenameGroup: () => void;
   onDeleteGroup: (id: string, name: string) => void;
   onAddCategoryInGroup?: (groupID: string) => void;
 }
@@ -42,9 +50,17 @@ export function GroupsMapSection({
   handleDragPointerDown,
   expandedGroupIDs,
   toggleGroup,
-  onRenameCategory,
+  inlineEditingCategoryID,
+  setInlineEditingCategoryID,
+  renameCategoryName,
+  onRenameCategoryNameChange,
+  saveRenameCategory,
   onDeleteCategory,
-  onRenameGroup,
+  inlineEditingGroupID,
+  setInlineEditingGroupID,
+  renameGroupName,
+  onRenameGroupNameChange,
+  saveRenameGroup,
   onDeleteGroup,
   onAddCategoryInGroup,
 }: GroupsMapSectionProps): JSX.Element {
@@ -88,9 +104,17 @@ export function GroupsMapSection({
             handleGroupDragPointerDown={handleGroupDragPointerDown}
             handleDragPointerDown={handleDragPointerDown}
             toggleGroup={toggleGroup}
-            onRenameCategory={onRenameCategory}
+            inlineEditingCategoryID={inlineEditingCategoryID}
+            setInlineEditingCategoryID={setInlineEditingCategoryID}
+            renameCategoryName={renameCategoryName}
+            onRenameCategoryNameChange={onRenameCategoryNameChange}
+            saveRenameCategory={saveRenameCategory}
             onDeleteCategory={onDeleteCategory}
-            onRenameGroup={onRenameGroup}
+            inlineEditingGroupID={inlineEditingGroupID}
+            setInlineEditingGroupID={setInlineEditingGroupID}
+            renameGroupName={renameGroupName}
+            onRenameGroupNameChange={onRenameGroupNameChange}
+            saveRenameGroup={saveRenameGroup}
             onDeleteGroup={onDeleteGroup}
             onAddCategory={onAddCategoryInGroup ? () => onAddCategoryInGroup(group.id) : undefined}
           />

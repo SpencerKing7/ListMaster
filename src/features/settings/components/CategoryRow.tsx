@@ -1,7 +1,8 @@
 // src/features/settings/components/CategoryRow.tsx
-// A single category row with drag handle, rename, and delete buttons.
+// A single category row with drag handle, inline rename, and delete buttons.
 
 import type { JSX } from "react";
+import { useRef, useEffect } from "react";
 import type { Category } from "@/models/types";
 
 /** Props for a single settings category row. */
@@ -16,7 +17,11 @@ export interface CategoryRowProps {
   /** "grouped" rows use a compact layout, "flat" rows use `<li>` with a subtle bg. */
   variant: "grouped" | "flat";
   handleDragPointerDown: (e: React.PointerEvent, visualIdx: number, groupID?: string | null) => void;
-  onRename: (id: string, name: string) => void;
+  inlineEditingCategoryID: string | null;
+  setInlineEditingCategoryID: (id: string | null) => void;
+  renameCategoryName: string;
+  onRenameCategoryNameChange: (v: string) => void;
+  saveRenameCategory: () => void;
   onDelete: (id: string, name: string) => void;
 }
 
@@ -33,13 +38,26 @@ export function CategoryRow({
   canDelete,
   variant,
   handleDragPointerDown,
-  onRename,
+  inlineEditingCategoryID,
+  setInlineEditingCategoryID,
+  renameCategoryName,
+  onRenameCategoryNameChange,
+  saveRenameCategory,
   onDelete,
 }: CategoryRowProps): JSX.Element {
   const isFlat = variant === "flat";
   const Tag = isFlat ? "li" : "div";
   const sizeClass = isFlat ? "px-3 py-2.5 rounded-xl" : "px-2 py-2 rounded-lg";
   const iconSize = isFlat ? "14" : "13";
+  const isEditing = inlineEditingCategoryID === category.id;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
 
   return (
     <Tag
@@ -62,19 +80,52 @@ export function CategoryRow({
       {/* Drag handle */}
       <div
         className="touch-none cursor-grab active:cursor-grabbing shrink-0 p-1 -m-1"
-        onPointerDown={(e) => handleDragPointerDown(e, visualIdx, groupID)}
+        onPointerDown={(e) => {
+          if (isEditing) return;
+          handleDragPointerDown(e, visualIdx, groupID);
+        }}
       >
         <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-          style={{ color: "var(--color-brand-teal)", opacity: isFlat ? 0.45 : 0.4 }}>
+          style={{ color: "var(--color-brand-teal)", opacity: isFlat ? 0.45 : 0.4, pointerEvents: "none" }}>
           <line x1="4" y1="7" x2="20" y2="7" />
           <line x1="4" y1="12" x2="20" y2="12" />
           <line x1="4" y1="17" x2="20" y2="17" />
         </svg>
       </div>
 
-      <span className={`flex-1 text-sm ${isFlat ? "font-medium" : ""}`} style={{ color: "var(--color-text-primary)" }}>
-        {category.name}
-      </span>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={renameCategoryName}
+          onChange={(e) => onRenameCategoryNameChange(e.target.value)}
+          onBlur={() => {
+            saveRenameCategory();
+            setInlineEditingCategoryID(null);
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") {
+              e.preventDefault();
+              saveRenameCategory();
+              setInlineEditingCategoryID(null);
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setInlineEditingCategoryID(null);
+            }
+          }}
+          className="flex-1 text-sm px-2 py-1 rounded border"
+          style={{
+            borderColor: "var(--color-border-subtle)",
+            color: "var(--color-text-primary)",
+            backgroundColor: "var(--color-surface-input)",
+          }}
+        />
+      ) : (
+        <span className={`flex-1 text-sm ${isFlat ? "font-medium" : ""}`} style={{ color: "var(--color-text-primary)" }}>
+          {category.name}
+        </span>
+      )}
 
       {/* Rename */}
       <button
@@ -82,7 +133,7 @@ export function CategoryRow({
         style={{ opacity: isFlat ? 0.55 : 0.5 }}
         onClick={(e) => {
           e.stopPropagation();
-          onRename(category.id, category.name);
+          setInlineEditingCategoryID(category.id);
         }}
       >
         <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none"

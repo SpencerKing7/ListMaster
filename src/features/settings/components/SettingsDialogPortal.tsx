@@ -4,8 +4,6 @@
 import type { JSX } from "react";
 import type { CategoryGroup } from "@/models/types";
 import type { UseSettingsDialogsReturn } from "@/features/settings/hooks/useSettingsDialogs";
-import { RenameCategoryDialog } from "./RenameCategoryDialog";
-import { RenameGroupDialog } from "./RenameGroupDialog";
 import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
 import { DeleteGroupDialog } from "./DeleteGroupDialog";
 import { GroupAssignmentSheet } from "./GroupAssignmentSheet";
@@ -32,22 +30,6 @@ interface SettingsDialogPortalProps {
 export function SettingsDialogPortal({ d, groups }: SettingsDialogPortalProps): JSX.Element {
   return (
     <>
-      <RenameCategoryDialog
-        categoryToRename={d.categoryToRename}
-        isRenameDuplicate={d.isRenameDuplicate}
-        hasGroups={d.hasGroups}
-        renameCategoryName={d.renameCategoryName}
-        onNameChange={d.onRenameCategoryNameChange}
-        onSave={d.saveRenameCategory}
-        onClose={d.closeRenameCategory}
-      />
-      <RenameGroupDialog
-        groupToRename={d.groupToRename}
-        renameGroupName={d.renameGroupName}
-        onNameChange={d.onRenameGroupNameChange}
-        onSave={d.saveRenameGroup}
-        onClose={d.closeRenameGroup}
-      />
       <DeleteCategoryDialog
         categoryToDelete={d.categoryToDelete}
         onConfirm={d.confirmDeleteCategory}

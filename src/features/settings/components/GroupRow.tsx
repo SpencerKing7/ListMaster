@@ -22,9 +22,17 @@ export interface GroupRowProps {
   handleGroupDragPointerDown: (e: React.PointerEvent, idx: number) => void;
   handleDragPointerDown: (e: React.PointerEvent, visualIdx: number, groupID?: string | null) => void;
   toggleGroup: (groupID: string) => void;
-  onRenameCategory: (id: string, name: string) => void;
+  inlineEditingCategoryID: string | null;
+  setInlineEditingCategoryID: (id: string | null) => void;
+  renameCategoryName: string;
+  onRenameCategoryNameChange: (v: string) => void;
+  saveRenameCategory: () => void;
   onDeleteCategory: (id: string, name: string) => void;
-  onRenameGroup: (id: string, name: string) => void;
+  inlineEditingGroupID: string | null;
+  setInlineEditingGroupID: (id: string | null) => void;
+  renameGroupName: string;
+  onRenameGroupNameChange: (v: string) => void;
+  saveRenameGroup: () => void;
   onDeleteGroup: (id: string, name: string) => void;
   onAddCategory?: () => void;
 }
@@ -45,9 +53,17 @@ export function GroupRow({
   handleGroupDragPointerDown,
   handleDragPointerDown,
   toggleGroup,
-  onRenameCategory,
+  inlineEditingCategoryID,
+  setInlineEditingCategoryID,
+  renameCategoryName,
+  onRenameCategoryNameChange,
+  saveRenameCategory,
   onDeleteCategory,
-  onRenameGroup,
+  inlineEditingGroupID,
+  setInlineEditingGroupID,
+  renameGroupName,
+  onRenameGroupNameChange,
+  saveRenameGroup,
   onDeleteGroup,
   onAddCategory,
 }: GroupRowProps): JSX.Element {
@@ -75,7 +91,11 @@ export function GroupRow({
         categoryCount={groupCategories.length}
         onDragPointerDown={handleGroupDragPointerDown}
         onToggle={toggleGroup}
-        onRename={onRenameGroup}
+        inlineEditingGroupID={inlineEditingGroupID}
+        setInlineEditingGroupID={setInlineEditingGroupID}
+        renameGroupName={renameGroupName}
+        onRenameGroupNameChange={onRenameGroupNameChange}
+        saveRenameGroup={saveRenameGroup}
         onDelete={onDeleteGroup}
       />
 
@@ -88,7 +108,11 @@ export function GroupRow({
         catDragState={catDragState}
         canDeleteCategories={canDeleteCategories}
         handleDragPointerDown={handleDragPointerDown}
-        onRenameCategory={onRenameCategory}
+        inlineEditingCategoryID={inlineEditingCategoryID}
+        setInlineEditingCategoryID={setInlineEditingCategoryID}
+        renameCategoryName={renameCategoryName}
+        onRenameCategoryNameChange={onRenameCategoryNameChange}
+        saveRenameCategory={saveRenameCategory}
         onDeleteCategory={onDeleteCategory}
         onAddCategory={onAddCategory}
       />

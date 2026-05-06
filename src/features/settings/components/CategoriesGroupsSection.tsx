@@ -36,10 +36,20 @@ interface CategoriesGroupsSectionProps {
   expandedGroupIDs: Set<string>;
   toggleGroup: (groupID: string) => void;
 
+  // ── Inline editing ──
+  inlineEditingCategoryID: string | null;
+  setInlineEditingCategoryID: (id: string | null) => void;
+  renameCategoryName: string;
+  onRenameCategoryNameChange: (v: string) => void;
+  saveRenameCategory: () => void;
+  inlineEditingGroupID: string | null;
+  setInlineEditingGroupID: (id: string | null) => void;
+  renameGroupName: string;
+  onRenameGroupNameChange: (v: string) => void;
+  saveRenameGroup: () => void;
+
   // ── Callbacks ──
-  onRenameCategory: (id: string, name: string) => void;
   onDeleteCategory: (id: string, name: string) => void;
-  onRenameGroup: (id: string, name: string) => void;
   onDeleteGroup: (id: string, name: string) => void;
   onAssignGroup: (categoryId: string, categoryName: string) => void;
   onAddCategory: () => void;
@@ -63,9 +73,17 @@ export function CategoriesGroupsSection({
   handleGroupDragPointerDown,
   expandedGroupIDs,
   toggleGroup,
-  onRenameCategory,
+  inlineEditingCategoryID,
+  setInlineEditingCategoryID,
+  renameCategoryName,
+  onRenameCategoryNameChange,
+  saveRenameCategory,
+  inlineEditingGroupID,
+  setInlineEditingGroupID,
+  renameGroupName,
+  onRenameGroupNameChange,
+  saveRenameGroup,
   onDeleteCategory,
-  onRenameGroup,
   onDeleteGroup,
   onAssignGroup,
   onAddCategory,
@@ -97,9 +115,17 @@ export function CategoriesGroupsSection({
             handleDragPointerDown={handleDragPointerDown}
             expandedGroupIDs={expandedGroupIDs}
             toggleGroup={toggleGroup}
-            onRenameCategory={onRenameCategory}
+            inlineEditingCategoryID={inlineEditingCategoryID}
+            setInlineEditingCategoryID={setInlineEditingCategoryID}
+            renameCategoryName={renameCategoryName}
+            onRenameCategoryNameChange={onRenameCategoryNameChange}
+            saveRenameCategory={saveRenameCategory}
             onDeleteCategory={onDeleteCategory}
-            onRenameGroup={onRenameGroup}
+            inlineEditingGroupID={inlineEditingGroupID}
+            setInlineEditingGroupID={setInlineEditingGroupID}
+            renameGroupName={renameGroupName}
+            onRenameGroupNameChange={onRenameGroupNameChange}
+            saveRenameGroup={saveRenameGroup}
             onDeleteGroup={onDeleteGroup}
             onAddCategoryInGroup={onAddCategoryInGroup}
           />
@@ -123,7 +149,11 @@ export function CategoriesGroupsSection({
           catDragState={catDragState}
           canDeleteCategories={canDeleteCategories}
           handleDragPointerDown={handleDragPointerDown}
-          onRenameCategory={onRenameCategory}
+          inlineEditingCategoryID={inlineEditingCategoryID}
+          setInlineEditingCategoryID={setInlineEditingCategoryID}
+          renameCategoryName={renameCategoryName}
+          onRenameCategoryNameChange={onRenameCategoryNameChange}
+          saveRenameCategory={saveRenameCategory}
           onDeleteCategory={onDeleteCategory}
         />
       )}

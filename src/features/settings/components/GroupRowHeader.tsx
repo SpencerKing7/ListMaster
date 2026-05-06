@@ -2,6 +2,7 @@
 // Header row for a collapsible group: drag handle, chevron, name, badge, actions.
 
 import type { JSX } from "react";
+import { useRef, useEffect } from "react";
 import type { CategoryGroup } from "@/models/types";
 
 // MARK: - Props
@@ -20,8 +21,11 @@ interface GroupRowHeaderProps {
   onDragPointerDown: (e: React.PointerEvent, idx: number) => void;
   /** Toggles expand/collapse for this group. */
   onToggle: (groupID: string) => void;
-  /** Called to open the rename dialog for this group. */
-  onRename: (id: string, name: string) => void;
+  inlineEditingGroupID: string | null;
+  setInlineEditingGroupID: (id: string | null) => void;
+  renameGroupName: string;
+  onRenameGroupNameChange: (v: string) => void;
+  saveRenameGroup: () => void;
   /** Called to open the delete dialog for this group. */
   onDelete: (id: string, name: string) => void;
 }
@@ -36,9 +40,23 @@ export function GroupRowHeader({
   categoryCount,
   onDragPointerDown,
   onToggle,
-  onRename,
+  inlineEditingGroupID,
+  setInlineEditingGroupID,
+  renameGroupName,
+  onRenameGroupNameChange,
+  saveRenameGroup,
   onDelete,
 }: GroupRowHeaderProps): JSX.Element {
+  const isEditing = inlineEditingGroupID === group.id;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   return (
     <div
       className="flex items-center gap-2.5 px-3 py-2.5 select-none"
@@ -50,11 +68,12 @@ export function GroupRowHeader({
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => {
           e.stopPropagation();
+          if (isEditing) return;
           onDragPointerDown(e, groupVisualIdx);
         }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-          style={{ color: "var(--color-brand-teal)", opacity: 0.55 }}>
+          style={{ color: "var(--color-brand-teal)", opacity: 0.55, pointerEvents: "none" }}>
           <line x1="4" y1="7" x2="20" y2="7" />
           <line x1="4" y1="12" x2="20" y2="12" />
           <line x1="4" y1="17" x2="20" y2="17" />
@@ -62,13 +81,43 @@ export function GroupRowHeader({
       </div>
 
       {/* Group name */}
-      <button
-        className="flex-1 text-left text-sm font-semibold tracking-[-0.01em] py-0.5"
-        style={{ color: "var(--color-text-primary)", touchAction: "manipulation" }}
-        onClick={() => onToggle(group.id)}
-      >
-        {group.name}
-      </button>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={renameGroupName}
+          onChange={(e) => onRenameGroupNameChange(e.target.value)}
+          onBlur={() => {
+            saveRenameGroup();
+            setInlineEditingGroupID(null);
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") {
+              e.preventDefault();
+              saveRenameGroup();
+              setInlineEditingGroupID(null);
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setInlineEditingGroupID(null);
+            }
+          }}
+          className="flex-1 text-sm font-semibold px-2 py-1 rounded border"
+          style={{
+            borderColor: "var(--color-border-subtle)",
+            color: "var(--color-text-primary)",
+            backgroundColor: "var(--color-surface-input)",
+          }}
+        />
+      ) : (
+        <button
+          className="flex-1 text-left text-sm font-semibold tracking-[-0.01em] py-0.5"
+          style={{ color: "var(--color-text-primary)", touchAction: "manipulation" }}
+          onClick={() => onToggle(group.id)}
+        >
+          {group.name}
+        </button>
+      )}
 
       {/* Category count badge */}
       {categoryCount > 0 && (
@@ -87,7 +136,7 @@ export function GroupRowHeader({
         style={{ opacity: 0.55 }}
         onClick={(e) => {
           e.stopPropagation();
-          onRename(group.id, group.name);
+          setInlineEditingGroupID(group.id);
         }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
