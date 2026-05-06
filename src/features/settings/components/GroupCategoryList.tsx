@@ -27,8 +27,11 @@ interface GroupCategoryListProps {
   canDeleteCategories: boolean;
   /** Called when a category drag handle receives pointer-down. */
   handleDragPointerDown: (e: React.PointerEvent, visualIdx: number, groupID?: string | null) => void;
-  /** Opens the rename dialog for a category. */
-  onRenameCategory: (id: string, name: string) => void;
+  inlineEditingCategoryID: string | null;
+  setInlineEditingCategoryID: (id: string | null) => void;
+  renameCategoryName: string;
+  onRenameCategoryNameChange: (v: string) => void;
+  saveRenameCategory: () => void;
   /** Opens the delete dialog for a category. */
   onDeleteCategory: (id: string, name: string) => void;
   /** Called to open the add category dialog for this group. */
@@ -47,7 +50,11 @@ export function GroupCategoryList({
   catDragState,
   canDeleteCategories,
   handleDragPointerDown,
-  onRenameCategory,
+  inlineEditingCategoryID,
+  setInlineEditingCategoryID,
+  renameCategoryName,
+  onRenameCategoryNameChange,
+  saveRenameCategory,
   onDeleteCategory,
   onAddCategory,
 }: GroupCategoryListProps): JSX.Element {
@@ -104,7 +111,11 @@ export function GroupCategoryList({
                 canDelete={canDeleteCategories}
                 variant="grouped"
                 handleDragPointerDown={handleDragPointerDown}
-                onRename={onRenameCategory}
+                inlineEditingCategoryID={inlineEditingCategoryID}
+                setInlineEditingCategoryID={setInlineEditingCategoryID}
+                renameCategoryName={renameCategoryName}
+                onRenameCategoryNameChange={onRenameCategoryNameChange}
+                saveRenameCategory={saveRenameCategory}
                 onDelete={onDeleteCategory}
               />
             );

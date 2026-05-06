@@ -1,132 +1,112 @@
 // src/features/settings/hooks/useRenameDialogs.ts
-// State and handlers for the rename-category and rename-group dialogs.
+// State and handlers for inline rename editing.
 
 import { useState, useCallback, useMemo } from "react";
 import { isCategoryNameAvailable } from "@/store/reducerHelpers";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
+import { useRenameGroup } from "./useRenameGroup";
+import type { UseRenameGroupReturn } from "./useRenameGroup";
 
 // MARK: - Types
 
 /** Return type for {@link useRenameDialogs}. */
-export interface UseRenameDialogsReturn {
-  /** The category being renamed, or `null` when idle. */
-  categoryToRename: { id: string; name: string } | null;
+export interface UseRenameDialogsReturn extends UseRenameGroupReturn {
+  /** ID of the category currently in inline-edit mode, or `null` when idle. */
+  inlineEditingCategoryID: string | null;
   /** Current rename-category input value. */
   renameCategoryName: string;
   /** Updates the rename-category input value. */
   onRenameCategoryNameChange: (v: string) => void;
-  /** Opens the rename-category dialog pre-filled with the given name. */
-  openRenameCategory: (id: string, name: string) => void;
-  /** Closes the rename-category dialog and resets the input. */
-  closeRenameCategory: () => void;
+  /** Enters inline-edit mode for a category. */
+  setInlineEditingCategoryID: (id: string | null) => void;
   /** Whether the rename input collides with an existing name in the same group. */
   isRenameDuplicate: boolean;
   /** Whether any groups exist (for adaptive error message). */
   hasGroups: boolean;
-  /** Saves the renamed category and closes the dialog. */
+  /** Saves the renamed category and exits inline-edit mode. */
   saveRenameCategory: () => void;
-  /** The group being renamed, or `null` when idle. */
-  groupToRename: { id: string; name: string } | null;
-  /** Current rename-group input value. */
-  renameGroupName: string;
-  /** Updates the rename-group input value. */
-  onRenameGroupNameChange: (v: string) => void;
-  /** Opens the rename-group dialog pre-filled with the given name. */
-  openRenameGroup: (id: string, name: string) => void;
-  /** Closes the rename-group dialog and resets the input. */
-  closeRenameGroup: () => void;
-  /** Saves the renamed group and closes the dialog. */
-  saveRenameGroup: () => void;
+  /** ID of the group currently in inline-edit mode, or `null` when idle. */
+  inlineEditingGroupID: string | null;
+  /** Enters inline-edit mode for a group. */
+  setInlineEditingGroupID: (id: string | null) => void;
 }
 
 // MARK: - Hook
 
-/** Manages rename state for both categories and groups. */
+/** Manages inline rename state for both categories and groups. */
 export function useRenameDialogs(): UseRenameDialogsReturn {
   const store = useCategoriesStore();
+  const group = useRenameGroup();
 
-  // ── Rename category ──
-  const [categoryToRename, setCategoryToRename] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  // ── Inline rename category ──
+  const [inlineEditingCategoryID, setInlineEditingCategoryID] = useState<string | null>(null);
   const [renameCategoryName, setRenameCategoryName] = useState("");
 
-  const openRenameCategory = useCallback((id: string, name: string) => {
-    setRenameCategoryName(name);
-    setCategoryToRename({ id, name });
+  const onRenameCategoryNameChange = useCallback((v: string) => {
+    setRenameCategoryName(v);
   }, []);
 
-  const closeRenameCategory = useCallback(() => {
-    setCategoryToRename(null);
-    setRenameCategoryName("");
-  }, []);
+  // When entering edit mode, pre-fill the current name
+  const setInlineEditingCategoryIDWithPreFill = useCallback((id: string | null) => {
+    if (id !== null) {
+      const category = store.categories.find((c) => c.id === id);
+      setRenameCategoryName(category?.name ?? "");
+    } else {
+      setRenameCategoryName("");
+    }
+    setInlineEditingCategoryID(id);
+  }, [store.categories]);
 
-  const saveRenameCategory = useCallback(() => {
-    if (!categoryToRename) return;
-    const trimmed = renameCategoryName.trim();
-    if (!trimmed) return;
-    store.renameCategory(categoryToRename.id, trimmed);
-    closeRenameCategory();
-  }, [categoryToRename, renameCategoryName, store, closeRenameCategory]);
-
-  // Derive the groupID of the category being renamed from the store
-  const renameGroupID = useMemo(() => {
-    if (!categoryToRename) return undefined;
-    return store.categories.find((c) => c.id === categoryToRename.id)?.groupID;
-  }, [categoryToRename, store.categories]);
+  // Derive the groupID of the category being edited
+  const editGroupID = useMemo(() => {
+    if (!inlineEditingCategoryID) return undefined;
+    return store.categories.find((c) => c.id === inlineEditingCategoryID)?.groupID;
+  }, [inlineEditingCategoryID, store.categories]);
 
   const isRenameDuplicate = useMemo(() => {
-    if (!categoryToRename) return false;
+    if (!inlineEditingCategoryID) return false;
     const trimmed = renameCategoryName.trim();
     if (!trimmed) return false;
     return !isCategoryNameAvailable(
       store.categories,
       trimmed,
-      categoryToRename.id,
-      renameGroupID,
+      inlineEditingCategoryID,
+      editGroupID,
     );
-  }, [categoryToRename, renameCategoryName, store.categories, renameGroupID]);
+  }, [inlineEditingCategoryID, renameCategoryName, store.categories, editGroupID]);
 
-  // ── Rename group ──
-  const [groupToRename, setGroupToRename] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [renameGroupName, setRenameGroupName] = useState("");
+  const saveRenameCategory = useCallback(() => {
+    if (!inlineEditingCategoryID) return;
+    const trimmed = renameCategoryName.trim();
+    if (!trimmed || isRenameDuplicate) return;
+    store.renameCategory(inlineEditingCategoryID, trimmed);
+    setInlineEditingCategoryID(null);
+    setRenameCategoryName("");
+  }, [inlineEditingCategoryID, renameCategoryName, isRenameDuplicate, store]);
 
-  const openRenameGroup = useCallback((id: string, name: string) => {
-    setRenameGroupName(name);
-    setGroupToRename({ id, name });
-  }, []);
+  // ── Inline rename group ──
+  const [inlineEditingGroupID, setInlineEditingGroupID] = useState<string | null>(null);
 
-  const closeRenameGroup = useCallback(() => {
-    setGroupToRename(null);
-    setRenameGroupName("");
-  }, []);
-
-  const saveRenameGroup = useCallback(() => {
-    if (!groupToRename) return;
-    const trimmed = renameGroupName.trim();
-    if (!trimmed) return;
-    store.renameGroup(groupToRename.id, trimmed);
-    closeRenameGroup();
-  }, [groupToRename, renameGroupName, store, closeRenameGroup]);
+  const setInlineEditingGroupIDWithPreFill = useCallback((id: string | null) => {
+    if (id !== null) {
+      const grp = store.groups.find((g) => g.id === id);
+      group.onRenameGroupNameChange(grp?.name ?? "");
+    } else {
+      group.onRenameGroupNameChange("");
+    }
+    setInlineEditingGroupID(id);
+  }, [store.groups, group]);
 
   return {
-    categoryToRename,
+    inlineEditingCategoryID,
     renameCategoryName,
-    onRenameCategoryNameChange: setRenameCategoryName,
-    openRenameCategory,
-    closeRenameCategory,
+    onRenameCategoryNameChange,
+    setInlineEditingCategoryID: setInlineEditingCategoryIDWithPreFill,
     saveRenameCategory,
     isRenameDuplicate,
     hasGroups: store.groups.length > 0,
-    groupToRename,
-    renameGroupName,
-    onRenameGroupNameChange: setRenameGroupName,
-    openRenameGroup,
-    closeRenameGroup,
-    saveRenameGroup,
+    inlineEditingGroupID,
+    setInlineEditingGroupID: setInlineEditingGroupIDWithPreFill,
+    ...group,
   };
 }

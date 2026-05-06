@@ -14,7 +14,11 @@ export interface FlatLayoutProps {
   catDragState: CatDragState | null;
   canDeleteCategories: boolean;
   handleDragPointerDown: (e: React.PointerEvent, visualIdx: number, groupID?: string | null) => void;
-  onRenameCategory: (id: string, name: string) => void;
+  inlineEditingCategoryID: string | null;
+  setInlineEditingCategoryID: (id: string | null) => void;
+  renameCategoryName: string;
+  onRenameCategoryNameChange: (v: string) => void;
+  saveRenameCategory: () => void;
   onDeleteCategory: (id: string, name: string) => void;
 }
 
@@ -27,7 +31,11 @@ export function FlatLayout({
   catDragState,
   canDeleteCategories,
   handleDragPointerDown,
-  onRenameCategory,
+  inlineEditingCategoryID,
+  setInlineEditingCategoryID,
+  renameCategoryName,
+  onRenameCategoryNameChange,
+  saveRenameCategory,
   onDeleteCategory,
 }: FlatLayoutProps): JSX.Element {
   const scopedDS = catDragState?.groupID === null ? catDragState : null;
@@ -69,7 +77,11 @@ export function FlatLayout({
             canDelete={canDeleteCategories}
             variant="flat"
             handleDragPointerDown={handleDragPointerDown}
-            onRename={onRenameCategory}
+            inlineEditingCategoryID={inlineEditingCategoryID}
+            setInlineEditingCategoryID={setInlineEditingCategoryID}
+            renameCategoryName={renameCategoryName}
+            onRenameCategoryNameChange={onRenameCategoryNameChange}
+            saveRenameCategory={saveRenameCategory}
             onDelete={onDeleteCategory}
           />
         );
