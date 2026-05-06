@@ -31,6 +31,8 @@ interface GroupCategoryListProps {
   onRenameCategory: (id: string, name: string) => void;
   /** Opens the delete dialog for a category. */
   onDeleteCategory: (id: string, name: string) => void;
+  /** Called to open the add category dialog for this group. */
+  onAddCategory?: () => void;
 }
 
 // MARK: - Component
@@ -47,6 +49,7 @@ export function GroupCategoryList({
   handleDragPointerDown,
   onRenameCategory,
   onDeleteCategory,
+  onAddCategory,
 }: GroupCategoryListProps): JSX.Element {
   const scopedDS = catDragState?.groupID === groupID ? catDragState : null;
   const draggingCatID = scopedDS
@@ -110,6 +113,16 @@ export function GroupCategoryList({
             <p className="text-xs py-2 pl-1" style={{ color: "var(--color-text-secondary)", opacity: 0.6 }}>
               No categories yet
             </p>
+          )}
+          {isExpanded && onAddCategory && (
+            <button
+              type="button"
+              className="w-full text-left text-xs py-2 pl-1 transition-all active:scale-[0.96] active:opacity-70"
+              style={{ color: "var(--color-brand-green)", touchAction: "manipulation" }}
+              onClick={onAddCategory}
+            >
+              + Add category
+            </button>
           )}
         </div>
       </div>

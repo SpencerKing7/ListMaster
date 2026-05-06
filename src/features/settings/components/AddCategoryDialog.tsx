@@ -2,6 +2,7 @@
 // Dialog for adding a new category with an optional group picker.
 
 import type { JSX } from "react";
+import { useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,17 @@ export function AddCategoryDialog({
   onClose,
   groups,
 }: AddCategoryDialogProps): JSX.Element {
+  const pillScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || !pillScrollRef.current) return;
+
+    const selectedPill = pillScrollRef.current.querySelector('[data-selected]');
+    if (selectedPill instanceof HTMLElement) {
+      selectedPill.scrollIntoView({ behavior: "instant", inline: "center", block: "nearest" });
+    }
+  }, [isOpen, selectedGroupID]);
+
   return (
     <Dialog
       open={isOpen}
@@ -91,38 +103,52 @@ export function AddCategoryDialog({
             <p className="text-xs font-medium px-0.5" style={{ color: "var(--color-text-secondary)" }}>
               Group
             </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => onGroupChange(null)}
-                className="h-9 rounded-xl px-3 text-sm font-medium transition-colors"
-                style={{
-                  touchAction: "manipulation",
-                  backgroundColor: selectedGroupID === null
-                    ? "var(--color-brand-green)"
-                    : "var(--color-surface-input)",
-                  color: selectedGroupID === null ? "#fff" : "var(--color-text-secondary)",
-                }}
+            <div
+              className="relative"
+              style={{
+                maskImage: "linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)",
+              }}
+            >
+              <div
+                ref={pillScrollRef}
+                className="flex flex-row gap-2 overflow-x-auto"
+                style={{ scrollbarWidth: "none", paddingLeft: "8px", paddingRight: "8px" }}
               >
-                No Group
-              </button>
-              {groups.map((group) => (
                 <button
-                  key={group.id}
                   type="button"
-                  onClick={() => onGroupChange(group.id)}
-                  className="h-9 rounded-xl px-3 text-sm font-medium transition-colors"
+                  onClick={() => onGroupChange(null)}
+                  className="h-9 rounded-xl px-3 text-sm font-medium transition-colors flex-shrink-0"
+                  data-selected={selectedGroupID === null ? "" : undefined}
                   style={{
                     touchAction: "manipulation",
-                    backgroundColor: selectedGroupID === group.id
+                    backgroundColor: selectedGroupID === null
                       ? "var(--color-brand-green)"
                       : "var(--color-surface-input)",
-                    color: selectedGroupID === group.id ? "#fff" : "var(--color-text-primary)",
+                    color: selectedGroupID === null ? "#fff" : "var(--color-text-secondary)",
                   }}
                 >
-                  {group.name}
+                  No Group
                 </button>
-              ))}
+                {groups.map((group) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => onGroupChange(group.id)}
+                    className="h-9 rounded-xl px-3 text-sm font-medium transition-colors flex-shrink-0"
+                    data-selected={selectedGroupID === group.id ? "" : undefined}
+                    style={{
+                      touchAction: "manipulation",
+                      backgroundColor: selectedGroupID === group.id
+                        ? "var(--color-brand-green)"
+                        : "var(--color-surface-input)",
+                      color: selectedGroupID === group.id ? "#fff" : "var(--color-text-primary)",
+                    }}
+                  >
+                    {group.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
