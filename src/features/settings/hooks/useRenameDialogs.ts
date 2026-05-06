@@ -1,7 +1,7 @@
 // src/features/settings/hooks/useRenameDialogs.ts
 // State and handlers for inline rename editing.
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { isCategoryNameAvailable } from "@/store/reducerHelpers";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useRenameGroup } from "./useRenameGroup";

@@ -1,22 +1,23 @@
-// src/App.tsx
+// src/App.tsx — Root application component: HashRouter, route tree, and splash screen gate.
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { JSX } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useSettingsStore } from "./store/useSettingsStore";
-import { useCategoriesStore } from "./store/useCategoriesStore";
-import { OnboardingWelcomeScreen } from "./screens/OnboardingWelcomeScreen";
-import { OnboardingSetupScreen } from "./screens/OnboardingSetupScreen";
-import { OnboardingSyncScreen } from "./screens/OnboardingSyncScreen";
-import { OnboardingInstallScreen } from "./screens/OnboardingInstallScreen";
-import { MainScreen } from "./screens/MainScreen";
-import { SplashScreen } from "./screens/SplashScreen";
-import { PageTransitionWrapper } from "./components/PageTransitionWrapper";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { useCategoriesStore } from "@/store/useCategoriesStore";
+import { OnboardingWelcomeScreen } from "@/screens/OnboardingWelcomeScreen";
+import { OnboardingSetupScreen } from "@/screens/OnboardingSetupScreen";
+import { OnboardingSyncScreen } from "@/screens/OnboardingSyncScreen";
+import { OnboardingInstallScreen } from "@/screens/OnboardingInstallScreen";
+import { MainScreen } from "@/screens/MainScreen";
+import { SplashScreen } from "@/screens/SplashScreen";
+import { PageTransitionWrapper } from "@/components/PageTransitionWrapper";
 
 // Declare gtag as a global function (loaded by GA script in index.html)
 declare global {
   function gtag(command: string, targetId: string, config?: Record<string, unknown>): void;
 }
 
+/** Root application component. Renders the hash router, route tree, and splash screen gate. */
 export function App(): JSX.Element {
   const { hasCompletedOnboarding } = useSettingsStore();
   const { reload } = useCategoriesStore();

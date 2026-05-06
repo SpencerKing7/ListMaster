@@ -1,7 +1,5 @@
-// src/store/useCategoriesStore.ts
-// React Context provider and hook for the categories store.
-// Cloud sync, dispatch wrappers, and derived values are extracted into
-// useCloudSync.ts, useCategoryActions.ts, and useCategoryDerived.ts.
+// src/store/useCategoriesStore.ts — React Context provider and hook for the categories store.
+// Sync, dispatch wrappers, and derived values are in useCloudSync.ts, useCategoryActions.ts, and useCategoryDerived.ts.
 
 import {
   createContext,
@@ -22,8 +20,6 @@ import { useCategoryActions } from "@/store/useCategoryActions";
 import { useCategoryDerived } from "@/store/useCategoryDerived";
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
-
-// MARK: - Provider
 
 /** Provides the categories store to the component tree. */
 export function StoreProvider({

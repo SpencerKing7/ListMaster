@@ -1,4 +1,4 @@
-// src/services/firebaseConfig.ts
+// src/services/firebaseConfig.ts — Firebase app initialisation and singleton accessor for db/auth.
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import {
   initializeFirestore,

@@ -1,4 +1,5 @@
 // src/services/authService.ts
+// Manages Firebase anonymous authentication for cloud sync.
 import {
   signInAnonymously,
   onAuthStateChanged,

@@ -1,12 +1,14 @@
-// src/components/GroupTabBar.tsx
+// src/components/GroupTabBar.tsx — Horizontally-scrollable group tab bar with spring underline indicator and drag-to-scroll.
 import { useRef, useLayoutEffect, useCallback } from "react";
 import type { JSX } from "react";
 
-// MARK: - GroupTabBar
-
+/** Props for the {@link GroupTabBar} component. */
 interface GroupTabBarProps {
+  /** All user-defined groups to render as tabs (in addition to the implicit "All" tab). */
   groups: { id: string; name: string; sortOrder: number }[];
+  /** The currently active group ID, or `null` when the "All" tab is selected. */
   selectedGroupID: string | null;
+  /** Called when the user taps a tab or the "All" tab. */
   onSelectGroup: (id: string | null) => void;
 }
 

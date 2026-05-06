@@ -1,4 +1,4 @@
-/** Full-screen branded splash shown to returning users on app launch. */
+// src/screens/SplashScreen.tsx — Full-screen branded splash shown to returning users on app launch.
 import { useState, useEffect } from "react";
 import type { JSX } from "react";
 

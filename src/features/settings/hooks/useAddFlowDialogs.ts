@@ -1,5 +1,4 @@
-// src/features/settings/hooks/useAddFlowDialogs.ts
-// State and handlers for the "Add Category" and "Add Group" flows.
+// src/features/settings/hooks/useAddFlowDialogs.ts — State and handlers for the "Add Category" and "Add Group" flows.
 
 import { useState, useCallback, useMemo } from "react";
 import { isCategoryNameAvailable } from "@/store/reducerHelpers";
@@ -77,14 +76,12 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     );
   }, [addCategoryName, addCategoryGroupID, store.categories]);
 
-  /** Opens the Add Category dialog pre-populated with the current group. */
   const openAddCategoryDialog = useCallback(() => {
     setAddCategoryGroupID(store.selectedGroupID);
     setAddCategoryName("");
     setAddMode("category");
   }, [store.selectedGroupID]);
 
-  /** Opens the Add Category dialog for a specific group. */
   const openAddCategoryDialogForGroup = useCallback((groupID: string) => {
     setAddCategoryGroupID(groupID);
     setAddCategoryName("");

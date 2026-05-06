@@ -4,3 +4,8 @@ dist-ssr/
 *.local
 .DS_Store
 .env
+.claude/
+.github/
+.vscode/
+docs/
+CLAUDE.md

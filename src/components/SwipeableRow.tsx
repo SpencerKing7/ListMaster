@@ -1,3 +1,4 @@
+// src/components/SwipeableRow.tsx — Swipe-left-to-delete row wrapper mirroring iOS UITableView trailing swipe.
 /**
  * SwipeableRow wraps a checklist item with swipe-left-to-reveal delete functionality,
  * mirroring iOS UITableView trailing swipe actions.

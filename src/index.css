@@ -52,6 +52,7 @@
 
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
+  --color-text-on-brand: var(--color-text-on-brand);
 
   /* Overlay and elevation tokens */
   --color-surface-overlay: var(--color-surface-overlay);

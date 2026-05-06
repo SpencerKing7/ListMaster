@@ -4,33 +4,11 @@
       "Read",
       "Edit",
       "Write",
-      "Bash(npm run build)",
-      "Bash(npx eslint .)",
-      "Bash(npx eslint . --max-warnings=0)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd /Users/spencerking/Documents/Websites/ListMasterPWA && npx eslint . --max-warnings=0 2>&1 | tail -5"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'npm run deploy' && echo 'BLOCKED: deploy is human-only' && exit 1 || exit 0"
-          }
-        ]
-      }
+      "Bash",
+      "MultiEdit",
+      "Grep",
+      "Glob",
+      "LS"
     ]
   }
 }

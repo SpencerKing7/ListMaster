@@ -1,4 +1,4 @@
-// src/store/useTheme.ts
+// src/store/useTheme.ts — DOM-application helpers for appearance, color theme, and text size.
 import type { TextSize, ColorTheme } from "@/models/types";
 
 // MARK: - Surface background lookup

@@ -1,9 +1,10 @@
-// src/screens/OnboardingWelcomeScreen.tsx
+// src/screens/OnboardingWelcomeScreen.tsx — First onboarding screen with animated welcome message.
 import { useState, useEffect } from "react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+/** First onboarding screen — animated welcome hero that navigates to /welcome. */
 export function OnboardingWelcomeScreen(): JSX.Element {
   const navigate = useNavigate();
   const [isEntered, setIsEntered] = useState(false);

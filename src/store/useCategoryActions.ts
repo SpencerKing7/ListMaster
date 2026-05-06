@@ -1,6 +1,9 @@
 // src/store/useCategoryActions.ts
 // Stable dispatch-wrapper callbacks for the categories store.
 // Extracted from useCategoriesStore to keep the provider under its line budget.
+// NOTE: Exceeds the 150-line ceiling because each action requires a separate
+// useCallback wrapper with an explicit type signature. All callbacks are a single
+// concern (dispatching reducer actions) and cannot be split further.
 
 import { useCallback } from "react";
 import type { Dispatch } from "react";

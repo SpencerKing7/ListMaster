@@ -1,4 +1,5 @@
 // src/store/useSyncActions.ts
+// Stable callbacks for enabling, disabling, and adopting cloud sync codes.
 import { useCallback } from "react";
 import { SettingsService } from "@/services/settingsService";
 import { generateSyncCode } from "@/lib/utils";

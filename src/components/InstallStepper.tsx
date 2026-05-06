@@ -26,7 +26,7 @@ function StepCard({
           className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 text-xs font-bold"
           style={{
             backgroundColor: "var(--color-brand-green)",
-            color: "#fff",
+            color: "var(--color-text-on-brand)",
           }}
         >
           {index + 1}

@@ -1,4 +1,4 @@
-// src/models/types.ts
+// src/models/types.ts — All shared interface and type declarations; no functions or imports.
 
 // MARK: - Appearance
 
@@ -7,6 +7,7 @@ export type AppearanceMode = "system" | "light" | "dark";
 
 // MARK: - Data
 
+/** A single checklist item belonging to a category. */
 export interface ChecklistItem {
   id: string; // UUID string — matches Swift UUID.uuidString
   name: string;
@@ -15,6 +16,7 @@ export interface ChecklistItem {
   createdAt: number;
 }
 
+/** A named checklist (called a "list" in iOS) that owns a collection of items. */
 export interface Category {
   id: string; // UUID string
   name: string;
@@ -27,6 +29,7 @@ export interface Category {
   groupID?: string;
 }
 
+/** A named group that organises multiple categories under a shared tab. */
 export interface CategoryGroup {
   id: string; // UUID v4
   name: string; // User-visible label — e.g. "Shopping", "Work"

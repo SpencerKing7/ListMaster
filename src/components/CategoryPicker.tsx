@@ -1,4 +1,4 @@
-// src/components/CategoryPicker.tsx
+// src/components/CategoryPicker.tsx — Horizontally-scrollable pill row for selecting the active category.
 import { useEffect } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";

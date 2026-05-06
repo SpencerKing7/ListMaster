@@ -1,8 +1,10 @@
 // src/components/InstallToast.tsx
+// Dismissible bottom toast prompting in-browser users to install the PWA.
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { JSX } from "react";
 import { InstallPromptService } from "@/services/installPromptService";
 
+/** Props for the {@link InstallToast} component. */
 interface InstallToastProps {
   /** Called when user taps the toast body (not ×). Parent opens InstallSheet. */
   onOpenInstallSheet: () => void;

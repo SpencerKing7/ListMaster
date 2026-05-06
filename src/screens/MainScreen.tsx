@@ -1,4 +1,4 @@
-// src/screens/MainScreen.tsx
+// src/screens/MainScreen.tsx — Primary route: category picker, checklist panel, and tab bar.
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
@@ -9,6 +9,7 @@ import { SettingsSheet } from "./SettingsSheet";
 import { InstallToast } from "@/components/InstallToast";
 import { InstallSheet } from "@/components/InstallSheet";
 
+/** Primary app screen — header, category picker, checklist panel, bottom bar, and overlays. */
 export function MainScreen(): JSX.Element {
   const store = useCategoriesStore();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

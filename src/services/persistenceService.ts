@@ -1,4 +1,5 @@
 // src/services/persistenceService.ts
+// The only file that reads/writes category list data to localStorage.
 import type { Category, CategoryGroup } from "@/models/types";
 
 const STORAGE_KEY = "grocery-lists-state";

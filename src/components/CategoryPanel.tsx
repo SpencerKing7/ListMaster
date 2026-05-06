@@ -13,8 +13,11 @@ import { ListMetaBar } from "./ListMetaBar";
 import { RenameItemDialog } from "./RenameItemDialog";
 import { noGroupIcon, noItemsIcon } from "./CategoryPanelIcons";
 
+/** Props for the {@link CategoryPanel} component. */
 interface CategoryPanelProps {
+  /** The selected category to display, or `null` when none is selected. */
   category: Category | null;
+  /** Ref forwarded to the scrollable list container for scroll-position tracking. */
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 

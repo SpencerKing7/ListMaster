@@ -1,6 +1,8 @@
 // src/store/useCategoryDerived.ts
 // Derived / computed values from the categories store state.
 // Extracted from useCategoriesStore to keep the provider focused.
+// NOTE: Marginally exceeds the 150-line ceiling due to the density of navigation
+// helpers (5 derived values + 2 callbacks) that all share state.selectedGroupID.
 
 import { useMemo, useEffect, useCallback } from "react";
 import type { Dispatch } from "react";
@@ -56,6 +58,7 @@ export function useCategoryDerived(
         .filter((c) => c.groupID !== undefined)
         .sort(
           (a, b) =>
+            // groupID is guaranteed non-undefined: these are items filtered by `c.groupID !== undefined`
             (groupOrder.get(a.groupID!) ?? 0) -
             (groupOrder.get(b.groupID!) ?? 0),
         )

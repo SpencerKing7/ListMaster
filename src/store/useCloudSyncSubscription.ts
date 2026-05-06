@@ -1,4 +1,5 @@
 // src/store/useCloudSyncSubscription.ts
+// Hook that sets up and tears down the Firestore real-time subscription for cloud sync.
 import { useEffect, useRef } from "react";
 import type { Dispatch, RefObject } from "react";
 import type { StoreAction, StoreState, ColorTheme } from "@/models/types";

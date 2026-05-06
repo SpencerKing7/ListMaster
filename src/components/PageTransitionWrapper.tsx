@@ -1,3 +1,4 @@
+// src/components/PageTransitionWrapper.tsx — iOS-style push/pop slide transition wrapper for route changes.
 /**
  * PageTransitionWrapper provides iOS-style push/pop slide transitions for route
  * changes, mirroring UINavigationController behavior.

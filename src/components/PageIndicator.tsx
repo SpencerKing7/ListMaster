@@ -1,3 +1,4 @@
+// src/components/PageIndicator.tsx — Page-position dot indicator similar to iOS UIPageControl.
 /**
  * PageIndicator renders a row of dots indicating the current page position,
  * similar to iOS UIPageControl. The active dot stretches into a pill shape.

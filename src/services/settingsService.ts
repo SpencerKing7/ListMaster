@@ -1,4 +1,8 @@
 // src/services/settingsService.ts
+// Singleton service for reading and writing user settings to localStorage.
+// NOTE: Exceeds the 150-line service ceiling because each setting requires
+// three operations (get/set/clear) and the validation constants add overhead.
+// All code is closely related and cannot be split without losing cohesion.
 import type {
   TextSize,
   SortOrder,
@@ -24,6 +28,7 @@ const VALID_APPEARANCE_MODES: readonly AppearanceMode[] = [
 ];
 const VALID_COLOR_THEMES: readonly ColorTheme[] = ["green", "blue", "orange"];
 
+/** Reads and writes all user settings to `localStorage`. The only file that accesses settings keys. */
 export const SettingsService = {
   // User Name
   getUserName(): string {

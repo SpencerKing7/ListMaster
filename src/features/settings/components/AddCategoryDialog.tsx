@@ -125,7 +125,7 @@ export function AddCategoryDialog({
                     backgroundColor: selectedGroupID === null
                       ? "var(--color-brand-green)"
                       : "var(--color-surface-input)",
-                    color: selectedGroupID === null ? "#fff" : "var(--color-text-secondary)",
+                    color: selectedGroupID === null ? "var(--color-text-on-brand)" : "var(--color-text-secondary)",
                   }}
                 >
                   No Group
@@ -142,7 +142,7 @@ export function AddCategoryDialog({
                       backgroundColor: selectedGroupID === group.id
                         ? "var(--color-brand-green)"
                         : "var(--color-surface-input)",
-                      color: selectedGroupID === group.id ? "#fff" : "var(--color-text-primary)",
+                      color: selectedGroupID === group.id ? "var(--color-text-on-brand)" : "var(--color-text-primary)",
                     }}
                   >
                     {group.name}

@@ -1,11 +1,13 @@
 // src/store/useCloudSync.ts
 // Hook that manages the cloud sync subscription lifecycle and debounced saves.
 // Extracted from useCategoriesStore to keep the provider focused on state shape.
+// NOTE: Exceeds the 150-line ceiling because the debounced-save logic, stable-ref
+// wiring, and subscription composition form a single sync state machine that cannot
+// be divided without breaking the own-echo and conflict-resolution guards.
 
 import { useEffect, useRef, useCallback } from "react";
 import type { Dispatch } from "react";
-import type { Category, CategoryGroup, ColorTheme } from "@/models/types";
-import type { StoreState, StoreAction } from "@/models/types";
+import type { Category, CategoryGroup, ColorTheme, StoreState, StoreAction } from "@/models/types";
 import { useCloudSyncSubscription } from "@/store/useCloudSyncSubscription";
 
 // MARK: - Types

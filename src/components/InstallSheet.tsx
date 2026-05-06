@@ -1,4 +1,5 @@
 // src/components/InstallSheet.tsx
+// Bottom sheet with full install instructions, sync code copy, and device mode toggle.
 import { useState, useRef } from "react";
 import type { JSX } from "react";
 import {
@@ -17,8 +18,11 @@ import { detectPlatform } from "@/lib/detectPlatform";
 import type { PlatformDetection } from "@/lib/detectPlatform";
 import { InstallPromptService } from "@/services/installPromptService";
 
+/** Props for the {@link InstallSheet} component. */
 interface InstallSheetProps {
+  /** Whether the sheet is currently open. */
   isOpen: boolean;
+  /** Called when the sheet open state changes. */
   onOpenChange: (open: boolean) => void;
 }
 

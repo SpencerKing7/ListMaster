@@ -1,3 +1,4 @@
+<!-- Feature: Settings Add-Flow Redesign (Proposals A–E) | Status: Fully Shipped | Last updated: May 2026 -->
 # Settings Add-Flow Redesign Plan
 
 ## Executive Summary

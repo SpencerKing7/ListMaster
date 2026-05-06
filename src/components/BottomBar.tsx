@@ -1,4 +1,4 @@
-// src/components/BottomBar.tsx
+// src/components/BottomBar.tsx — Fixed bottom navigation bar with category nav arrows and item count.
 import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";

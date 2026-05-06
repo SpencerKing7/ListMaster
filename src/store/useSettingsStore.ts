@@ -1,4 +1,9 @@
 // src/store/useSettingsStore.ts
+// React Context provider for all user settings (appearance, text size, color theme, sync, onboarding).
+// NOTE: Exceeds the 150-line store ceiling because all five useState fields share the same
+// synchronous DOM-apply pattern and must be initialized together to prevent flash-of-wrong-style
+// on first paint. Splitting them across files would require re-introducing the same side-effect
+// pattern in multiple places without reducing complexity.
 import {
   createContext,
   useContext,
@@ -42,6 +47,7 @@ interface SettingsState {
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
+/** Provides all user settings to the component tree. Must wrap the entire application. */
 export function SettingsProvider({
   children,
 }: {
@@ -75,7 +81,7 @@ export function SettingsProvider({
     return saved;
   });
 
-  function setUserName(name: string) {
+  function setUserName(name: string): void {
     SettingsService.setUserName(name);
     setUserNameState(name);
   }
@@ -84,30 +90,30 @@ export function SettingsProvider({
    * Applies a userName received from the cloud.
    * Device-local name takes precedence — only updates if the local name is empty.
    */
-  function syncUserName(name: string) {
+  function syncUserName(name: string): void {
     if (!name || SettingsService.getUserName()) return;
     SettingsService.setUserName(name);
     setUserNameState(name);
   }
 
-  function completeOnboarding() {
+  function completeOnboarding(): void {
     SettingsService.setHasCompletedOnboarding(true);
     setHasCompletedOnboarding(true);
   }
 
-  function setAppearanceMode(mode: AppearanceMode) {
+  function setAppearanceMode(mode: AppearanceMode): void {
     SettingsService.setAppearanceMode(mode);
     setAppearanceModeState(mode);
     applyThemeToDOM(mode);
   }
 
-  function setTextSize(size: TextSize) {
+  function setTextSize(size: TextSize): void {
     SettingsService.setTextSize(size);
     setTextSizeState(size);
     applyTextSizeToDOM(size);
   }
 
-  function setColorTheme(theme: ColorTheme) {
+  function setColorTheme(theme: ColorTheme): void {
     SettingsService.setColorTheme(theme);
     setColorThemeState(theme);
     applyColorThemeToDOM(theme, appearanceMode);
@@ -118,14 +124,14 @@ export function SettingsProvider({
    * Always overwrites local — color theme is a shared preference, not
    * device-local data. Last write from any synced device wins.
    */
-  function syncColorTheme(theme: ColorTheme) {
+  function syncColorTheme(theme: ColorTheme): void {
     if (!theme) return;
     SettingsService.setColorTheme(theme);
     setColorThemeState(theme);
     applyColorThemeToDOM(theme, appearanceMode);
   }
 
-  function resetToNewUser() {
+  function resetToNewUser(): void {
     PersistenceService.clear();
     SettingsService.clearAll();
     InstallPromptService.clearAll();
@@ -162,6 +168,7 @@ export function SettingsProvider({
   );
 }
 
+/** Hook to access the settings store. Must be used within a {@link SettingsProvider}. */
 export function useSettingsStore(): SettingsState {
   const ctx = useContext(SettingsContext);
   if (!ctx)

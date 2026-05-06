@@ -1,5 +1,4 @@
-// src/store/categoriesReducer.ts
-// Pure reducer orchestrator — delegates each action to a domain-specific handler module.
+// src/store/categoriesReducer.ts — Pure reducer orchestrator that delegates each action to a domain-specific handler module.
 
 import type { StoreState, StoreAction } from "@/models/types";
 import { PersistenceService } from "@/services/persistenceService";
@@ -39,8 +38,6 @@ import {
 } from "./metaHandlers";
 
 export { loadInitialState } from "./reducerHelpers";
-
-// MARK: - Reducer
 
 /** Pure reducer for the categories store. Delegates to domain handlers. */
 export function categoriesReducer(
@@ -88,7 +85,6 @@ export function categoriesReducer(
     case "ADD_CATEGORY_WITH_GROUP":
       next = handleAddCategoryWithGroup(state, action.name, action.groupID);
       break;
-
     // ── Item actions ──
     case "ADD_ITEM":
       next = handleAddItem(state, action.name);
@@ -111,7 +107,6 @@ export function categoriesReducer(
     case "UNCHECK_ALL":
       next = handleUncheckAll(state);
       break;
-
     // ── Group actions ──
     case "ADD_GROUP":
       next = handleAddGroup(state, action.name);
@@ -128,7 +123,6 @@ export function categoriesReducer(
     case "SELECT_GROUP":
       next = handleSelectGroup(state, action.id);
       break;
-
     // ── Meta actions — own their persistence, return directly ──
     case "RELOAD":
       return handleReload(state);

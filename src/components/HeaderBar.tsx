@@ -1,4 +1,4 @@
-// src/components/HeaderBar.tsx
+// src/components/HeaderBar.tsx — Sticky top navigation bar with app title and settings button.
 import { useState } from "react";
 import type { JSX } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";

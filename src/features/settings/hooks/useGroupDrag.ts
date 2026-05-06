@@ -77,6 +77,7 @@ export function useGroupDrag(
       const heights: number[] = [];
       if (groupsContainerRef.current) {
         groupsRef.current.forEach((_, i) => {
+          // groupsContainerRef.current is non-null: we just checked it in the outer if-block
           const el = groupsContainerRef.current!.querySelector<HTMLElement>(
             `[data-group-idx="${i}"]`,
           );
@@ -156,6 +157,7 @@ export function useGroupDrag(
           );
           collapsedHeights.push(el ? el.getBoundingClientRect().height : 48);
         });
+        // groupsContainerRef.current is non-null: checked above before entering setTimeout callback
         groupRowHeightsRef.current = collapsedHeights;
 
         const collapsedOffsets: number[] = [];

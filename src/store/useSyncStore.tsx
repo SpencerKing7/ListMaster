@@ -1,4 +1,5 @@
 // src/store/useSyncStore.tsx
+// React Context provider and hook for sync status (enabled, code, device count, status).
 import {
   createContext,
   useContext,

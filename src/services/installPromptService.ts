@@ -1,4 +1,5 @@
 // src/services/installPromptService.ts
+// Tracks install-prompt dismissal state and show-count in localStorage.
 
 const DISMISSED_AT_KEY = "installToastDismissedAt";
 const SHOW_COUNT_KEY = "installToastShowCount";

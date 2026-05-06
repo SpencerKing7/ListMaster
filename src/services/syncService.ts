@@ -1,4 +1,9 @@
 // src/services/syncService.ts
+// Firestore read/write/subscribe functions for cloud list sync.
+// NOTE: Exceeds the 150-line service ceiling because all five API functions
+// (saveState, registerDevice, loadState, subscribeToState, deleteSyncData) share the
+// same SyncPayloadWrite/SyncPayloadRead types and toUnixMs helper. Extracting any of
+// these would require moving those private Firestore types out of scope, breaking cohesion.
 import {
   doc,
   setDoc,

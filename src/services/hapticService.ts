@@ -1,3 +1,4 @@
+// src/services/hapticService.ts — Haptic feedback service wrapping the Vibration API.
 /**
  * HapticService provides iOS-equivalent haptic feedback using the Vibration API.
  * This is the closest web equivalent to UIImpactFeedbackGenerator.
