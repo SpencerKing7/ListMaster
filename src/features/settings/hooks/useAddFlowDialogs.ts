@@ -11,6 +11,8 @@ import { useCategoriesStore } from "@/store/useCategoriesStore";
 export interface UseAddFlowDialogsReturn {
   /** Opens the Add Category dialog pre-populated with the current group. */
   openAddCategoryDialog: () => void;
+  /** Opens the Add Category dialog for a specific group. */
+  openAddCategoryDialogForGroup: (groupID: string) => void;
   /** Opens the Add Group dialog. */
   openAddGroupDialog: () => void;
   /** Which add dialog is active: `"category"`, `"group"`, or `null`. */
@@ -82,6 +84,13 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
     setAddMode("category");
   }, [store.selectedGroupID]);
 
+  /** Opens the Add Category dialog for a specific group. */
+  const openAddCategoryDialogForGroup = useCallback((groupID: string) => {
+    setAddCategoryGroupID(groupID);
+    setAddCategoryName("");
+    setAddMode("category");
+  }, []);
+
   const openAddGroupDialog = useCallback(() => {
     setAddGroupDialogName("");
     setAddMode("group");
@@ -97,6 +106,7 @@ export function useAddFlowDialogs(): UseAddFlowDialogsReturn {
 
   return {
     openAddCategoryDialog,
+    openAddCategoryDialogForGroup,
     openAddGroupDialog,
     addMode,
     setAddMode,

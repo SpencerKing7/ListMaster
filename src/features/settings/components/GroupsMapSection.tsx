@@ -25,6 +25,7 @@ interface GroupsMapSectionProps {
   onDeleteCategory: (id: string, name: string) => void;
   onRenameGroup: (id: string, name: string) => void;
   onDeleteGroup: (id: string, name: string) => void;
+  onAddCategoryInGroup?: (groupID: string) => void;
 }
 
 // MARK: - Component
@@ -45,6 +46,7 @@ export function GroupsMapSection({
   onDeleteCategory,
   onRenameGroup,
   onDeleteGroup,
+  onAddCategoryInGroup,
 }: GroupsMapSectionProps): JSX.Element {
   // Always render in original DOM order; visual reorder is driven by translateY.
   const draggingGroupID = groupDragState ? groups[groupDragState.idx]?.id : null;
@@ -90,6 +92,7 @@ export function GroupsMapSection({
             onDeleteCategory={onDeleteCategory}
             onRenameGroup={onRenameGroup}
             onDeleteGroup={onDeleteGroup}
+            onAddCategory={onAddCategoryInGroup ? () => onAddCategoryInGroup(group.id) : undefined}
           />
         );
       })}

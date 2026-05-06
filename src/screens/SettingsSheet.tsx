@@ -117,6 +117,7 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
                   onAssignGroup={d.openGroupAssignment}
                   onAddCategory={d.openAddCategoryDialog}
                   onAddGroup={d.openAddGroupDialog}
+                  onAddCategoryInGroup={d.openAddCategoryDialogForGroup}
                 />
                 <AppearanceSection
                   appearanceMode={settings.appearanceMode}

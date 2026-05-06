@@ -44,6 +44,7 @@ interface CategoriesGroupsSectionProps {
   onAssignGroup: (categoryId: string, categoryName: string) => void;
   onAddCategory: () => void;
   onAddGroup: () => void;
+  onAddCategoryInGroup?: (groupID: string) => void;
 }
 
 // MARK: - Component
@@ -69,6 +70,7 @@ export function CategoriesGroupsSection({
   onAssignGroup,
   onAddCategory,
   onAddGroup,
+  onAddCategoryInGroup,
 }: CategoriesGroupsSectionProps): JSX.Element {
   return (
     <SettingsCard>
@@ -99,6 +101,7 @@ export function CategoriesGroupsSection({
             onDeleteCategory={onDeleteCategory}
             onRenameGroup={onRenameGroup}
             onDeleteGroup={onDeleteGroup}
+            onAddCategoryInGroup={onAddCategoryInGroup}
           />
           <UngroupedSection
             categories={categories}

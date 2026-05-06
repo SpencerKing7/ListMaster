@@ -26,6 +26,7 @@ export interface GroupRowProps {
   onDeleteCategory: (id: string, name: string) => void;
   onRenameGroup: (id: string, name: string) => void;
   onDeleteGroup: (id: string, name: string) => void;
+  onAddCategory?: () => void;
 }
 
 // MARK: - Component
@@ -48,6 +49,7 @@ export function GroupRow({
   onDeleteCategory,
   onRenameGroup,
   onDeleteGroup,
+  onAddCategory,
 }: GroupRowProps): JSX.Element {
   return (
     <div
@@ -88,6 +90,7 @@ export function GroupRow({
         handleDragPointerDown={handleDragPointerDown}
         onRenameCategory={onRenameCategory}
         onDeleteCategory={onDeleteCategory}
+        onAddCategory={onAddCategory}
       />
     </div>
   );
