@@ -1,0 +1,326 @@
+/* src/styles/tokens.css */
+
+/* ── Light (default) ─────────────────────────────────────── */
+:root {
+  --color-brand-green: #39b385;
+  --color-brand-teal: #2c9096;
+  --color-brand-blue: #3275b5;
+  --color-brand-deep-green: #1a5e4b;
+
+  --color-surface-background: #f2f2f7;
+  --color-surface-card: #ffffff;
+  --color-surface-input: #e9e9ef;
+  --color-surface-chrome: #f2f2f7;
+  --color-surface-green-tint: rgba(57, 179, 133, 0.06);
+
+  --color-danger: #d44b4a;
+  --color-danger-rgb: 212, 75, 74;
+
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: rgba(0, 0, 0, 0.5);
+  /* Text rendered on a solid brand-color background (e.g. selected pills) — always white. */
+  --color-text-on-brand: #ffffff;
+
+  --color-brand-deep-green-rgb: 26, 94, 75;
+  --color-brand-green-rgb: 57, 179, 133;
+  --color-brand-teal-rgb: 44, 144, 150;
+
+  /* Overlay / scrim for ActionSheet and modal backdrops */
+  --color-surface-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Subtle border for cards and dialogs */
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
+  /* Slightly stronger border for dialogs / elevated surfaces */
+  --color-border-dialog: rgba(0, 0, 0, 0.1);
+
+  /* Elevation shadow for cards — subtle on light */
+  --elevation-card:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  /* Elevation shadow for floating elements (sheets, dialogs) */
+  --elevation-sheet:
+    0 -4px 24px rgba(0, 0, 0, 0.1), 0 -1px 4px rgba(0, 0, 0, 0.06);
+
+  --gradient-brand-wide: none;
+
+  /* iOS spring — used for page swipe commits */
+  --spring-page: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* iOS standard ease — used for small element state changes */
+  --spring-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  /* iOS decelerate — used for sheet entrance */
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  /* iOS snap-back rubber-band */
+  --spring-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Durations */
+  --duration-page: 380ms;
+  --duration-element: 220ms;
+  --duration-micro: 120ms;
+
+  /* Keyboard inset for safe area */
+  --keyboard-inset: 0px;
+
+  /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+  --text-size-base: 1rem;
+
+  /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+  --row-padding-y: 0.875rem;
+}
+
+/* ── Dark (system preference) ───────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-brand-green: #49cb9a;
+    --color-brand-teal: #3daab0;
+    --color-brand-blue: #4c8dcb;
+    --color-brand-deep-green: #277862;
+
+    --color-surface-background: #0a0a0a;
+    --color-surface-card: #1a1a1a;
+    --color-surface-input: #252525;
+    --color-surface-chrome: #111111;
+    --color-surface-green-tint: rgba(73, 203, 154, 0.1);
+
+    --color-danger: #e76560;
+    --color-danger-rgb: 231, 101, 96;
+
+    --color-text-primary: #ffffff;
+    --color-text-secondary: rgba(255, 255, 255, 0.63);
+    --color-text-on-brand: #ffffff;
+
+    --color-brand-deep-green-rgb: 39, 120, 98;
+    --color-brand-green-rgb: 73, 203, 154;
+    --color-brand-teal-rgb: 61, 170, 176;
+
+    /* Overlay / scrim — slightly darker for dark mode */
+    --color-surface-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Subtle border for cards and dialogs — lighter strokes on dark */
+    --color-border-subtle: rgba(255, 255, 255, 0.1);
+    --color-border-dialog: rgba(255, 255, 255, 0.16);
+
+    /* Elevation shadows — more opaque on dark */
+    --elevation-card:
+      0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --elevation-sheet:
+      0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 4px rgba(0, 0, 0, 0.3);
+
+    --gradient-brand-wide: none; /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+    --text-size-base: 1rem;
+
+    /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+    --row-padding-y: 0.875rem;
+  }
+}
+
+/* ── Manual override: force light ───────────────────────── */
+:root[data-theme="light"] {
+  --color-brand-green: #39b385;
+  --color-brand-teal: #2c9096;
+  --color-brand-blue: #3275b5;
+  --color-brand-deep-green: #1a5e4b;
+
+  --color-surface-background: #f2f2f7;
+  --color-surface-card: #ffffff;
+  --color-surface-input: #e9e9ef;
+  --color-surface-chrome: #f2f2f7;
+  --color-surface-green-tint: rgba(57, 179, 133, 0.06);
+
+  --color-danger: #d44b4a;
+  --color-danger-rgb: 212, 75, 74;
+
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: rgba(0, 0, 0, 0.5);
+  --color-text-on-brand: #ffffff;
+
+  --color-brand-deep-green-rgb: 26, 94, 75;
+  --color-brand-green-rgb: 57, 179, 133;
+  --color-brand-teal-rgb: 44, 144, 150;
+
+  --color-surface-overlay: rgba(0, 0, 0, 0.45);
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
+  --color-border-dialog: rgba(0, 0, 0, 0.1);
+  --elevation-card:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --elevation-sheet:
+    0 -4px 24px rgba(0, 0, 0, 0.1), 0 -1px 4px rgba(0, 0, 0, 0.06);
+
+  /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+  --text-size-base: 1rem;
+
+  /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+  --row-padding-y: 0.875rem;
+}
+
+/* ── Manual override: force dark ────────────────────────── */
+:root[data-theme="dark"] {
+  --color-brand-green: #49cb9a;
+  --color-brand-teal: #3daab0;
+  --color-brand-blue: #4c8dcb;
+  --color-brand-deep-green: #277862;
+
+  --color-surface-background: #0a0a0a;
+  --color-surface-card: #1a1a1a;
+  --color-surface-input: #252525;
+  --color-surface-chrome: #111111;
+  --color-surface-green-tint: rgba(73, 203, 154, 0.1);
+
+  --color-danger: #e76560;
+  --color-danger-rgb: 231, 101, 96;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.63);
+  --color-text-on-brand: #ffffff;
+
+  --color-brand-deep-green-rgb: 39, 120, 98;
+  --color-brand-green-rgb: 73, 203, 154;
+  --color-brand-teal-rgb: 61, 170, 176;
+
+  --color-surface-overlay: rgba(0, 0, 0, 0.7);
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
+  --color-border-dialog: rgba(255, 255, 255, 0.16);
+  --elevation-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --elevation-sheet:
+    0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 4px rgba(0, 0, 0, 0.3);
+
+  --gradient-brand-wide: none;
+
+  /* Base font size for checklist item text — overridden by applyTextSizeToDOM */
+  --text-size-base: 1rem;
+
+  /* Vertical padding for list item rows — overridden by applyTextSizeToDOM */
+  --row-padding-y: 0.875rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   COLOR THEME PICKER SWATCHES  (used by ColorThemeSection preview dots)
+   Static values — intentionally not themed, always the light-mode brand color.
+   ══════════════════════════════════════════════════════════ */
+:root {
+  --color-theme-swatch-green: #39b385;
+  --color-theme-swatch-blue: #3b82f6;
+  --color-theme-swatch-orange: #f97316;
+}
+
+/* ══════════════════════════════════════════════════════════
+   BLUE COLOR THEME  (data-color-theme="blue")
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Blue — light default ───────────────────────────────── */
+:root[data-color-theme="blue"] {
+  --color-brand-green: #3b82f6;
+  --color-brand-teal: #2563eb;
+  --color-brand-blue: #1d4ed8;
+  --color-brand-deep-green: #1e3a8a;
+
+  --color-surface-green-tint: rgba(59, 130, 246, 0.06);
+
+  --color-brand-green-rgb: 59, 130, 246;
+  --color-brand-deep-green-rgb: 30, 58, 138;
+  --color-brand-teal-rgb: 37, 99, 235;
+}
+
+/* ── Blue — system dark ─────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root[data-color-theme="blue"] {
+    --color-brand-green: #60a5fa;
+    --color-brand-teal: #4b8ef5;
+    --color-brand-blue: #3b82f6;
+    --color-brand-deep-green: #1e40af;
+
+    --color-surface-green-tint: rgba(96, 165, 250, 0.1);
+
+    --color-brand-green-rgb: 96, 165, 250;
+    --color-brand-deep-green-rgb: 30, 64, 175;
+    --color-brand-teal-rgb: 75, 142, 245;
+  }
+}
+
+/* ── Blue — forced light ────────────────────────────────── */
+:root[data-theme="light"][data-color-theme="blue"] {
+  --color-brand-green: #3b82f6;
+  --color-brand-teal: #2563eb;
+  --color-brand-blue: #1d4ed8;
+  --color-brand-deep-green: #1e3a8a;
+
+  --color-surface-green-tint: rgba(59, 130, 246, 0.06);
+
+  --color-brand-green-rgb: 59, 130, 246;
+  --color-brand-deep-green-rgb: 30, 58, 138;
+  --color-brand-teal-rgb: 37, 99, 235;
+}
+
+/* ── Blue — forced dark ─────────────────────────────────── */
+:root[data-theme="dark"][data-color-theme="blue"] {
+  --color-brand-green: #60a5fa;
+  --color-brand-teal: #4b8ef5;
+  --color-brand-blue: #3b82f6;
+  --color-brand-deep-green: #1e40af;
+
+  --color-surface-green-tint: rgba(96, 165, 250, 0.1);
+
+  --color-brand-green-rgb: 96, 165, 250;
+  --color-brand-deep-green-rgb: 30, 64, 175;
+  --color-brand-teal-rgb: 75, 142, 245;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ORANGE COLOR THEME  (data-color-theme="orange")
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Orange — light default ─────────────────────────────── */
+:root[data-color-theme="orange"] {
+  --color-brand-green: #f97316;
+  --color-brand-teal: #ea6c0a;
+  --color-brand-blue: #c2510a;
+  --color-brand-deep-green: #7c2d12;
+
+  --color-surface-green-tint: rgba(249, 115, 22, 0.06);
+
+  --color-brand-green-rgb: 249, 115, 22;
+  --color-brand-deep-green-rgb: 124, 45, 18;
+  --color-brand-teal-rgb: 234, 108, 10;
+}
+
+/* ── Orange — system dark ───────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root[data-color-theme="orange"] {
+    --color-brand-green: #fb923c;
+    --color-brand-teal: #f0821c;
+    --color-brand-blue: #e07318;
+    --color-brand-deep-green: #9a3412;
+
+    --color-surface-green-tint: rgba(251, 146, 60, 0.1);
+
+    --color-brand-green-rgb: 251, 146, 60;
+    --color-brand-deep-green-rgb: 154, 52, 18;
+    --color-brand-teal-rgb: 240, 130, 28;
+  }
+}
+
+/* ── Orange — forced light ──────────────────────────────── */
+:root[data-theme="light"][data-color-theme="orange"] {
+  --color-brand-green: #f97316;
+  --color-brand-teal: #ea6c0a;
+  --color-brand-blue: #c2510a;
+  --color-brand-deep-green: #7c2d12;
+
+  --color-surface-green-tint: rgba(249, 115, 22, 0.06);
+
+  --color-brand-green-rgb: 249, 115, 22;
+  --color-brand-deep-green-rgb: 124, 45, 18;
+  --color-brand-teal-rgb: 234, 108, 10;
+}
+
+/* ── Orange — forced dark ───────────────────────────────── */
+:root[data-theme="dark"][data-color-theme="orange"] {
+  --color-brand-green: #fb923c;
+  --color-brand-teal: #f0821c;
+  --color-brand-blue: #e07318;
+  --color-brand-deep-green: #9a3412;
+
+  --color-surface-green-tint: rgba(251, 146, 60, 0.1);
+
+  --color-brand-green-rgb: 251, 146, 60;
+  --color-brand-deep-green-rgb: 154, 52, 18;
+  --color-brand-teal-rgb: 240, 130, 28;
+}

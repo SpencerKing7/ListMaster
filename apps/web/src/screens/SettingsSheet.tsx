@@ -1,0 +1,165 @@
+// src/screens/SettingsSheet.tsx
+// Top-level settings bottom-sheet — composes extracted section components.
+
+import { useRef } from "react";
+import type { JSX } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { useCategoriesStore } from "@/store/useCategoriesStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { useSyncStore } from "@/store/useSyncStore";
+import {
+  CategoriesGroupsSection,
+  AppearanceSection,
+  ColorThemeSection,
+  TextSizeSection,
+  NameSection,
+  SyncSection,
+  DataSection,
+  SettingsDialogPortal,
+  useCategoryDrag,
+  useGroupDrag,
+  useSettingsDialogs,
+} from "@/features/settings";
+
+// MARK: - Props
+
+/** Props for the {@link SettingsSheet} component. */
+interface SettingsSheetProps {
+  /** Whether the sheet is open. */
+  isOpen: boolean;
+  /** Callback to toggle the sheet open/closed. */
+  onOpenChange: (open: boolean) => void;
+}
+
+// MARK: - Component
+
+/**
+ * Full-screen bottom sheet containing all application settings.
+ *
+ * Composes CategoriesGroupsSection, AppearanceSection, TextSizeSection,
+ * NameSection, SyncSection, DataSection, and associated dialogs.
+ */
+export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX.Element {
+  const store = useCategoriesStore();
+  const settings = useSettingsStore();
+  const sync = useSyncStore();
+
+  const catDrag = useCategoryDrag(store.categories, store.reorderCategories);
+  const groupDrag = useGroupDrag(store.groups, store.moveGroups);
+  const d = useSettingsDialogs(() => onOpenChange(false));
+
+  const sheetFocusSentinelRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <>
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="rounded-t-3xl max-h-[90dvh]"
+          initialFocus={sheetFocusSentinelRef}
+          style={{
+            backgroundColor: "var(--color-surface-background)",
+            boxShadow: "var(--elevation-sheet)",
+          }}
+        >
+          <div className="flex flex-col overflow-hidden max-h-[90dvh] relative">
+            <div ref={sheetFocusSentinelRef} tabIndex={-1} className="sr-only" aria-hidden />
+
+            <SheetHeader className="px-5 pb-3 pt-4">
+              <div className="flex flex-row items-center justify-between">
+                <SheetTitle
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--color-brand-green)" }}
+                >
+                  Settings
+                </SheetTitle>
+                <Button
+                  variant="ghost"
+                  className="font-semibold text-sm rounded-full px-4 hover:!bg-[color:var(--color-surface-input)] focus-visible:!border-[color:var(--color-brand-green)] focus-visible:!ring-[color:var(--color-brand-green)]/30"
+                  style={{
+                    color: "var(--color-brand-green)",
+                    backgroundColor: "rgba(var(--color-brand-green-rgb), 0.12)",
+                    touchAction: "manipulation",
+                  }}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-4 px-4 pb-10 pt-2">
+                <CategoriesGroupsSection
+                  categories={store.categories}
+                  groups={store.groups}
+                  canDeleteCategories={store.canDeleteCategories}
+                  catDragState={catDrag.catDragState}
+                  catContainerRef={catDrag.catContainerRef}
+                  listRef={catDrag.listRef}
+                  handleDragPointerDown={catDrag.handleDragPointerDown}
+                  groupDragState={groupDrag.groupDragState}
+                  groupsContainerRef={groupDrag.groupsContainerRef}
+                  handleGroupDragPointerDown={groupDrag.handleGroupDragPointerDown}
+                  expandedGroupIDs={groupDrag.expandedGroupIDs}
+                  toggleGroup={groupDrag.toggleGroup}
+                  inlineEditingCategoryID={d.inlineEditingCategoryID}
+                  setInlineEditingCategoryID={d.setInlineEditingCategoryID}
+                  renameCategoryName={d.renameCategoryName}
+                  onRenameCategoryNameChange={d.onRenameCategoryNameChange}
+                  saveRenameCategory={d.saveRenameCategory}
+                  inlineEditingGroupID={d.inlineEditingGroupID}
+                  setInlineEditingGroupID={d.setInlineEditingGroupID}
+                  renameGroupName={d.renameGroupName}
+                  onRenameGroupNameChange={d.onRenameGroupNameChange}
+                  saveRenameGroup={d.saveRenameGroup}
+                  onDeleteCategory={d.openDeleteCategory}
+                  onDeleteGroup={d.openDeleteGroup}
+                  onAssignGroup={d.openGroupAssignment}
+                  onAddCategory={d.openAddCategoryDialog}
+                  onAddGroup={d.openAddGroupDialog}
+                  onAddCategoryInGroup={d.openAddCategoryDialogForGroup}
+                />
+                <AppearanceSection
+                  appearanceMode={settings.appearanceMode}
+                  onChangeMode={settings.setAppearanceMode}
+                />
+                <ColorThemeSection
+                  colorTheme={settings.colorTheme}
+                  onChangeTheme={settings.setColorTheme}
+                />
+                <TextSizeSection
+                  textSize={settings.textSize}
+                  onChangeSize={settings.setTextSize}
+                />
+                <NameSection
+                  userName={settings.userName}
+                  onChangeName={settings.setUserName}
+                />
+                <SyncSection
+                  isSyncEnabled={sync.isSyncEnabled}
+                  syncCode={sync.syncCode}
+                  syncStatus={sync.syncStatus}
+                  syncedDeviceCount={sync.syncedDeviceCount}
+                  onEnableSync={sync.enableSync}
+                  onDisableSync={sync.disableSync}
+                  onAdoptSyncCode={sync.adoptSyncCode}
+                />
+                <DataSection onReset={d.handleReset} />
+              </div>
+            </div>
+          </div>
+
+          <SettingsDialogPortal d={d} groups={store.groups} />
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
