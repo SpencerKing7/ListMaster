@@ -1,14 +1,47 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
+
+# ── Build Outputs ─────────────────────────────────────────────────────────────
 dist/
 dist-ssr/
-*.local
-.DS_Store
-.env
-.claude/
-.github/
-.vscode/
-docs/
-CLAUDE.md
+build/
+out/
+.expo/
+.expo-shared/
+
+# ── Native (Expo / React Native) ──────────────────────────────────────────────
 ios/
 android/
-.turbo
+
+# ── Environment & Secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.local
+google-services.json
+GoogleService-Info.plist
+
+# ── Turbo ─────────────────────────────────────────────────────────────────────
+.turbo/
+
+# ── Testing & Coverage ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Tooling & Editor ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/
+.idea/
+
+# ── Project-specific Exclusions ───────────────────────────────────────────────
+.claude/
+.github/
+docs/
+CLAUDE.md
