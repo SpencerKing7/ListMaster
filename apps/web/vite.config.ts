@@ -4,10 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { fileURLToPath, URL } from "node:url";
 
-export default defineConfig(({ command }) => {
-  const base = command === "serve" ? "/" : "/ListMaster/";
+export default defineConfig(() => {
   return {
-    base,
+    base: "/",
     plugins: [
       react(),
       tailwindcss(),
@@ -21,21 +20,21 @@ export default defineConfig(({ command }) => {
           background_color: "#edf3f0",
           display: "standalone",
           orientation: "portrait",
-          start_url: "/ListMaster/",
-          scope: "/ListMaster/",
+          start_url: "/",
+          scope: "/",
           icons: [
             {
-              src: "/ListMaster/icon-192.png",
+              src: "/icon-192.png",
               sizes: "192x192",
               type: "image/png",
             },
             {
-              src: "/ListMaster/icon-512.png",
+              src: "/icon-512.png",
               sizes: "512x512",
               type: "image/png",
             },
             {
-              src: "/ListMaster/icon-512.png",
+              src: "/icon-512.png",
               sizes: "512x512",
               type: "image/png",
               purpose: "any maskable",

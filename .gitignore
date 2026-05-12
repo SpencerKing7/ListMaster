@@ -45,3 +45,4 @@ yarn-error.log*
 .github/
 docs/
 CLAUDE.md
+.vercel
