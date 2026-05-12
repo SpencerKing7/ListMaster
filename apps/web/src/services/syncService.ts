@@ -54,13 +54,13 @@ interface SyncPayloadRead {
   groups?: CategoryGroup[];
   userName?: string;
   colorTheme?: ColorTheme;
-  updatedAt: Timestamp | number;
+  updatedAt: Timestamp | number | null;
   deviceIDs?: string[];
 }
 
 /** Converts a Firestore Timestamp or legacy number to Unix ms. */
-function toUnixMs(value: Timestamp | number | undefined): number {
-  if (value === undefined) return 0;
+function toUnixMs(value: Timestamp | number | null | undefined): number {
+  if (value == null) return 0;
   if (typeof value === "number") return value;
   return value.toMillis();
 }
