@@ -11,6 +11,7 @@ import {
   onSnapshot,
   deleteDoc,
   arrayUnion,
+  arrayRemove,
   serverTimestamp,
   type Unsubscribe,
   type FieldValue,
@@ -209,6 +210,22 @@ export function subscribeToState(
         import.meta.env.PROD ? String(error) : error,
       );
     },
+  );
+}
+
+/**
+ * Removes a single device UID from the `deviceIDs` array on the sync document
+ * without touching any other data. Called when a device disables sync but keeps
+ * the cloud backup, so the device count stays accurate for remaining devices.
+ */
+export async function removeDevice(
+  syncCode: string,
+  uid: string,
+): Promise<void> {
+  await setDoc(
+    syncDocRef(syncCode),
+    { deviceIDs: arrayRemove(uid) },
+    { merge: true },
   );
 }
 

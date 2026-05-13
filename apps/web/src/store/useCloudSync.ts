@@ -127,7 +127,7 @@ export function useCloudSync({
           isOwnEchoExpected.current = false;
           console.error("Failed to save to cloud:", error);
         }
-      }, 1000);
+      }, 400);
     },
     [isSyncEnabled, syncCode],
   );

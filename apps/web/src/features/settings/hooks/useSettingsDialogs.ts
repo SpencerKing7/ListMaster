@@ -46,6 +46,9 @@ export function useSettingsDialogs(
   const handleReset = useCallback(() => {
     if (sync.isSyncEnabled && sync.syncCode) {
       const codeToDelete = sync.syncCode;
+      // Delete the cloud document and the anonymous Firebase auth user so the
+      // account is fully cleaned up. disableSync(false) runs synchronously
+      // below to clear local state; the cloud ops happen in the background.
       import("@/services/syncService").then(
         ({ ensureAnonymousAuth, deleteSyncData }) =>
           ensureAnonymousAuth()
@@ -53,6 +56,12 @@ export function useSettingsDialogs(
             .catch((err: unknown) =>
               console.error("Failed to delete cloud data on reset:", err),
             ),
+      );
+      import("@/services/authService").then(
+        ({ deleteAnonymousUser }) =>
+          deleteAnonymousUser().catch((err: unknown) =>
+            console.error("Failed to delete anonymous auth user on reset:", err),
+          ),
       );
     }
     sync.disableSync(false);

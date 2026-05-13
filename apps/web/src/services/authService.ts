@@ -3,6 +3,7 @@
 import {
   signInAnonymously,
   onAuthStateChanged,
+  deleteUser,
   type User,
 } from "firebase/auth";
 import { getFirebaseInstances } from "./firebaseConfig";
@@ -27,4 +28,17 @@ export function ensureAnonymousAuth(): Promise<User> {
       }
     });
   });
+}
+
+/**
+ * Deletes the current anonymous Firebase auth user, cleaning up the credential
+ * from Firebase Auth. Called during full account reset so the anonymous user
+ * does not accumulate in the Firebase project.
+ */
+export async function deleteAnonymousUser(): Promise<void> {
+  const { auth } = getFirebaseInstances();
+  const user = auth.currentUser;
+  if (user) {
+    await deleteUser(user);
+  }
 }

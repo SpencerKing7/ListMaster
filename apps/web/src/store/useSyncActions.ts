@@ -78,6 +78,19 @@ export function useSyncActions(
     async (deleteCloud: boolean) => {
       const codeToDelete = SettingsService.getSyncCode();
 
+      // Capture the auth user before clearing local state so we can use the
+      // uid to remove this device from the cloud record.
+      let currentUid: string | null = null;
+      if (codeToDelete) {
+        try {
+          const { ensureAnonymousAuth } = await import("@/services/syncService");
+          const user = await ensureAnonymousAuth();
+          currentUid = user.uid;
+        } catch {
+          // Auth unavailable — proceed without device removal
+        }
+      }
+
       SettingsService.setIsSyncEnabled(false);
       SettingsService.clearSyncCode();
       setIsSyncEnabled(false);
@@ -85,12 +98,19 @@ export function useSyncActions(
       setSyncStatus("idle");
       setSyncedDeviceCount(0);
 
-      if (deleteCloud && codeToDelete) {
+      if (codeToDelete) {
         try {
-          const { deleteSyncData } = await import("@/services/syncService");
-          await deleteSyncData(codeToDelete);
+          if (deleteCloud) {
+            const { deleteSyncData } = await import("@/services/syncService");
+            await deleteSyncData(codeToDelete);
+          } else if (currentUid) {
+            // Surgically remove only this device's UID so the remaining devices
+            // see an accurate device count via the real-time listener.
+            const { removeDevice } = await import("@/services/syncService");
+            await removeDevice(codeToDelete, currentUid);
+          }
         } catch (error) {
-          console.error("Failed to delete cloud sync data:", error);
+          console.error("Failed to update cloud sync data on disable:", error);
         }
       }
     },

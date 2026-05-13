@@ -11,6 +11,13 @@ service cloud.firestore {
         && request.resource.data.deviceIDs.hasAll(resource.data.deviceIDs)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceIDs']);
 
+      // A registered device may self-remove: an update that ONLY removes UIDs from
+      // deviceIDs and changes nothing else. Mirrors the registration rule in reverse.
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.deviceIDs
+        && resource.data.deviceIDs.hasAll(request.resource.data.deviceIDs)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceIDs']);
+
       // Read, general update (sync saves), and delete require the device to be registered.
       allow read, delete: if request.auth != null
         && request.auth.uid in resource.data.deviceIDs;
