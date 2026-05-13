@@ -2,7 +2,6 @@
 // Step 3 of 4 in onboarding — reached from /setup, navigates to /install (browser) or completes onboarding (standalone).
 import { useState, useEffect, useCallback } from "react";
 import type { JSX } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSyncStore } from "@/store/useSyncStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -15,7 +14,6 @@ export function OnboardingSyncScreen(): JSX.Element | null {
   // 1. Store hooks
   const sync = useSyncStore();
   const settings = useSettingsStore();
-  const navigate = useNavigate();
 
   // 2. State declarations
   const [isLoading, setIsLoading] = useState(false);
@@ -23,12 +21,10 @@ export function OnboardingSyncScreen(): JSX.Element | null {
   const [hasError, setHasError] = useState(false);
 
   // 3. navigateForward — must be defined before effects that call it
-  // Navigate to "/" first so the hash is already at the root when the
-  // route tree swaps, preventing a blank-screen transition race in App.tsx.
   const navigateForward = useCallback((): void => {
-    navigate("/");
     settings.completeOnboarding();
-  }, [settings, navigate]);
+    // App.tsx re-renders automatically when hasCompletedOnboarding flips.
+  }, [settings]);
 
   // 5. Early-exit effect — user already joined sync on /setup
   useEffect(() => {

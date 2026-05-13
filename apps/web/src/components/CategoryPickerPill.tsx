@@ -33,7 +33,7 @@ export function CategoryPickerPill({
   onSelect,
 }: CategoryPickerPillProps): JSX.Element {
   return (
-    <div className="shrink-0">
+    <div className="flex-1 min-w-fit">
       <button
         data-category-id={category.id}
         onPointerDown={(e) => {
@@ -45,7 +45,7 @@ export function CategoryPickerPill({
             HapticService.selection();
           }
         }}
-        className={`rounded-full px-4 text-xs font-semibold whitespace-nowrap active:scale-[0.97]${isSelected ? " shadow-sm" : ""}`}
+        className={`rounded-full px-4 text-xs font-semibold whitespace-nowrap active:scale-[0.97] w-full${isSelected ? " shadow-sm" : ""}`}
         style={
           isSelected
             ? {

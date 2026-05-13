@@ -2,7 +2,7 @@
 // Main content panel showing the checklist items for the selected category.
 
 import { useState, useRef, useEffect } from "react";
-import type { JSX, RefObject } from "react";
+import type { JSX } from "react";
 import type { Category } from "@/models/types";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
@@ -18,16 +18,14 @@ interface CategoryPanelProps {
   /** The selected category to display, or `null` when none is selected. */
   category: Category | null;
   /** Ref forwarded to the scrollable list container for scroll-position tracking. */
-  scrollContainerRef: RefObject<HTMLDivElement | null>;
-  /** Ref forwarded to the add-item input for global keyboard focus shortcut. */
-  addInputRef?: RefObject<HTMLInputElement | null>;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // MARK: - Component
 
 /** Displays the selected category's items with add input, sort controls, and
  *  checklist rows with inline edit/delete actions. Shows contextual empty states when appropriate. */
-export function CategoryPanel({ category, scrollContainerRef, addInputRef }: CategoryPanelProps): JSX.Element | null {
+export function CategoryPanel({ category, scrollContainerRef }: CategoryPanelProps): JSX.Element | null {
   const store = useCategoriesStore();
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string; name: string } | null>(null);
@@ -59,7 +57,7 @@ export function CategoryPanel({ category, scrollContainerRef, addInputRef }: Cat
   if (category.items.length === 0) {
     return (
       <div className="flex-1 flex flex-col px-3 pt-2">
-        <AddItemInput ref={addInputRef} />
+        <AddItemInput />
         <EmptyState
           icon={noItemsIcon}
           title="No items yet"
@@ -103,7 +101,7 @@ export function CategoryPanel({ category, scrollContainerRef, addInputRef }: Cat
           onChangeSortDirection={(next) => store.setCategorySortDirection(category.id, next)}
         />
         <div className="mt-2">
-          <AddItemInput ref={addInputRef} focusOnMount={justAddedFirstItem} />
+          <AddItemInput focusOnMount={justAddedFirstItem} />
         </div>
       </div>
 

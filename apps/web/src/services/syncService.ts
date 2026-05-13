@@ -2,8 +2,8 @@
 // Firestore read/write/subscribe functions for cloud list sync.
 // NOTE: Exceeds the 150-line service ceiling because all five API functions
 // (saveState, registerDevice, loadState, subscribeToState, deleteSyncData) share the
-// same SyncPayloadWrite/SyncPayloadRead types and toUnixMs helper. Extracting any of
-// these would require moving those private Firestore types out of scope, breaking cohesion.
+// same SyncPayloadWrite/SyncPayloadRead types, toUnixMs helper, and isSyncPayload guard.
+// Extracting any of these would require moving those private Firestore types out of scope.
 import {
   doc,
   setDoc,
@@ -17,6 +17,7 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
+import { encryptField, decryptField } from "@/lib/syncCrypto";
 import type {
   Category,
   CategoryGroup,
@@ -65,6 +66,19 @@ function toUnixMs(value: Timestamp | number | null | undefined): number {
   return value.toMillis();
 }
 
+// MARK: - Validation
+
+/** Narrows an unknown Firestore snapshot to SyncPayloadRead; rejects malformed documents. */
+function isSyncPayload(data: unknown): data is SyncPayloadRead {
+  if (typeof data !== "object" || data === null) return false;
+  const d = data as Record<string, unknown>;
+  if (!Array.isArray(d["lists"])) return false;
+  if (d["selectedCategoryID"] !== null && typeof d["selectedCategoryID"] !== "string") return false;
+  if (d["groups"] !== undefined && !Array.isArray(d["groups"])) return false;
+  if (d["deviceIDs"] !== undefined && !Array.isArray(d["deviceIDs"])) return false;
+  return true;
+}
+
 // MARK: - Firestore Helpers
 
 function syncDocRef(syncCode: string) {
@@ -86,11 +100,12 @@ export async function saveState(
   userName: string,
   colorTheme: ColorTheme,
 ): Promise<void> {
+  const encryptedName = userName ? await encryptField(syncCode, userName) : userName;
   const payload: SyncPayloadWrite = {
     lists: categories,
     selectedCategoryID,
     groups,
-    userName,
+    userName: encryptedName,
     colorTheme,
     // serverTimestamp() is resolved by Firestore on the server, making it
     // immune to client clock skew across devices.
@@ -126,22 +141,27 @@ export async function loadState(syncCode: string): Promise<LoadStateResult> {
     setTimeout(() => resolve({ status: "timeout" }), 5000),
   );
 
-  const fetchPromise = getDoc(syncDocRef(syncCode)).then((snap) => {
+  const fetchPromise = (async () => {
+    const snap = await getDoc(syncDocRef(syncCode));
     if (!snap.exists()) return { status: "not-found" as const };
-    const data = snap.data() as SyncPayloadRead;
+    const raw = snap.data();
+    if (!isSyncPayload(raw)) return { status: "not-found" as const };
+    const decryptedName = raw.userName
+      ? await decryptField(syncCode, raw.userName)
+      : raw.userName;
     return {
       status: "loaded" as const,
       data: {
-        categories: data.lists,
-        selectedCategoryID: data.selectedCategoryID,
-        groups: data.groups ?? [],
-        userName: data.userName,
-        colorTheme: data.colorTheme,
-        deviceIDs: data.deviceIDs ?? [],
-        updatedAt: toUnixMs(data.updatedAt),
+        categories: raw.lists,
+        selectedCategoryID: raw.selectedCategoryID,
+        groups: raw.groups ?? [],
+        userName: decryptedName,
+        colorTheme: raw.colorTheme,
+        deviceIDs: raw.deviceIDs ?? [],
+        updatedAt: toUnixMs(raw.updatedAt),
       },
     };
-  });
+  })();
 
   return Promise.race([fetchPromise, timeoutPromise]);
 }
@@ -166,21 +186,27 @@ export function subscribeToState(
     syncDocRef(syncCode),
     (snap) => {
       if (!snap.exists()) return;
-      const data = snap.data() as SyncPayloadRead;
-      callback(
-        data.lists,
-        data.selectedCategoryID,
-        data.groups ?? [],
-        toUnixMs(data.updatedAt),
-        data.userName,
-        (data.deviceIDs ?? []).length,
-        data.colorTheme,
-      );
+      const raw = snap.data();
+      if (!isSyncPayload(raw)) return;
+      void (async () => {
+        const decryptedName = raw.userName
+          ? await decryptField(syncCode, raw.userName)
+          : raw.userName;
+        callback(
+          raw.lists,
+          raw.selectedCategoryID,
+          raw.groups ?? [],
+          toUnixMs(raw.updatedAt),
+          decryptedName,
+          (raw.deviceIDs ?? []).length,
+          raw.colorTheme,
+        );
+      })();
     },
     (error) => {
       console.error(
         "[SyncService] onSnapshot error — listener stopped:",
-        error,
+        import.meta.env.PROD ? String(error) : error,
       );
     },
   );

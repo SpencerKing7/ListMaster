@@ -8,7 +8,6 @@ import { CategoryPanel } from "@/components/CategoryPanel";
 import { SettingsSheet } from "./SettingsSheet";
 import { InstallToast } from "@/components/InstallToast";
 import { InstallSheet } from "@/components/InstallSheet";
-import { useKeyboardShortcuts } from "@/store/useKeyboardShortcuts";
 
 /** Primary app screen — header, category picker, checklist panel, bottom bar, and overlays. */
 export function MainScreen(): JSX.Element {
@@ -17,24 +16,13 @@ export function MainScreen(): JSX.Element {
   const [scrolled, setScrolled] = useState(false);
   const [isInstallSheetOpen, setIsInstallSheetOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const addInputRef = useRef<HTMLInputElement>(null);
 
-  useKeyboardShortcuts(addInputRef, isSettingsOpen, useCallback(() => setIsSettingsOpen(false), []));
-
-  // Reset scroll position on mount and prevent iOS Safari from scrolling the
-  // page when the keyboard opens (visualViewport.offsetTop drifts otherwise).
+  // Reset scroll position on mount — clears any residual scroll offset left
+  // from a previous screen (e.g. onboarding with keyboard open).
   useEffect(() => {
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-
-    const vv = window.visualViewport;
-    if (!vv) return;
-    function lockScroll(): void {
-      window.scrollTo(0, 0);
-    }
-    vv.addEventListener("scroll", lockScroll);
-    return () => vv.removeEventListener("scroll", lockScroll);
   }, []);
 
   // Dismiss keyboard on scroll
@@ -49,22 +37,6 @@ export function MainScreen(): JSX.Element {
     const scrollTop = (e.target as HTMLElement).scrollTop;
     setScrolled(scrollTop > 20);
   }, [handleScroll]);
-
-  // Dismiss keyboard when tapping a non-interactive area
-  const handleContentPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const tag = target.tagName.toLowerCase();
-    const isInteractive =
-      tag === "input" ||
-      tag === "textarea" ||
-      tag === "button" ||
-      tag === "select" ||
-      target.closest("button, input, textarea, select, [role='button']") !== null;
-    if (!isInteractive) {
-      const active = document.activeElement as HTMLElement | null;
-      active?.blur();
-    }
-  }, []);
 
   return (
     <>
@@ -91,7 +63,7 @@ export function MainScreen(): JSX.Element {
       />
 
       {/* App layout — clipped to safe area */}
-      <div className="flex flex-col overflow-hidden" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}>
+      <div className="relative h-dvh flex flex-col overflow-hidden">
 
         <HeaderBar
           onOpenSettings={() => setIsSettingsOpen(true)}
@@ -103,12 +75,10 @@ export function MainScreen(): JSX.Element {
         <div
           className="flex-1 overflow-hidden relative flex flex-col min-h-0"
           onScroll={handleScrollWithPosition}
-          onPointerDown={handleContentPointerDown}
         >
           <CategoryPanel
             category={store.selectedCategory}
             scrollContainerRef={scrollContainerRef}
-            addInputRef={addInputRef}
           />
         </div>
 

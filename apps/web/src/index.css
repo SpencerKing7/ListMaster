@@ -131,7 +131,7 @@
     background-image: var(--gradient-brand-wide);
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
+    min-height: 100dvh;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
@@ -280,3 +280,14 @@
   }
 }
 
+/* ── Desktop: center bottom sheets and cap width ── */
+@media (min-width: 768px) {
+  [data-slot="sheet-content"][data-side="bottom"] {
+    max-width: 42rem;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto !important;
+    border-bottom-left-radius: 1.5rem !important;
+    border-bottom-right-radius: 1.5rem !important;
+  }
+}

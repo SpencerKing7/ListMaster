@@ -2,7 +2,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /syncStates/{syncCode} {
-      allow read, write: if request.auth != null;
+      // Any authenticated user may create a new sync document (first device on a code).
+      allow create: if request.auth != null;
+
+      // Any authenticated user may self-register: an update that ONLY adds their own UID
+      // to deviceIDs and changes nothing else. This lets adoptSyncCode() join a code.
+      allow update: if request.auth != null
+        && request.resource.data.deviceIDs.hasAll(resource.data.deviceIDs)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceIDs']);
+
+      // Read, general update (sync saves), and delete require the device to be registered.
+      allow read, delete: if request.auth != null
+        && request.auth.uid in resource.data.deviceIDs;
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.deviceIDs;
     }
   }
 }

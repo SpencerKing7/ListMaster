@@ -65,24 +65,26 @@ export function App(): JSX.Element {
 
   return (
     <HashRouter>
-      <PageTransitionWrapper>
-        <Routes>
-          {hasCompletedOnboarding ? (
-            <>
-              <Route path="/" element={<MainScreen />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          ) : (
-            <>
-              <Route path="/" element={<OnboardingInstallScreen />} />
-              <Route path="/welcome" element={<OnboardingWelcomeScreen />} />
-              <Route path="/setup" element={<OnboardingSetupScreen />} />
-              <Route path="/sync" element={<OnboardingSyncScreen />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          )}
-        </Routes>
-      </PageTransitionWrapper>
+      <div className="md:max-w-2xl md:mx-auto w-full h-dvh overflow-hidden">
+        <PageTransitionWrapper>
+          <Routes>
+            {hasCompletedOnboarding ? (
+              <>
+                <Route path="/" element={<MainScreen />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            ) : (
+              <>
+                <Route path="/" element={<OnboardingInstallScreen />} />
+                <Route path="/welcome" element={<OnboardingWelcomeScreen />} />
+                <Route path="/setup" element={<OnboardingSetupScreen />} />
+                <Route path="/sync" element={<OnboardingSyncScreen />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
+          </Routes>
+        </PageTransitionWrapper>
+      </div>
     </HashRouter>
   );
 }

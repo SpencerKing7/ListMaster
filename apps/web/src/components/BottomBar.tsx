@@ -3,13 +3,6 @@ import type { JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 
-/** Blurs the active input when tapping a non-interactive area. */
-function handlePointerDown(e: React.PointerEvent<HTMLElement>): void {
-  const target = e.target as HTMLElement;
-  if (target.closest("button, input, textarea, select, [role='button']") !== null) return;
-  (document.activeElement as HTMLElement | null)?.blur();
-}
-
 /** Bottom bar — shows chevron navigation and clear-checked button when checked items exist. */
 export function BottomBar(): JSX.Element {
   const store = useCategoriesStore();
@@ -20,8 +13,7 @@ export function BottomBar(): JSX.Element {
 
   return (
     <footer
-      className="shrink-0 z-10 px-4 pt-2"
-      onPointerDown={handlePointerDown}
+      className="sticky bottom-0 z-10 px-4 pt-2"
       style={{
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
         background:

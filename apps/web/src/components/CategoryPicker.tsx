@@ -78,7 +78,7 @@ export function CategoryPicker(): JSX.Element {
             onPointerCancel={handlePointerUp}
           >
             <div
-              className="px-1 py-1 flex items-center justify-center gap-1 min-w-full"
+              className="px-1 py-1 flex items-center gap-1 min-w-max w-full"
               style={{ position: "relative" }}
             >
               {(() => {

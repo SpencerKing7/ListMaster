@@ -5,6 +5,7 @@ import { StoreProvider } from "@/store/useCategoriesStore";
 import { SettingsProvider } from "@/store/useSettingsStore";
 import { SyncProvider } from "@/store/useSyncStore";
 import { App } from "@/App";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./index.css";
 
 // Reload the page whenever a new service worker takes control so the latest
@@ -17,12 +18,14 @@ if ("serviceWorker" in navigator) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <SettingsProvider>
-      <SyncProvider>
-        <StoreProvider>
-          <App />
-        </StoreProvider>
-      </SyncProvider>
-    </SettingsProvider>
+    <ErrorBoundary>
+      <SettingsProvider>
+        <SyncProvider>
+          <StoreProvider>
+            <App />
+          </StoreProvider>
+        </SyncProvider>
+      </SettingsProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );

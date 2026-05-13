@@ -1,7 +1,7 @@
 // src/components/AddItemInput.tsx
 // Minimal always-visible input row for adding new checklist items.
 
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle, type JSX } from "react";
+import { useState, useRef, useEffect, type JSX } from "react";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { HapticService } from "@/services/hapticService";
 import { capitalizeFirst } from "@/lib/utils";
@@ -13,13 +13,10 @@ interface AddItemInputProps {
 
 /** Compact, always-visible input row for adding new items. Sits above the list
  *  with a ghost style so it doesn't dominate the screen. */
-export const AddItemInput = forwardRef<HTMLInputElement, AddItemInputProps>(
-  function AddItemInput({ focusOnMount = false }: AddItemInputProps, ref): JSX.Element {
+export function AddItemInput({ focusOnMount = false }: AddItemInputProps): JSX.Element {
   const store = useCategoriesStore();
   const [newItemName, setNewItemName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
 
   useEffect(() => {
     if (!focusOnMount) return;
@@ -79,14 +76,7 @@ export const AddItemInput = forwardRef<HTMLInputElement, AddItemInputProps>(
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              if (trimmedName.length > 0) {
-                addItem();
-              } else {
-                inputRef.current?.blur();
-              }
-            } else if (e.key === "Escape") {
-              e.preventDefault();
-              inputRef.current?.blur();
+              addItem();
             }
           }}
           className="flex-1 bg-transparent outline-none placeholder:opacity-35"
@@ -96,7 +86,7 @@ export const AddItemInput = forwardRef<HTMLInputElement, AddItemInputProps>(
             fontSize: "var(--text-size-base)",
             fontWeight: 500,
           }}
-          enterKeyHint={trimmedName.length > 0 ? "send" : "done"}
+          enterKeyHint="send"
           autoCapitalize="sentences"
         />
 
@@ -129,4 +119,4 @@ export const AddItemInput = forwardRef<HTMLInputElement, AddItemInputProps>(
       </div>
     </div>
   );
-});
+}
