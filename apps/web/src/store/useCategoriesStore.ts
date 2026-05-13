@@ -18,6 +18,7 @@ import { categoriesReducer, loadInitialState } from "@/store/categoriesReducer";
 import { useCloudSync } from "@/store/useCloudSync";
 import { useCategoryActions } from "@/store/useCategoryActions";
 import { useCategoryDerived } from "@/store/useCategoryDerived";
+import { PersistenceService } from "@/services/persistenceService";
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 
@@ -32,8 +33,24 @@ export function StoreProvider({
     undefined,
     loadInitialState,
   );
-  const { isSyncEnabled, syncCode, setSyncedDeviceCount } = useSyncStore();
+  const { isSyncEnabled, syncCode, setSyncedDeviceCount, registerSyncLoadCallback } = useSyncStore();
   const settings = useSettingsStore();
+
+  // Register a callback so adoptSyncCode() can dispatch SYNC_LOAD with the
+  // fetched cloud data immediately, before the caller navigates. This closes
+  // the race where navigation fires before setupSubscription's async loadState
+  // + resolveInitialLoad completes, causing MainScreen to render stale data.
+  useEffect(() => {
+    registerSyncLoadCallback((categories, selectedCategoryID, groups) => {
+      // Persist to localStorage so conflict resolution in setupSubscription
+      // sees a current localLastEditedAt and skips an unnecessary second push.
+      PersistenceService.save(categories, selectedCategoryID ?? "", groups, null);
+      dispatch({ type: "SYNC_LOAD", categories, selectedCategoryID, groups });
+    });
+    // registerSyncLoadCallback is a stable function (not state-derived), so
+    // this effect intentionally runs only on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Keep stable refs for cloud sync callbacks.
   const userNameRef = useRef(settings.userName);

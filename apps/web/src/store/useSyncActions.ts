@@ -1,9 +1,9 @@
 // src/store/useSyncActions.ts
 // Stable callbacks for enabling, disabling, and adopting cloud sync codes.
-import { useCallback } from "react";
+import { useCallback, type RefObject } from "react";
 import { SettingsService } from "@/services/settingsService";
 import { generateSyncCode } from "@/lib/utils";
-import type { SyncStatus } from "@/store/useSyncStore";
+import type { SyncStatus, SyncLoadCallback } from "@/store/useSyncStore";
 
 // MARK: - Types
 
@@ -33,10 +33,13 @@ const SYNC_CODE_PATTERN = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
  * Provides the four sync action callbacks for SyncProvider.
  * enableSync and adoptSyncCode capture user.uid from ensureAnonymousAuth()
  * and immediately call registerDevice, then loadState for the initial count.
+ * When adoptSyncCode fetches cloud data it calls syncLoadCallbackRef so
+ * StoreProvider can dispatch SYNC_LOAD before the caller navigates away.
  */
 export function useSyncActions(
   isSyncEnabled: boolean,
   setters: UseSyncSetters,
+  syncLoadCallbackRef: RefObject<SyncLoadCallback | null>,
 ): UseSyncActionsReturn {
   const { setSyncCode, setIsSyncEnabled, setSyncStatus, setSyncedDeviceCount } =
     setters;
@@ -145,13 +148,22 @@ export function useSyncActions(
           result.status === "loaded" ? result.data.deviceIDs.length : 0,
         );
 
+        // Dispatch SYNC_LOAD immediately so data lands in the store before
+        // the caller navigates. Without this, the caller would navigate before
+        // setupSubscription's async loadState + resolveInitialLoad completes,
+        // causing MainScreen to render with empty/stale local data.
+        if (result.status === "loaded" && syncLoadCallbackRef.current) {
+          const { categories, selectedCategoryID, groups } = result.data;
+          syncLoadCallbackRef.current(categories, selectedCategoryID, groups);
+        }
+
         setSyncStatus("synced");
       } catch (error) {
         console.error("Failed to adopt sync code:", error);
         setSyncStatus("error");
       }
     },
-    [setSyncCode, setIsSyncEnabled, setSyncStatus, setSyncedDeviceCount],
+    [setSyncCode, setIsSyncEnabled, setSyncStatus, setSyncedDeviceCount, syncLoadCallbackRef],
   );
 
   const resetSync = useCallback(() => {

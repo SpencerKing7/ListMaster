@@ -37,16 +37,19 @@ export function OnboardingSetupScreen(): JSX.Element {
     (document.activeElement as HTMLElement | null)?.blur();
 
     if (trimmedSyncCode.length > 0) {
+      // adoptSyncCode fetches cloud data and dispatches SYNC_LOAD via the
+      // registered callback before returning, so data is in the store now.
+      // Complete onboarding directly — no need for the /sync interstitial.
       await sync.adoptSyncCode(trimmedSyncCode);
+      settings.completeOnboarding();
     } else {
       settings.setUserName(trimmedName);
       store.setCategories(pendingCategories);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        navigate("/sync");
+      }, 350);
     }
-
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      navigate("/sync");
-    }, 350);
   }
 
   return (

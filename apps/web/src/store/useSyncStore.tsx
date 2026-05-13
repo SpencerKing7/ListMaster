@@ -4,14 +4,23 @@ import {
   createContext,
   useContext,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { SettingsService } from "@/services/settingsService";
 import { useSyncActions } from "@/store/useSyncActions";
+import type { Category, CategoryGroup } from "@/models/types";
 
 // MARK: - Types
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error";
+
+/** Callback invoked with loaded cloud data so StoreProvider can dispatch SYNC_LOAD immediately. */
+export type SyncLoadCallback = (
+  categories: Category[],
+  selectedCategoryID: string | null,
+  groups: CategoryGroup[],
+) => void;
 
 interface SyncContextValue {
   /** The current sync code (empty string if sync has never been enabled). */
@@ -32,6 +41,12 @@ interface SyncContextValue {
   adoptSyncCode: (code: string) => Promise<void>;
   /** Resets sync by generating a new code. */
   resetSync: () => void;
+  /**
+   * Registers a callback that is invoked with cloud data immediately when
+   * adoptSyncCode fetches it. StoreProvider calls this on mount to wire
+   * dispatch(SYNC_LOAD) so data lands in the store before navigation.
+   */
+  registerSyncLoadCallback: (cb: SyncLoadCallback) => void;
 }
 
 // MARK: - Context
@@ -51,9 +66,17 @@ export function SyncProvider({ children }: { children: ReactNode }): ReactNode {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncedDeviceCount, setSyncedDeviceCount] = useState<number>(0);
 
+  // Stable ref — StoreProvider registers its dispatch-based callback here so
+  // adoptSyncCode can dispatch SYNC_LOAD synchronously before returning.
+  const syncLoadCallbackRef = useRef<SyncLoadCallback | null>(null);
+  const registerSyncLoadCallback = (cb: SyncLoadCallback) => {
+    syncLoadCallbackRef.current = cb;
+  };
+
   const { enableSync, disableSync, adoptSyncCode, resetSync } = useSyncActions(
     isSyncEnabled,
     { setSyncCode, setIsSyncEnabled, setSyncStatus, setSyncedDeviceCount },
+    syncLoadCallbackRef,
   );
 
   const value: SyncContextValue = {
@@ -66,6 +89,7 @@ export function SyncProvider({ children }: { children: ReactNode }): ReactNode {
     disableSync,
     adoptSyncCode,
     resetSync,
+    registerSyncLoadCallback,
   };
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;

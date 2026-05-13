@@ -138,8 +138,10 @@ export function SyncSection({
         isOpen={isAdoptingCode}
         syncCodeInput={syncCodeInput}
         onInputChange={setSyncCodeInput}
-        onAdopt={() => {
-          onAdoptSyncCode(syncCodeInput.trim());
+        onAdopt={async () => {
+          // Await so SYNC_LOAD is dispatched before the dialog closes and the
+          // user sees the settings sheet, which re-renders with the new data.
+          await onAdoptSyncCode(syncCodeInput.trim());
           setIsAdoptingCode(false);
           setSyncCodeInput("");
         }}
