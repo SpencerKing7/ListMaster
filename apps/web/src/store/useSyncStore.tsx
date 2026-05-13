@@ -9,7 +9,7 @@ import {
 } from "react";
 import { SettingsService } from "@/services/settingsService";
 import { useSyncActions } from "@/store/useSyncActions";
-import type { Category, CategoryGroup } from "@/models/types";
+import type { Category, CategoryGroup, ColorTheme } from "@/models/types";
 
 // MARK: - Types
 
@@ -20,6 +20,8 @@ export type SyncLoadCallback = (
   categories: Category[],
   selectedCategoryID: string | null,
   groups: CategoryGroup[],
+  userName: string | undefined,
+  colorTheme: ColorTheme | undefined,
 ) => void;
 
 interface SyncContextValue {

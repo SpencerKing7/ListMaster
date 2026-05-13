@@ -18,6 +18,7 @@ import { categoriesReducer, loadInitialState } from "@/store/categoriesReducer";
 import { useCloudSync } from "@/store/useCloudSync";
 import { useCategoryActions } from "@/store/useCategoryActions";
 import { useCategoryDerived } from "@/store/useCategoryDerived";
+import { PersistenceService } from "@/services/persistenceService";
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 
@@ -32,7 +33,7 @@ export function StoreProvider({
     undefined,
     loadInitialState,
   );
-  const { isSyncEnabled, syncCode, setSyncedDeviceCount } = useSyncStore();
+  const { isSyncEnabled, syncCode, setSyncedDeviceCount, registerSyncLoadCallback } = useSyncStore();
   const settings = useSettingsStore();
 
   // Keep stable refs for cloud sync callbacks.
@@ -62,6 +63,18 @@ export function StoreProvider({
     (theme: ColorTheme) => syncColorThemeRef.current(theme),
     [],
   );
+
+  // Register a callback so adoptSyncCode() can dispatch SYNC_LOAD with the
+  // fetched cloud data immediately, before the caller navigates away.
+  useEffect(() => {
+    registerSyncLoadCallback((categories, selectedCategoryID, groups, userName, colorTheme) => {
+      PersistenceService.save(categories, selectedCategoryID ?? "", groups, null);
+      if (userName) applySyncUserName(userName);
+      if (colorTheme) applySyncColorTheme(colorTheme);
+      dispatch({ type: "SYNC_LOAD", categories, selectedCategoryID, groups });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // -- Composed hooks --
 

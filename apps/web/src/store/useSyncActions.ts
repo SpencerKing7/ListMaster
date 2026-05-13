@@ -153,8 +153,8 @@ export function useSyncActions(
         // setupSubscription's async loadState + resolveInitialLoad completes,
         // causing MainScreen to render with empty/stale local data.
         if (result.status === "loaded" && syncLoadCallbackRef.current) {
-          const { categories, selectedCategoryID, groups } = result.data;
-          syncLoadCallbackRef.current(categories, selectedCategoryID, groups);
+          const { categories, selectedCategoryID, groups, userName, colorTheme } = result.data;
+          syncLoadCallbackRef.current(categories, selectedCategoryID, groups, userName, colorTheme);
         }
 
         setSyncStatus("synced");
