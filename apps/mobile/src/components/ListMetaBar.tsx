@@ -38,7 +38,7 @@ export function ListMetaBar({
             if (allChecked) onUncheckAll(); else onCheckAll();
             HapticService.medium();
           }}
-          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
         >
           {allChecked ? (
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -64,7 +64,7 @@ export function ListMetaBar({
             onChangeSortOrder(sortOrder === "date" ? "alpha" : "date");
             HapticService.light();
           }}
-          style={({ pressed }) => [styles.sortButton, { opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [styles.sortButton, { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
         >
           <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <Path d="M3 6h18M7 12h10M11 18h2" />
@@ -82,7 +82,7 @@ export function ListMetaBar({
             onChangeSortDirection(sortDirection === "asc" ? "desc" : "asc");
             HapticService.light();
           }}
-          style={({ pressed }) => [styles.sortButton, { opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [styles.sortButton, { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
         >
           <Svg
             width={13}

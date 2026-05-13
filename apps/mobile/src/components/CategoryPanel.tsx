@@ -12,27 +12,25 @@ import { ListMetaBar } from "@/components/ListMetaBar";
 import { RenameItemDialog } from "@/components/RenameItemDialog";
 import type { ChecklistItem } from "@/models/types";
 
-// MARK: - Icons
-
-const noGroupIcon = (
-  <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#39b385" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-  </Svg>
-);
-
-const noItemsIcon = (
-  <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#39b385" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-    <Rect x={3} y={3} width={18} height={18} rx={2} ry={2} />
-    <Line x1={3} y1={9} x2={21} y2={9} />
-    <Line x1={9} y1={21} x2={9} y2={9} />
-  </Svg>
-);
-
 // MARK: - Component
 
 /** Displays the selected category's items with add input, sort controls, and delete buttons. */
 export function CategoryPanel() {
   const { theme } = useSettingsStore();
+
+  const noGroupIcon = (
+    <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={theme.brandGreen} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </Svg>
+  );
+
+  const noItemsIcon = (
+    <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={theme.brandGreen} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <Rect x={3} y={3} width={18} height={18} rx={2} ry={2} />
+      <Line x1={3} y1={9} x2={21} y2={9} />
+      <Line x1={9} y1={21} x2={9} y2={9} />
+    </Svg>
+  );
   const store = useCategoriesStore();
   const category = store.selectedCategory;
 

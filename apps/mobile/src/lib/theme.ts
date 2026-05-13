@@ -12,6 +12,7 @@ interface AppearanceTokens {
   surfaceOverlay: string;
   textPrimary: string;
   textSecondary: string;
+  textPlaceholder: string;
   textOnBrand: string;
   borderSubtle: string;
   borderDialog: string;
@@ -40,6 +41,7 @@ const LIGHT_APPEARANCE: AppearanceTokens = {
   surfaceOverlay: "rgba(0,0,0,0.45)",
   textPrimary: "#1a1a1a",
   textSecondary: "rgba(0,0,0,0.5)",
+  textPlaceholder: "rgba(0,0,0,0.35)",
   textOnBrand: "#ffffff",
   borderSubtle: "rgba(0,0,0,0.08)",
   borderDialog: "rgba(0,0,0,0.1)",
@@ -54,6 +56,7 @@ const DARK_APPEARANCE: AppearanceTokens = {
   surfaceOverlay: "rgba(0,0,0,0.7)",
   textPrimary: "#ffffff",
   textSecondary: "rgba(255,255,255,0.63)",
+  textPlaceholder: "rgba(255,255,255,0.35)",
   textOnBrand: "#ffffff",
   borderSubtle: "rgba(255,255,255,0.1)",
   borderDialog: "rgba(255,255,255,0.16)",

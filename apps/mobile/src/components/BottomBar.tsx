@@ -1,6 +1,7 @@
 // src/components/BottomBar.tsx — Fixed bottom navigation bar with category nav arrows and clear-checked button.
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Svg, { Polyline, Path } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
@@ -16,11 +17,10 @@ export function BottomBar() {
   const hasCheckedItems = checkedCount > 0;
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingBottom: insets.bottom + 10, backgroundColor: theme.surfaceChrome },
-      ]}
+    <LinearGradient
+      colors={["transparent", theme.surfaceChrome]}
+      locations={[0, 0.4]}
+      style={[styles.container, { paddingBottom: insets.bottom + 10 }]}
     >
       {/* 3-column grid so centre is always truly centred */}
       <View style={styles.grid}>
@@ -31,7 +31,7 @@ export function BottomBar() {
               onPress={() => { store.selectPreviousCategory(); HapticService.selection(); }}
               style={({ pressed }) => [
                 styles.navButton,
-                { backgroundColor: `rgba(26,94,75,0.10)`, opacity: pressed ? 0.7 : 1 },
+                { backgroundColor: `rgba(26,94,75,0.10)`, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
               ]}
             >
               <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={theme.brandGreen} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -51,7 +51,7 @@ export function BottomBar() {
               onPress={() => { store.clearCheckedItemsInSelectedCategory(); HapticService.medium(); }}
               style={({ pressed }) => [
                 styles.navButton,
-                { backgroundColor: `rgba(${hexToRgb(theme.danger)}, 0.12)`, opacity: pressed ? 0.7 : 1 },
+                { backgroundColor: `rgba(${hexToRgb(theme.danger)}, 0.12)`, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
               ]}
             >
               <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={theme.danger} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +71,7 @@ export function BottomBar() {
               onPress={() => { store.selectNextCategory(); HapticService.selection(); }}
               style={({ pressed }) => [
                 styles.navButton,
-                { backgroundColor: `rgba(26,94,75,0.10)`, opacity: pressed ? 0.7 : 1 },
+                { backgroundColor: `rgba(26,94,75,0.10)`, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
               ]}
             >
               <Text style={[styles.navText, { color: theme.brandGreen }]} numberOfLines={1}>
@@ -84,7 +84,7 @@ export function BottomBar() {
           )}
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

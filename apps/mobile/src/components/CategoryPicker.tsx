@@ -16,13 +16,17 @@ export function CategoryPicker() {
   const { theme } = useSettingsStore();
   const { pickerCategories, selectedCategoryID, selectCategory, groups, selectedGroupID } = useCategoriesStore();
   const scrollRef = useRef<ScrollView>(null);
-  const pillLayouts = useRef<Record<string, number>>({});
+  const pillLayouts = useRef<Record<string, { x: number; width: number }>>({});
+  const containerWidthRef = useRef<number>(0);
+  const hasDraggedRef = useRef(false);
 
   // MARK: - Scroll selected pill into center
+
   useEffect(() => {
-    const x = pillLayouts.current[selectedCategoryID ?? ""];
-    if (x == null || !scrollRef.current) return;
-    scrollRef.current.scrollTo({ x: Math.max(0, x - 60), animated: true });
+    const layout = pillLayouts.current[selectedCategoryID ?? ""];
+    if (layout == null || !scrollRef.current) return;
+    const offset = Math.max(0, layout.x - (containerWidthRef.current - layout.width) / 2);
+    scrollRef.current.scrollTo({ x: offset, animated: true });
   }, [selectedCategoryID]);
 
   const isAllView = selectedGroupID === null && groups.length > 0;
@@ -36,7 +40,10 @@ export function CategoryPicker() {
   }
 
   return (
-    <View style={[styles.wrapper, { marginTop: groups.length > 0 ? 8 : 0 }]}>
+    <View
+      style={[styles.wrapper, { marginTop: groups.length > 0 ? 8 : 0 }]}
+      onLayout={(e) => { containerWidthRef.current = e.nativeEvent.layout.width; }}
+    >
       {/* Background track */}
       <View style={[styles.track, { backgroundColor: `rgba(26,94,75,0.12)` }]} />
 
@@ -46,6 +53,10 @@ export function CategoryPicker() {
         showsHorizontalScrollIndicator={false}
         style={styles.scroll}
         contentContainerStyle={styles.row}
+        onScrollBeginDrag={() => { hasDraggedRef.current = false; }}
+        onScroll={() => { hasDraggedRef.current = true; }}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={() => { hasDraggedRef.current = false; }}
       >
         {pickerCategories.map(({ category, isUngrouped }, index) => {
           const prevGroupID = index > 0 ? pickerCategories[index - 1].category.groupID : "__none__";
@@ -62,9 +73,13 @@ export function CategoryPicker() {
 
               <Pressable
                 onLayout={(e) => {
-                  pillLayouts.current[category.id] = e.nativeEvent.layout.x;
+                  pillLayouts.current[category.id] = {
+                    x: e.nativeEvent.layout.x,
+                    width: e.nativeEvent.layout.width,
+                  };
                 }}
                 onPress={() => {
+                  if (hasDraggedRef.current) return;
                   selectCategory(category.id);
                   HapticService.selection();
                 }}

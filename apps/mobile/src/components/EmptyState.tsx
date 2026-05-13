@@ -1,5 +1,5 @@
 // src/components/EmptyState.tsx — Animated empty-state with icon, title, and optional subtitle.
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { View, Text, Animated, StyleSheet } from "react-native";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
@@ -9,23 +9,25 @@ interface EmptyStateProps {
   subtitle?: string;
 }
 
-/** Centered empty-state with a mount-in animation (fade + slide up). */
+/** Centered empty-state with a mount-in animation (fade + slide up + scale). */
 export function EmptyState({ icon, title, subtitle }: EmptyStateProps) {
   const { theme } = useSettingsStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(12)).current;
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
     ]).start();
-  }, [fadeAnim, slideAnim]);
+  }, [fadeAnim, slideAnim, scaleAnim]);
 
   return (
     <View style={styles.container}>
       <Animated.View
-        style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+        style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: scaleAnim }] }]}
       >
         <View style={[styles.iconCircle, { backgroundColor: `rgba(26,94,75,0.14)` }]}>
           {icon}

@@ -8,6 +8,7 @@ import {
   Animated,
 } from "react-native";
 import Svg, { Line, Polyline, Path } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -45,11 +46,10 @@ export function HeaderBar({ scrolled = false, onRefresh }: HeaderBarProps) {
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top + 8, backgroundColor: theme.surfaceChrome },
-      ]}
+    <LinearGradient
+      colors={[theme.surfaceChrome, theme.surfaceChrome, "transparent"]}
+      locations={[0, 0.85, 1]}
+      style={[styles.container, { paddingTop: insets.top + 8 }]}
     >
       {/* MARK: - Brand row */}
       <View style={styles.brandRow}>
@@ -126,7 +126,7 @@ export function HeaderBar({ scrolled = false, onRefresh }: HeaderBarProps) {
 
       {/* MARK: - Category picker */}
       <CategoryPicker />
-    </View>
+    </LinearGradient>
   );
 }
 

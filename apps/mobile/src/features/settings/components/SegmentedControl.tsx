@@ -1,11 +1,18 @@
 // src/features/settings/components/SegmentedControl.tsx
 // Generic segmented control (radio-group) used for Appearance, Color, Text Size.
+import type { ReactNode } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
 interface Segment<T extends string> {
   value: T;
   label: string;
+  /** Optional font size override for the segment label. */
+  fontSize?: number;
+  /** Optional static color dot shown next to the label (e.g. theme swatches). */
+  dot?: string;
+  /** Optional icon rendered before the label. */
+  icon?: ReactNode;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -46,17 +53,24 @@ export function SegmentedControl<T extends string>({
               !isSelected && pressed && { opacity: 0.6 },
             ]}
           >
-            <Text
-              style={[
-                styles.label,
-                {
-                  color: isSelected ? theme.brandGreen : theme.textSecondary,
-                  fontWeight: isSelected ? "600" : "500",
-                },
-              ]}
-            >
-              {seg.label}
-            </Text>
+            <View style={styles.labelRow}>
+              {seg.icon !== undefined && seg.icon}
+              {seg.dot !== undefined && (
+                <View style={[styles.dot, { backgroundColor: seg.dot }]} />
+              )}
+              <Text
+                style={[
+                  styles.label,
+                  {
+                    color: isSelected ? theme.brandGreen : theme.textSecondary,
+                    fontWeight: isSelected ? "600" : "500",
+                    fontSize: seg.fontSize ?? 12,
+                  },
+                ]}
+              >
+                {seg.label}
+              </Text>
+            </View>
           </Pressable>
         );
       })}
@@ -77,6 +91,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 7,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   label: {
     fontSize: 12,

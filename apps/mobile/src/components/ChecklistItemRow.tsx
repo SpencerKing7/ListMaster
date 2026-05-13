@@ -67,7 +67,7 @@ export function ChecklistItemRow({ item, isTapped, onTap, onEdit, onDelete }: Ch
       {/* Edit button */}
       <Pressable
         onPress={(e) => { e.stopPropagation(); onEdit(); }}
-        style={({ pressed }) => [styles.actionButton, { opacity: pressed ? 0.9 : 0.5 }]}
+        style={({ pressed }) => [styles.actionButton, { opacity: pressed ? 0.9 : 0.5, transform: [{ scale: pressed ? 0.9 : 1 }] }]}
         hitSlop={8}
       >
         <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={theme.brandTeal} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -79,7 +79,7 @@ export function ChecklistItemRow({ item, isTapped, onTap, onEdit, onDelete }: Ch
       {/* Delete button */}
       <Pressable
         onPress={(e) => { e.stopPropagation(); onDelete(); }}
-        style={({ pressed }) => [styles.actionButton, { opacity: pressed ? 0.9 : 0.5 }]}
+        style={({ pressed }) => [styles.actionButton, { opacity: pressed ? 0.9 : 0.5, transform: [{ scale: pressed ? 0.9 : 1 }] }]}
         hitSlop={8}
       >
         <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={theme.danger} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

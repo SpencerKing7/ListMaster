@@ -26,6 +26,7 @@ export function GroupTabBar({ groups, selectedGroupID, onSelectGroup }: GroupTab
   const underlineX = useRef(new Animated.Value(0)).current;
   const underlineW = useRef(new Animated.Value(0)).current;
   const tabLayouts = useRef<{ x: number; width: number }[]>([]);
+  const hasDraggedRef = useRef(false);
 
   function moveUnderline(index: number) {
     const layout = tabLayouts.current[index];
@@ -50,6 +51,10 @@ export function GroupTabBar({ groups, selectedGroupID, onSelectGroup }: GroupTab
         showsHorizontalScrollIndicator={false}
         style={styles.scroll}
         contentContainerStyle={styles.row}
+        onScrollBeginDrag={() => { hasDraggedRef.current = false; }}
+        onScroll={() => { hasDraggedRef.current = true; }}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={() => { hasDraggedRef.current = false; }}
       >
         {allTabs.map((tab, index) => {
           const isSelected = tab.id === selectedGroupID;
@@ -61,6 +66,7 @@ export function GroupTabBar({ groups, selectedGroupID, onSelectGroup }: GroupTab
                 if (index === activeIndex) moveUnderline(index);
               }}
               onPress={() => {
+                if (hasDraggedRef.current) return;
                 onSelectGroup(tab.id);
                 HapticService.selection();
               }}

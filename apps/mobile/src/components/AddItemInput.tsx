@@ -55,7 +55,7 @@ export function AddItemInput({ focusOnMount = false }: AddItemInputProps) {
         <TextInput
           ref={inputRef}
           placeholder="Add an item…"
-          placeholderTextColor={`rgba(${theme.textSecondary.includes("rgba") ? "0,0,0,0.35" : "0,0,0"}, 0.35)`}
+          placeholderTextColor={theme.textPlaceholder}
           value={newItemName}
           onChangeText={(val) => setNewItemName(capitalizeFirst(val))}
           onSubmitEditing={addItem}
@@ -70,7 +70,7 @@ export function AddItemInput({ focusOnMount = false }: AddItemInputProps) {
             onPress={addItem}
             style={({ pressed }) => [
               styles.submitButton,
-              { backgroundColor: theme.brandGreen, opacity: pressed ? 0.8 : 1 },
+              { backgroundColor: theme.brandGreen, opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
             <Svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
