@@ -1,17 +1,15 @@
 // src/screens/OnboardingSetupScreen.tsx
-// Onboarding step where the user enters their name, categories, or a sync code.
+// Onboarding step where the user enters categories, or a sync code.
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useSyncStore } from "@/store/useSyncStore";
 import { OnboardingCategoryInput } from "@/components/OnboardingCategoryInput";
 import { OnboardingSyncCodeInput } from "@/components/OnboardingSyncCodeInput";
-import { capitalizeWords } from "@/lib/utils";
 
 /** Onboarding setup page — collects name + categories or a sync code. */
 export function OnboardingSetupScreen(): JSX.Element {
@@ -20,16 +18,11 @@ export function OnboardingSetupScreen(): JSX.Element {
   const sync = useSyncStore();
   const navigate = useNavigate();
 
-  const [nameText, setNameText] = useState(settings.userName || "");
   const [pendingCategories, setPendingCategories] = useState<string[]>(store.categories.map(c => c.name));
   const [syncCodeText, setSyncCodeText] = useState("");
 
-  const nameInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { nameInputRef.current?.focus(); }, []);
-
-  const trimmedName = nameText.trim();
   const trimmedSyncCode = syncCodeText.trim();
-  const isFormValid = trimmedSyncCode.length > 0 || (trimmedName.length > 0 && pendingCategories.length > 0);
+  const isFormValid = trimmedSyncCode.length > 0 || pendingCategories.length > 0;
   const isManualSectionDimmed = trimmedSyncCode.length > 0;
 
   async function finishSetup(): Promise<void> {
@@ -43,7 +36,6 @@ export function OnboardingSetupScreen(): JSX.Element {
       await sync.adoptSyncCode(trimmedSyncCode);
       settings.completeOnboarding();
     } else {
-      settings.setUserName(trimmedName);
       store.setCategories(pendingCategories);
       setTimeout(() => {
         window.scrollTo(0, 0);
@@ -95,29 +87,6 @@ export function OnboardingSetupScreen(): JSX.Element {
         className="flex flex-col gap-6 px-8 mt-10 transition-opacity duration-200"
         style={{ opacity: isManualSectionDimmed ? 0.4 : 1, pointerEvents: isManualSectionDimmed ? "none" : "auto" }}
       >
-        {/* Name input */}
-        <div className="flex flex-col gap-2">
-          <label className="font-semibold" style={{ color: "var(--color-brand-teal)" }}>
-            Your Name
-          </label>
-          <Input
-            ref={nameInputRef}
-            placeholder="Enter your name"
-            value={nameText}
-            onChange={(e) => setNameText(capitalizeWords(e.target.value))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                nameInputRef.current?.blur();
-              }
-            }}
-            className="h-12 rounded-[14px] border-transparent px-4 text-text-primary placeholder:text-[color:var(--color-text-secondary)] focus-visible:border-[color:var(--color-brand-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-brand-green)]/30"
-            style={{ backgroundColor: "var(--color-surface-input)", color: "var(--color-text-primary)" }}
-            autoCapitalize="words"
-            enterKeyHint="done"
-          />
-        </div>
-
         <OnboardingCategoryInput
           categories={pendingCategories}
           onAdd={(name) => setPendingCategories((prev) => [...prev, name])}

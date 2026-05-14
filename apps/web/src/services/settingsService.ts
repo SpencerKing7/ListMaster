@@ -10,7 +10,6 @@ import type {
   AppearanceMode,
 } from "@/models/types";
 
-const USER_NAME_KEY = "userName";
 const HAS_COMPLETED_ONBOARDING_KEY = "hasCompletedOnboarding";
 const APPEARANCE_MODE_KEY = "appearanceMode";
 const TEXT_SIZE_KEY = "textSize";
@@ -30,19 +29,6 @@ const VALID_COLOR_THEMES: readonly ColorTheme[] = ["green", "blue", "orange"];
 
 /** Reads and writes all user settings to `localStorage`. The only file that accesses settings keys. */
 export const SettingsService = {
-  // User Name
-  getUserName(): string {
-    return localStorage.getItem(USER_NAME_KEY) ?? "";
-  },
-
-  setUserName(name: string): void {
-    localStorage.setItem(USER_NAME_KEY, name);
-  },
-
-  clearUserName(): void {
-    localStorage.removeItem(USER_NAME_KEY);
-  },
-
   // Onboarding
   getHasCompletedOnboarding(): boolean {
     return localStorage.getItem(HAS_COMPLETED_ONBOARDING_KEY) === "true";
@@ -155,7 +141,6 @@ export const SettingsService = {
 
   // Clear all settings
   clearAll(): void {
-    this.clearUserName();
     this.clearHasCompletedOnboarding();
     this.clearAppearanceMode();
     this.clearTextSize();

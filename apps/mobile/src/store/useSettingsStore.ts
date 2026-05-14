@@ -20,7 +20,6 @@ import type { TextSize, ColorTheme, AppearanceMode } from "@/models/types";
 export type { TextSize };
 
 interface SettingsState {
-  userName: string;
   hasCompletedOnboarding: boolean;
   appearanceMode: AppearanceMode;
   textSize: TextSize;
@@ -31,9 +30,6 @@ interface SettingsState {
   textSizeSp: number;
   /** Resolved vertical row padding in px. */
   rowPaddingY: number;
-  setUserName: (name: string) => void;
-  /** Applies a userName from the cloud only if the local name is empty. */
-  syncUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
@@ -58,9 +54,6 @@ export function SettingsProvider({
   const systemColorScheme = useColorScheme();
   const systemIsDark = systemColorScheme === "dark";
 
-  const [userName, setUserNameState] = useState<string>(() =>
-    SettingsService.getUserName(),
-  );
   const [hasCompletedOnboarding, setHasCompletedOnboarding] =
     useState<boolean>(() => SettingsService.getHasCompletedOnboarding());
   const [appearanceMode, setAppearanceModeState] = useState<AppearanceMode>(
@@ -77,17 +70,6 @@ export function SettingsProvider({
   const theme = resolveThemeTokens(appearanceMode, colorTheme, systemIsDark);
   const textSizeSp = TEXT_SIZE_SP[textSize] ?? TEXT_SIZE_SP["m"];
   const rowPaddingY = ROW_PADDING_Y[textSize] ?? ROW_PADDING_Y["m"];
-
-  function setUserName(name: string): void {
-    SettingsService.setUserName(name);
-    setUserNameState(name);
-  }
-
-  function syncUserName(name: string): void {
-    if (!name || SettingsService.getUserName()) return;
-    SettingsService.setUserName(name);
-    setUserNameState(name);
-  }
 
   function completeOnboarding(): void {
     SettingsService.setHasCompletedOnboarding(true);
@@ -118,7 +100,6 @@ export function SettingsProvider({
   function resetToNewUser(): void {
     PersistenceService.clear();
     SettingsService.clearAll();
-    setUserNameState("");
     setHasCompletedOnboarding(false);
     setAppearanceModeState("system");
     setTextSizeState("m");
@@ -129,7 +110,6 @@ export function SettingsProvider({
     SettingsContext.Provider,
     {
       value: {
-        userName,
         hasCompletedOnboarding,
         appearanceMode,
         textSize,
@@ -137,8 +117,6 @@ export function SettingsProvider({
         theme,
         textSizeSp,
         rowPaddingY,
-        setUserName,
-        syncUserName,
         completeOnboarding,
         setAppearanceMode,
         setTextSize,

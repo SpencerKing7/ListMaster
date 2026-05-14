@@ -18,7 +18,6 @@ import {
   AppearanceSection,
   ColorThemeSection,
   TextSizeSection,
-  NameSection,
   SyncSection,
   DataSection,
   SettingsDialogPortal,
@@ -138,10 +137,6 @@ export function SettingsSheet({ isOpen, onOpenChange }: SettingsSheetProps): JSX
                 <TextSizeSection
                   textSize={settings.textSize}
                   onChangeSize={settings.setTextSize}
-                />
-                <NameSection
-                  userName={settings.userName}
-                  onChangeName={settings.setUserName}
                 />
                 <SyncSection
                   isSyncEnabled={sync.isSyncEnabled}

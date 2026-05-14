@@ -26,14 +26,10 @@ import type { TextSize, ColorTheme, AppearanceMode } from "@/models/types";
 export type { TextSize };
 
 interface SettingsState {
-  userName: string;
   hasCompletedOnboarding: boolean;
   appearanceMode: AppearanceMode;
   textSize: TextSize;
   colorTheme: ColorTheme;
-  setUserName: (name: string) => void;
-  /** Applies a userName from the cloud only if the local name is empty. */
-  syncUserName: (name: string) => void;
   completeOnboarding: () => void;
   setAppearanceMode: (mode: AppearanceMode) => void;
   setTextSize: (size: TextSize) => void;
@@ -53,9 +49,6 @@ export function SettingsProvider({
 }: {
   children: ReactNode;
 }): ReactNode {
-  const [userName, setUserNameState] = useState<string>(() =>
-    SettingsService.getUserName(),
-  );
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(
     () => SettingsService.getHasCompletedOnboarding(),
   );
@@ -80,21 +73,6 @@ export function SettingsProvider({
     applyColorThemeToDOM(saved, SettingsService.getAppearanceMode());
     return saved;
   });
-
-  function setUserName(name: string): void {
-    SettingsService.setUserName(name);
-    setUserNameState(name);
-  }
-
-  /**
-   * Applies a userName received from the cloud.
-   * Device-local name takes precedence — only updates if the local name is empty.
-   */
-  function syncUserName(name: string): void {
-    if (!name || SettingsService.getUserName()) return;
-    SettingsService.setUserName(name);
-    setUserNameState(name);
-  }
 
   function completeOnboarding(): void {
     SettingsService.setHasCompletedOnboarding(true);
@@ -135,7 +113,6 @@ export function SettingsProvider({
     PersistenceService.clear();
     SettingsService.clearAll();
     InstallPromptService.clearAll();
-    setUserNameState("");
     setHasCompletedOnboarding(false);
     setAppearanceModeState("system");
     applyThemeToDOM("system");
@@ -149,13 +126,10 @@ export function SettingsProvider({
     SettingsContext.Provider,
     {
       value: {
-        userName,
         hasCompletedOnboarding,
         appearanceMode,
         textSize,
         colorTheme,
-        setUserName,
-        syncUserName,
         completeOnboarding,
         setAppearanceMode,
         setTextSize,

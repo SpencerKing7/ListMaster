@@ -1,7 +1,6 @@
 // src/components/HeaderBar.tsx — Sticky top navigation bar with app title and settings button.
 import { useState } from "react";
 import type { JSX } from "react";
-import { useSettingsStore } from "@/store/useSettingsStore";
 import { useCategoriesStore } from "@/store/useCategoriesStore";
 import { CategoryPicker } from "./CategoryPicker";
 import { GroupTabBar } from "./GroupTabBar";
@@ -12,11 +11,9 @@ interface HeaderBarProps {
   onRefresh?: () => void;
 }
 
-/** Top header bar — greeting, settings button, optional refresh, group tabs, and category picker. */
+/** Top header bar — settings button, optional refresh, group tabs, and category picker. */
 export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: HeaderBarProps): JSX.Element {
-  const { userName } = useSettingsStore();
   const { hasGroups, groups, selectedGroupID, selectGroup } = useCategoriesStore();
-  const trimmedName = userName.trim();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   function handleRefresh() {
@@ -110,21 +107,6 @@ export function HeaderBar({ onOpenSettings, scrolled = false, onRefresh }: Heade
           </svg>
         </button>
       </div>
-      {/* MARK: - Greeting row */}
-      {trimmedName.length > 0 && (
-        <p
-          className={`font-bold min-w-0 truncate transition-all duration-220 ease-out mb-2 ${scrolled ? "text-sm opacity-60" : "text-2xl"}`}
-          style={{
-            color: "var(--color-text-primary)",
-            letterSpacing: scrolled ? "0" : "-0.01em",
-            transform: scrolled ? "scale(0.75) translateX(-8%)" : "scale(1)",
-            transformOrigin: "left center",
-          }}
-        >
-          Welcome,{" "}
-          <span style={{ color: "var(--color-brand-green)" }}>{trimmedName}</span>
-        </p>
-      )}
       {hasGroups && (
         <GroupTabBar
           groups={groups}

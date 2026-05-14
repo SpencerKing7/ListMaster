@@ -264,7 +264,6 @@ export interface LoadedSyncState {
   categories: Category[];
   selectedCategoryID: string | null;
   groups: CategoryGroup[];
-  userName?: string;
   colorTheme?: ColorTheme;
   deviceIDs: string[];
   /** Unix ms timestamp from the Firestore document — used for conflict resolution. */

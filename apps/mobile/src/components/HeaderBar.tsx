@@ -17,16 +17,14 @@ import { GroupTabBar } from "@/components/GroupTabBar";
 import { CategoryPicker } from "@/components/CategoryPicker";
 
 interface HeaderBarProps {
-  scrolled?: boolean;
   onRefresh?: () => void;
 }
 
-/** Top header bar — brand row, greeting, group tabs, category picker. */
-export function HeaderBar({ scrolled = false, onRefresh }: HeaderBarProps) {
+/** Top header bar — brand row, group tabs, category picker. */
+export function HeaderBar({ onRefresh }: HeaderBarProps) {
   const insets = useSafeAreaInsets();
-  const { theme, userName } = useSettingsStore();
+  const { theme } = useSettingsStore();
   const { hasGroups, groups, selectedGroupID, selectGroup } = useCategoriesStore();
-  const trimmedName = userName.trim();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [spinAnim] = useState(() => new Animated.Value(0));
 
@@ -97,24 +95,6 @@ export function HeaderBar({ scrolled = false, onRefresh }: HeaderBarProps) {
         </Pressable>
       </View>
 
-      {/* MARK: - Greeting */}
-      {trimmedName.length > 0 && (
-        <Text
-          style={[
-            styles.greeting,
-            {
-              color: theme.textPrimary,
-              fontSize: scrolled ? 13 : 26,
-              opacity: scrolled ? 0.6 : 1,
-            },
-          ]}
-          numberOfLines={1}
-        >
-          {"Welcome, "}
-          <Text style={{ color: theme.brandGreen }}>{trimmedName}</Text>
-        </Text>
-      )}
-
       {/* MARK: - Group tabs */}
       {hasGroups && (
         <GroupTabBar
@@ -160,10 +140,5 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-  },
-  greeting: {
-    fontWeight: "700",
-    letterSpacing: -0.3,
-    marginBottom: 8,
   },
 });

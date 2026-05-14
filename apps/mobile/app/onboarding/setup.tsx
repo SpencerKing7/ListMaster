@@ -1,9 +1,8 @@
-// app/onboarding/setup.tsx — Onboarding step: enter name + categories or a sync code.
-import { useState, useRef, useEffect } from "react";
+// app/onboarding/setup.tsx — Onboarding step: enter categories or a sync code.
+import { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,7 +18,6 @@ import { GradientBackground } from "@/components/GradientBackground";
 import { OnboardingCategoryInput } from "@/components/OnboardingCategoryInput";
 import { PageIndicator } from "@/components/PageIndicator";
 import { OnboardingSyncCodeInput } from "@/components/OnboardingSyncCodeInput";
-import { capitalizeWords } from "@/lib/utils";
 
 export default function SetupScreen() {
   const router = useRouter();
@@ -29,33 +27,23 @@ export default function SetupScreen() {
   const store = useCategoriesStore();
   const sync = useSyncStore();
 
-  const [nameText, setNameText] = useState(settings.userName || "");
   const [pendingCategories, setPendingCategories] = useState<string[]>(
     store.categories.map((c) => c.name),
   );
   const [syncCodeText, setSyncCodeText] = useState("");
 
-  const nameInputRef = useRef<TextInput>(null);
-  useEffect(() => {
-    const t = setTimeout(() => nameInputRef.current?.focus(), 200);
-    return () => clearTimeout(t);
-  }, []);
-
-  const trimmedName = nameText.trim();
   const trimmedSyncCode = syncCodeText.trim();
   const isFormValid =
     trimmedSyncCode.length > 0 ||
-    (trimmedName.length > 0 && pendingCategories.length > 0);
+    pendingCategories.length > 0;
   const isManualDimmed = trimmedSyncCode.length > 0;
 
   async function finishSetup(): Promise<void> {
     if (!isFormValid) return;
-    nameInputRef.current?.blur();
 
     if (trimmedSyncCode.length > 0) {
       await sync.adoptSyncCode(trimmedSyncCode);
     } else {
-      settings.setUserName(trimmedName);
       store.setCategories(pendingCategories);
     }
 
@@ -97,30 +85,6 @@ export default function SetupScreen() {
           ]}
           pointerEvents={isManualDimmed ? "none" : "auto"}
         >
-          {/* Name input */}
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.brandTeal }]}>
-              Your Name
-            </Text>
-            <TextInput
-              ref={nameInputRef}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.surfaceInput,
-                  color: theme.textPrimary,
-                  borderColor: theme.borderSubtle,
-                },
-              ]}
-              placeholder="Enter your name"
-              placeholderTextColor={theme.textSecondary}
-              value={nameText}
-              onChangeText={(val) => setNameText(capitalizeWords(val))}
-              autoCapitalize="words"
-              returnKeyType="done"
-            />
-          </View>
-
           <OnboardingCategoryInput
             categories={pendingCategories}
             onAdd={(name) =>
@@ -202,20 +166,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     marginTop: 40,
     gap: 24,
-  },
-  fieldGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  input: {
-    height: 48,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    borderWidth: 1,
   },
   divider: {
     flexDirection: "row",

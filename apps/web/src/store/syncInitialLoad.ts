@@ -16,8 +16,6 @@ interface ResolveInitialLoadParams {
   syncCode: string;
   stateRef: RefObject<StoreState>;
   isLoadingFromSyncRef: RefObject<boolean>;
-  getUserNameRef: RefObject<() => string>;
-  syncUserNameRef: RefObject<(name: string) => void>;
   getColorThemeRef: RefObject<() => ColorTheme>;
   syncColorThemeRef: RefObject<(theme: ColorTheme) => void>;
   dispatch: Dispatch<StoreAction>;
@@ -27,7 +25,6 @@ interface ResolveInitialLoadParams {
     categories: Category[],
     selectedCategoryID: string | null,
     groups: CategoryGroup[],
-    userName: string,
     colorTheme: ColorTheme,
   ) => Promise<void>;
 }
@@ -47,8 +44,6 @@ export async function resolveInitialLoad({
   syncCode,
   stateRef,
   isLoadingFromSyncRef,
-  getUserNameRef,
-  syncUserNameRef,
   getColorThemeRef,
   syncColorThemeRef,
   dispatch,
@@ -72,7 +67,6 @@ export async function resolveInitialLoad({
           s.categories,
           s.selectedCategoryID,
           s.groups,
-          getUserNameRef.current(),
           // Use cloud theme directly — syncColorThemeRef set React state but the
           // colorThemeRef won't update until the next render (async), so we read
           // cloudState.colorTheme here rather than getColorThemeRef.current().
@@ -83,7 +77,6 @@ export async function resolveInitialLoad({
       }
     } else {
       // Cloud is newer — accept the remote state.
-      if (cloudState.userName) syncUserNameRef.current(cloudState.userName);
       if (cloudState.colorTheme)
         syncColorThemeRef.current(cloudState.colorTheme);
       isLoadingFromSyncRef.current = true;
@@ -104,7 +97,6 @@ export async function resolveInitialLoad({
         s.categories,
         s.selectedCategoryID,
         s.groups,
-        getUserNameRef.current(),
         getColorThemeRef.current(),
       );
     } catch (e: unknown) {

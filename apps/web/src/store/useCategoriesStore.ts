@@ -41,11 +41,10 @@ export function StoreProvider({
   // the race where navigation fires before setupSubscription's async loadState
   // + resolveInitialLoad completes, causing MainScreen to render stale data.
   useEffect(() => {
-    registerSyncLoadCallback((categories, selectedCategoryID, groups, userName, colorTheme) => {
+    registerSyncLoadCallback((categories, selectedCategoryID, groups, colorTheme) => {
       // Persist to localStorage so conflict resolution in setupSubscription
       // sees a current localLastEditedAt and skips an unnecessary second push.
       PersistenceService.save(categories, selectedCategoryID ?? "", groups, null);
-      if (userName) applySyncUserName(userName);
       if (colorTheme) applySyncColorTheme(colorTheme);
       dispatch({ type: "SYNC_LOAD", categories, selectedCategoryID, groups });
     });
@@ -55,27 +54,16 @@ export function StoreProvider({
   }, []);
 
   // Keep stable refs for cloud sync callbacks.
-  const userNameRef = useRef(settings.userName);
-  const syncUserNameRef = useRef(settings.syncUserName);
   const colorThemeRef = useRef<ColorTheme>(settings.colorTheme);
   const syncColorThemeRef = useRef(settings.syncColorTheme);
   useEffect(() => {
-    userNameRef.current = settings.userName;
-    syncUserNameRef.current = settings.syncUserName;
     colorThemeRef.current = settings.colorTheme;
     syncColorThemeRef.current = settings.syncColorTheme;
   }, [
-    settings.userName,
-    settings.syncUserName,
     settings.colorTheme,
     settings.syncColorTheme,
   ]);
 
-  const getUserName = useCallback(() => userNameRef.current, []);
-  const applySyncUserName = useCallback(
-    (name: string) => syncUserNameRef.current(name),
-    [],
-  );
   const getColorTheme = useCallback(() => colorThemeRef.current, []);
   const applySyncColorTheme = useCallback(
     (theme: ColorTheme) => syncColorThemeRef.current(theme),
@@ -89,8 +77,6 @@ export function StoreProvider({
     dispatch,
     isSyncEnabled,
     syncCode,
-    getUserName,
-    syncUserName: applySyncUserName,
     getColorTheme,
     syncColorTheme: applySyncColorTheme,
     onDeviceCountChange: setSyncedDeviceCount,

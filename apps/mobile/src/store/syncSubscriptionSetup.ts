@@ -18,8 +18,6 @@ export interface SetupSubscriptionParams {
   isLoadingFromSyncRef: RefObject<boolean>;
   /** Tracks whether we are waiting for Firestore to echo back our own write. */
   isOwnEchoExpectedRef: RefObject<boolean>;
-  getUserNameRef: RefObject<() => string>;
-  syncUserNameRef: RefObject<(name: string) => void>;
   getColorThemeRef: RefObject<() => ColorTheme>;
   syncColorThemeRef: RefObject<(theme: ColorTheme) => void>;
   onDeviceCountChangeRef: RefObject<(count: number) => void>;
@@ -50,8 +48,6 @@ export async function setupSubscription(
     isSyncReadyRef,
     isLoadingFromSyncRef,
     isOwnEchoExpectedRef,
-    getUserNameRef,
-    syncUserNameRef,
     getColorThemeRef,
     syncColorThemeRef,
     onDeviceCountChangeRef,
@@ -70,8 +66,6 @@ export async function setupSubscription(
       syncCode,
       stateRef,
       isLoadingFromSyncRef,
-      getUserNameRef,
-      syncUserNameRef,
       getColorThemeRef,
       syncColorThemeRef,
       dispatch,
@@ -101,7 +95,6 @@ export async function setupSubscription(
         _selectedCategoryID,
         groups,
         cloudUpdatedAt,
-        cloudUserName,
         deviceCount,
         cloudColorTheme,
       ) => {
@@ -127,7 +120,6 @@ export async function setupSubscription(
         // than the stale cloud snapshot — push local state up instead of overwriting.
         if (cloudUpdatedAt > localEditedAtRef.current) {
           // Cloud is the source of truth — accept remote changes.
-          if (cloudUserName) syncUserNameRef.current(cloudUserName);
           if (cloudColorTheme) syncColorThemeRef.current(cloudColorTheme);
           isLoadingFromSyncRef.current = true;
           dispatch({ type: "SYNC_LOAD", categories, groups });

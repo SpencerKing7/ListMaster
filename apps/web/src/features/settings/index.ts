@@ -6,7 +6,6 @@
 export { AppearanceSection } from "./components/AppearanceSection";
 export { ColorThemeSection } from "./components/ColorThemeSection";
 export { TextSizeSection } from "./components/TextSizeSection";
-export { NameSection } from "./components/NameSection";
 export { SyncSection } from "./components/SyncSection";
 export { DataSection } from "./components/DataSection";
 export { CategoriesGroupsSection } from "./components/CategoriesGroupsSection";

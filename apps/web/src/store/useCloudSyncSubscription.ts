@@ -17,8 +17,6 @@ interface UseCloudSyncSubscriptionParams {
   isLoadingFromSyncRef: RefObject<boolean>;
   /** Tracks whether we are waiting for Firestore to echo back our own write. */
   isOwnEchoExpectedRef: RefObject<boolean>;
-  getUserNameRef: RefObject<() => string>;
-  syncUserNameRef: RefObject<(name: string) => void>;
   getColorThemeRef: RefObject<() => ColorTheme>;
   syncColorThemeRef: RefObject<(theme: ColorTheme) => void>;
   cloudSaveTimerRef: RefObject<ReturnType<typeof setTimeout> | null>;
@@ -45,8 +43,6 @@ export function useCloudSyncSubscription({
   isSyncReadyRef,
   isLoadingFromSyncRef,
   isOwnEchoExpectedRef,
-  getUserNameRef,
-  syncUserNameRef,
   getColorThemeRef,
   syncColorThemeRef,
   cloudSaveTimerRef,
@@ -80,8 +76,6 @@ export function useCloudSyncSubscription({
       isSyncReadyRef,
       isLoadingFromSyncRef,
       isOwnEchoExpectedRef,
-      getUserNameRef,
-      syncUserNameRef,
       getColorThemeRef,
       syncColorThemeRef,
       onDeviceCountChangeRef,
@@ -113,8 +107,6 @@ export function useCloudSyncSubscription({
     isSyncReadyRef,
     isLoadingFromSyncRef,
     isOwnEchoExpectedRef,
-    getUserNameRef,
-    syncUserNameRef,
     getColorThemeRef,
     syncColorThemeRef,
     stateRef,

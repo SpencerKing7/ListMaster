@@ -11,14 +11,13 @@ import { useGroupDrag } from "@/features/settings/hooks/useGroupDrag";
 import { AppearanceSection } from "@/features/settings/components/AppearanceSection";
 import { ColorThemeSection } from "@/features/settings/components/ColorThemeSection";
 import { TextSizeSection } from "@/features/settings/components/TextSizeSection";
-import { NameSection } from "@/features/settings/components/NameSection";
 import { SyncSection } from "@/features/settings/components/SyncSection";
 import { DataSection } from "@/features/settings/components/DataSection";
 import { CategoriesGroupsSection } from "@/features/settings/components/CategoriesGroupsSection";
 
 /** Full settings screen composing all settings sections. */
 export default function SettingsScreen(): React.JSX.Element {
-  const { theme, userName, appearanceMode, colorTheme, textSize, setUserName, setAppearanceMode, setColorTheme, setTextSize, resetToNewUser } = useSettingsStore();
+  const { theme, appearanceMode, colorTheme, textSize, setAppearanceMode, setColorTheme, setTextSize, resetToNewUser } = useSettingsStore();
   const { categories, groups, reorderCategories, moveGroups, resetCategories } = useCategoriesStore();
   const { isSyncEnabled, syncCode, syncStatus, syncedDeviceCount, enableSync, disableSync, adoptSyncCode } = useSyncStore();
 
@@ -100,7 +99,6 @@ export default function SettingsScreen(): React.JSX.Element {
         <AppearanceSection appearanceMode={appearanceMode} onChangeMode={setAppearanceMode} />
         <ColorThemeSection colorTheme={colorTheme} onChangeTheme={setColorTheme} />
         <TextSizeSection textSize={textSize} onChangeSize={setTextSize} />
-        <NameSection userName={userName} onChangeName={setUserName} />
         <SyncSection
           isSyncEnabled={isSyncEnabled}
           syncCode={syncCode}

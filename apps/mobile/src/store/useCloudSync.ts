@@ -22,10 +22,6 @@ interface UseCloudSyncParams {
   isSyncEnabled: boolean;
   /** The active sync code (empty string when disabled). */
   syncCode: string;
-  /** Returns the latest user name for save payloads. */
-  getUserName: () => string;
-  /** Applies a cloud-provided user name to local settings. */
-  syncUserName: (name: string) => void;
   /** Returns the latest color theme for save payloads. */
   getColorTheme: () => ColorTheme;
   /** Applies a cloud-provided color theme to local settings. */
@@ -49,8 +45,6 @@ export function useCloudSync({
   dispatch,
   isSyncEnabled,
   syncCode,
-  getUserName,
-  syncUserName,
   getColorTheme,
   syncColorTheme,
   onDeviceCountChange,
@@ -75,16 +69,12 @@ export function useCloudSync({
   const localEditedAtRef = useRef<number>(0);
 
   // Stable refs so the subscription setup closure doesn't go stale.
-  const getUserNameRef = useRef(getUserName);
-  const syncUserNameRef = useRef(syncUserName);
   const getColorThemeRef = useRef(getColorTheme);
   const syncColorThemeRef = useRef(syncColorTheme);
   useEffect(() => {
-    getUserNameRef.current = getUserName;
-    syncUserNameRef.current = syncUserName;
     getColorThemeRef.current = getColorTheme;
     syncColorThemeRef.current = syncColorTheme;
-  }, [getUserName, syncUserName, getColorTheme, syncColorTheme]);
+  }, [getColorTheme, syncColorTheme]);
 
   // ── Cloud save (debounced) ──
 
@@ -119,7 +109,6 @@ export function useCloudSync({
             categories,
             selectedCategoryID,
             groups,
-            getUserNameRef.current(),
             getColorThemeRef.current(),
           );
         } catch (error) {
@@ -155,8 +144,6 @@ export function useCloudSync({
     isSyncReadyRef,
     isLoadingFromSyncRef: isLoadingFromSync,
     isOwnEchoExpectedRef: isOwnEchoExpected,
-    getUserNameRef,
-    syncUserNameRef,
     getColorThemeRef,
     syncColorThemeRef,
     cloudSaveTimerRef: cloudSaveTimer,

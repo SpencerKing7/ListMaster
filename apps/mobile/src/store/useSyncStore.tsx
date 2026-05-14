@@ -20,7 +20,6 @@ export type SyncLoadCallback = (
   categories: Category[],
   selectedCategoryID: string | null,
   groups: CategoryGroup[],
-  userName: string | undefined,
   colorTheme: ColorTheme | undefined,
 ) => void;
 

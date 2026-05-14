@@ -18,7 +18,6 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { getFirebaseInstances } from "./firebaseConfig";
-import { encryptField, decryptField } from "@/lib/syncCrypto";
 import type {
   Category,
   CategoryGroup,
@@ -40,7 +39,6 @@ interface SyncPayloadWrite {
   lists: Category[];
   selectedCategoryID: string | null;
   groups?: CategoryGroup[];
-  userName?: string;
   colorTheme?: ColorTheme;
   updatedAt: FieldValue;
   deviceIDs?: string[];
@@ -54,7 +52,6 @@ interface SyncPayloadRead {
   lists: Category[];
   selectedCategoryID: string | null;
   groups?: CategoryGroup[];
-  userName?: string;
   colorTheme?: ColorTheme;
   updatedAt: Timestamp | number | null;
   deviceIDs?: string[];
@@ -98,15 +95,12 @@ export async function saveState(
   categories: Category[],
   selectedCategoryID: string | null,
   groups: CategoryGroup[],
-  userName: string,
   colorTheme: ColorTheme,
 ): Promise<void> {
-  const encryptedName = userName ? await encryptField(syncCode, userName) : userName;
   const payload: SyncPayloadWrite = {
     lists: categories,
     selectedCategoryID,
     groups,
-    userName: encryptedName,
     colorTheme,
     // serverTimestamp() is resolved by Firestore on the server, making it
     // immune to client clock skew across devices.
@@ -147,16 +141,12 @@ export async function loadState(syncCode: string): Promise<LoadStateResult> {
     if (!snap.exists()) return { status: "not-found" as const };
     const raw = snap.data();
     if (!isSyncPayload(raw)) return { status: "not-found" as const };
-    const decryptedName = raw.userName
-      ? await decryptField(syncCode, raw.userName)
-      : raw.userName;
     return {
       status: "loaded" as const,
       data: {
         categories: raw.lists,
         selectedCategoryID: raw.selectedCategoryID,
         groups: raw.groups ?? [],
-        userName: decryptedName,
         colorTheme: raw.colorTheme,
         deviceIDs: raw.deviceIDs ?? [],
         updatedAt: toUnixMs(raw.updatedAt),
@@ -178,7 +168,6 @@ export function subscribeToState(
     selectedCategoryID: string | null,
     groups: CategoryGroup[],
     updatedAt: number,
-    userName: string | undefined,
     deviceCount: number,
     colorTheme: ColorTheme | undefined,
   ) => void,
@@ -189,20 +178,14 @@ export function subscribeToState(
       if (!snap.exists()) return;
       const raw = snap.data();
       if (!isSyncPayload(raw)) return;
-      void (async () => {
-        const decryptedName = raw.userName
-          ? await decryptField(syncCode, raw.userName)
-          : raw.userName;
-        callback(
-          raw.lists,
-          raw.selectedCategoryID,
-          raw.groups ?? [],
-          toUnixMs(raw.updatedAt),
-          decryptedName,
-          (raw.deviceIDs ?? []).length,
-          raw.colorTheme,
-        );
-      })();
+      callback(
+        raw.lists,
+        raw.selectedCategoryID,
+        raw.groups ?? [],
+        toUnixMs(raw.updatedAt),
+        (raw.deviceIDs ?? []).length,
+        raw.colorTheme,
+      );
     },
     (error) => {
       console.error(

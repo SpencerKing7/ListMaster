@@ -9,7 +9,6 @@ import type {
   AppearanceMode,
 } from "@/models/types";
 
-const USER_NAME_KEY = "userName";
 const HAS_COMPLETED_ONBOARDING_KEY = "hasCompletedOnboarding";
 const APPEARANCE_MODE_KEY = "appearanceMode";
 const TEXT_SIZE_KEY = "textSize";
@@ -32,7 +31,6 @@ const cache: Record<string, string> = {};
 
 /** Keys that must be hydrated at startup. */
 const SETTINGS_KEYS = [
-  USER_NAME_KEY,
   HAS_COMPLETED_ONBOARDING_KEY,
   APPEARANCE_MODE_KEY,
   TEXT_SIZE_KEY,
@@ -70,16 +68,6 @@ function remove(key: string): void {
 
 /** Reads and writes all user settings. The only file that accesses settings keys. */
 export const SettingsService = {
-  getUserName(): string {
-    return get(USER_NAME_KEY) ?? "";
-  },
-  setUserName(name: string): void {
-    set(USER_NAME_KEY, name);
-  },
-  clearUserName(): void {
-    remove(USER_NAME_KEY);
-  },
-
   getHasCompletedOnboarding(): boolean {
     return get(HAS_COMPLETED_ONBOARDING_KEY) === "true";
   },
@@ -163,7 +151,6 @@ export const SettingsService = {
   },
 
   clearAll(): void {
-    this.clearUserName();
     this.clearHasCompletedOnboarding();
     this.clearAppearanceMode();
     this.clearTextSize();

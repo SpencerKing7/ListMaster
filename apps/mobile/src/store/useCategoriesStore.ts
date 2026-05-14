@@ -37,27 +37,16 @@ export function StoreProvider({
   const settings = useSettingsStore();
 
   // Keep stable refs for cloud sync callbacks.
-  const userNameRef = useRef(settings.userName);
-  const syncUserNameRef = useRef(settings.syncUserName);
   const colorThemeRef = useRef<ColorTheme>(settings.colorTheme);
   const syncColorThemeRef = useRef(settings.syncColorTheme);
   useEffect(() => {
-    userNameRef.current = settings.userName;
-    syncUserNameRef.current = settings.syncUserName;
     colorThemeRef.current = settings.colorTheme;
     syncColorThemeRef.current = settings.syncColorTheme;
   }, [
-    settings.userName,
-    settings.syncUserName,
     settings.colorTheme,
     settings.syncColorTheme,
   ]);
 
-  const getUserName = useCallback(() => userNameRef.current, []);
-  const applySyncUserName = useCallback(
-    (name: string) => syncUserNameRef.current(name),
-    [],
-  );
   const getColorTheme = useCallback(() => colorThemeRef.current, []);
   const applySyncColorTheme = useCallback(
     (theme: ColorTheme) => syncColorThemeRef.current(theme),
@@ -67,9 +56,8 @@ export function StoreProvider({
   // Register a callback so adoptSyncCode() can dispatch SYNC_LOAD with the
   // fetched cloud data immediately, before the caller navigates away.
   useEffect(() => {
-    registerSyncLoadCallback((categories, selectedCategoryID, groups, userName, colorTheme) => {
+    registerSyncLoadCallback((categories, selectedCategoryID, groups, colorTheme) => {
       PersistenceService.save(categories, selectedCategoryID ?? "", groups, null);
-      if (userName) applySyncUserName(userName);
       if (colorTheme) applySyncColorTheme(colorTheme);
       dispatch({ type: "SYNC_LOAD", categories, selectedCategoryID, groups });
     });
@@ -83,8 +71,6 @@ export function StoreProvider({
     dispatch,
     isSyncEnabled,
     syncCode,
-    getUserName,
-    syncUserName: applySyncUserName,
     getColorTheme,
     syncColorTheme: applySyncColorTheme,
     onDeviceCountChange: setSyncedDeviceCount,
