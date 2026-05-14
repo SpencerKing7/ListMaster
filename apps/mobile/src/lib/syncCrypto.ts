@@ -45,18 +45,28 @@ export async function encryptField(syncCode: string, plaintext: string): Promise
 
 /**
  * Decrypts a base64-encoded AES-GCM blob produced by `encryptField`.
- * Returns the plaintext string, or the original blob if decryption fails
- * (handles legacy unencrypted documents that still contain plaintext).
+ * Returns the plaintext string on success.
+ * Returns the original blob unchanged for legacy plaintext values (not valid base64).
+ * Returns undefined if the blob is valid base64 but decryption fails — callers must
+ * not store or display the raw encrypted blob as a name.
  */
-export async function decryptField(syncCode: string, blob: string): Promise<string> {
+export async function decryptField(syncCode: string, blob: string): Promise<string | undefined> {
+  let combined: Uint8Array;
   try {
-    const combined = Uint8Array.from(atob(blob), (c) => c.charCodeAt(0));
+    combined = Uint8Array.from(atob(blob), (c) => c.charCodeAt(0));
+  } catch {
+    // Not valid base64 — this is a legacy plaintext value; return as-is.
+    return blob;
+  }
+  try {
     const iv = combined.slice(0, 12);
     const ciphertext = combined.slice(12);
     const key = await deriveKey(syncCode);
     const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
     return new TextDecoder().decode(plaintext);
   } catch {
-    return blob;
+    // Valid base64 but decryption failed — return undefined rather than the
+    // raw encrypted blob so callers never store or display it as a name.
+    return undefined;
   }
 }
